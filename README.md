@@ -1,7 +1,11 @@
 # RustyDasher
 
 <p align="center">
-  <strong>A polished 2D arcade game in Rust + Bevy 0.19</strong><br/>
+  <strong>Wanna try out a new 2010's vibe browser game? Check out RustyDasher.</strong>
+</p>
+
+<p align="center">
+  A polished 2D arcade game in Rust + Bevy 0.19<br/>
   Native desktop · WebAssembly · Touch-friendly
 </p>
 

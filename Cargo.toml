@@ -2,7 +2,7 @@
 name = "rusty_dasher"
 version = "0.3.0"
 edition = "2024"
-description = "RustyDasher — a polished Bevy 2D arcade game (native + WASM)"
+description = "Wanna try out a new 2010's vibe browser game? Check out RustyDasher (Bevy 0.19, native + WASM)."
 license = "MIT"
 repository = "https://github.com/IntRUSTing-Games/rusty-dasher"
 readme = "README.md"
