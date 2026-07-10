@@ -6,6 +6,7 @@
  * Handheld formats (touch:true): touch (+ keyboard smoke still runs where useful)
  */
 import puppeteer from 'puppeteer-core';
+import { chromeExecutable, chromeGpuArgs, logChromeGlMode } from './chrome_launch.mjs';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -34,18 +35,11 @@ async function shot(page, name) {
   await page.screenshot({ path: path.join(OUT, name + '.png') });
 }
 
+logChromeGlMode();
 const browser = await puppeteer.launch({
-  executablePath: '/home/viny/bin/google-chrome',
+  executablePath: chromeExecutable(),
   headless: 'new',
-  args: [
-    '--no-sandbox',
-    '--disable-setuid-sandbox',
-    '--enable-unsafe-swiftshader',
-    '--use-gl=angle',
-    '--use-angle=swiftshader-webgl',
-    '--window-size=1920,1080',
-    '--force-device-scale-factor=1',
-  ],
+  args: chromeGpuArgs(),
 });
 
 async function newPage(format) {

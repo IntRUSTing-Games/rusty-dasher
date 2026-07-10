@@ -1,11 +1,12 @@
 /**
  * Full visual matrix: every SCREEN × every FORMAT (see scripts/qa_matrix.json).
- * Produces screenshots/viewports/{format}_{shot_suffix}.png for all 30 cells.
+ * Produces screenshots/viewports/{format}_{shot_suffix}.png for every cell in qa_matrix.json.
  *
  * Uses ?qa_matrix=1 so Game Over can be forced after a brief play (reliable).
  * Requires dist served at http://127.0.0.1:8080/
  */
 import puppeteer from 'puppeteer-core';
+import { chromeExecutable, chromeGpuArgs, logChromeGlMode } from './chrome_launch.mjs';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -113,18 +114,11 @@ async function captureFormat(browser, format) {
   await page.close();
 }
 
+logChromeGlMode();
 const browser = await puppeteer.launch({
-  executablePath: '/home/viny/bin/google-chrome',
+  executablePath: chromeExecutable(),
   headless: 'new',
-  args: [
-    '--no-sandbox',
-    '--disable-gpu-sandbox',
-    '--use-gl=angle',
-    '--use-angle=swiftshader-webgl',
-    '--enable-webgl',
-    '--ignore-gpu-blocklist',
-    '--window-size=1920,1080',
-  ],
+  args: chromeGpuArgs(),
 });
 
 const missing = [];
@@ -133,7 +127,7 @@ try {
     await captureFormat(browser, format);
   }
 
-  // Verify all 30 cells exist
+  // Verify all expected matrix cells exist
   for (const format of MATRIX.formats) {
     for (const screen of MATRIX.screens) {
       const name = `${format.id}_${screen.shot_suffix}.png`;

@@ -1,12 +1,12 @@
 //! Window-relative UI scale + viewport class for responsive layouts.
 //!
-//! Target surfaces (must all look good):
-//!   - 4K desktop
-//!   - 1080p desktop
-//!   - Tablet vertical (portrait)
-//!   - Tablet horizontal (landscape)
-//!   - Phone vertical (portrait)
-//!   - Phone horizontal (landscape)
+//! Classification is by **CSS viewport** (logical pixels), not physical panel
+//! resolution. Sources of truth for common sizes: StatCounter / industry
+//! breakpoint practice (phone short≤500; tablets ~768–1180; laptops include
+//! **1366×768** and **1536×864**; desktops 1920×1080+).
+//!
+//! Important: 1366×768 budget laptops are **desktop**, never tablet. Distinguish
+//! landscape 16:9 laptops from 4:3 tablet landscape (1024×768) via aspect.
 
 use bevy::prelude::*;
 
@@ -62,12 +62,19 @@ impl ViewportClass {
     }
 }
 
-/// Classify CSS/logical window size into one of the six target surfaces.
+/// Classify CSS/logical window size into a layout class.
 ///
-/// Heuristics use short/long sides (orientation-independent) plus aspect:
-/// - Phone: short side ≤ 500 CSS px (≈ iPhone / small Android)
-/// - Tablet: short ≤ 900 and long ≤ 1400 (iPad / Android tablets)
-/// - Else desktop; 4K when min dimension ≥ 2000 or max ≥ 3000
+/// Rules (CSS logical pixels — what Bevy/`window.width()` sees):
+/// 1. **4K-class:** short ≥ 2000 or long ≥ 3000, or QHD-ish (short≥1400 & long≥2500)
+/// 2. **Phone:** short ≤ 500 (covers 360×800 Android, 390×844 iPhone, etc.)
+/// 3. **Phone landscape (short height):** landscape, aspect > 1.85, height < 560
+/// 4. **Laptop / desktop:** landscape 16:10+ with height ≥ 700 and width ≥ 1200
+///    (catches **1366×768**, 1280×720, 1440×900, 1536×864, 1600×900, 1920×1080),
+///    OR width ≥ 1100 with height ≥ 650, OR short > 900 / long > 1400
+/// 5. **Tablet:** remaining mid sizes (768×1024, 1024×768 4:3, 820×1180, …)
+///
+/// Why not `long > 1400` alone for desktop? **1366×768** has long=1366 and used
+/// to fall into tablet landscape — that shipped stick chrome on real laptops.
 pub fn classify_viewport(width: f32, height: f32) -> ViewportClass {
     let w = width.max(1.0);
     let h = height.max(1.0);
@@ -76,20 +83,15 @@ pub fn classify_viewport(width: f32, height: f32) -> ViewportClass {
     let portrait = h >= w;
     let aspect = w / h;
 
-    // Desktop / large first by absolute size so a 4K window is never a "tablet".
+    // 4K / ultra-wide large panels first.
     if short >= 2000.0 || long >= 3000.0 {
         return ViewportClass::Desktop4k;
     }
-    if short > 900.0 || long > 1400.0 {
-        // Large enough to be a laptop/monitor; still 1080-class.
-        return if short >= 1400.0 && long >= 2500.0 {
-            ViewportClass::Desktop4k
-        } else {
-            ViewportClass::Desktop1080
-        };
+    if short >= 1400.0 && long >= 2500.0 {
+        return ViewportClass::Desktop4k;
     }
 
-    // Handheld band
+    // Phones (CSS short side).
     if short <= 500.0 {
         return if portrait {
             ViewportClass::PhonePortrait
@@ -98,12 +100,25 @@ pub fn classify_viewport(width: f32, height: f32) -> ViewportClass {
         };
     }
 
-    // Tablet band (and small laptop windows treated as tablet landscape for layout)
+    // Ultra-wide short viewports (browser chrome / foldables) → phone landscape UI.
+    if !portrait && aspect > 1.85 && h < 560.0 {
+        return ViewportClass::PhoneLandscape;
+    }
+
+    // Laptops & desktops — including budget HD (1366×768) and Win 125% (1536×864).
+    // Aspect ≥ 1.45 separates 16:10 / 16:9 laptops from 4:3 tablets (1024×768 ≈ 1.33).
+    let landscape_laptop = !portrait
+        && short >= 700.0
+        && long >= 1200.0
+        && aspect >= 1.45;
+    let desktop_window = w >= 1100.0 && h >= 650.0;
+    if landscape_laptop || desktop_window || short > 900.0 || long > 1400.0 {
+        return ViewportClass::Desktop1080;
+    }
+
+    // Tablets (iPad classic, modern iPad CSS, small Android tablets).
     if portrait {
         ViewportClass::TabletPortrait
-    } else if aspect > 1.85 && h < 600.0 {
-        // Very wide short height → phone landscape class (foldables / browser chrome)
-        ViewportClass::PhoneLandscape
     } else {
         ViewportClass::TabletLandscape
     }
@@ -321,13 +336,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn classifies_six_targets() {
+    fn classifies_core_targets() {
         assert_eq!(
             classify_viewport(390.0, 844.0),
             ViewportClass::PhonePortrait
         );
         assert_eq!(
             classify_viewport(844.0, 390.0),
+            ViewportClass::PhoneLandscape
+        );
+        assert_eq!(
+            classify_viewport(360.0, 800.0),
+            ViewportClass::PhonePortrait
+        );
+        assert_eq!(
+            classify_viewport(800.0, 360.0),
             ViewportClass::PhoneLandscape
         );
         assert_eq!(
@@ -339,10 +362,74 @@ mod tests {
             ViewportClass::TabletLandscape
         );
         assert_eq!(
+            classify_viewport(820.0, 1180.0),
+            ViewportClass::TabletPortrait
+        );
+        assert_eq!(
             classify_viewport(1920.0, 1080.0),
             ViewportClass::Desktop1080
         );
         assert_eq!(classify_viewport(3840.0, 2160.0), ViewportClass::Desktop4k);
+    }
+
+    #[test]
+    fn flagship_phone_css_not_physical_panel() {
+        // Physical panels are ~1300×2800+; CSS viewports stay phone-class.
+        assert_eq!(
+            classify_viewport(440.0, 956.0),
+            ViewportClass::PhonePortrait
+        ); // iPhone 16 Pro Max CSS
+        assert_eq!(
+            classify_viewport(956.0, 440.0),
+            ViewportClass::PhoneLandscape
+        );
+        assert_eq!(
+            classify_viewport(412.0, 915.0),
+            ViewportClass::PhonePortrait
+        ); // Galaxy Ultra-class CSS
+        assert_eq!(
+            classify_viewport(915.0, 412.0),
+            ViewportClass::PhoneLandscape
+        );
+        assert_eq!(
+            classify_viewport(430.0, 932.0),
+            ViewportClass::PhonePortrait
+        );
+    }
+
+    #[test]
+    fn laptops_are_desktop_not_tablet() {
+        // Budget HD laptop — the regression that showed stick chrome on a friend's PC.
+        assert_eq!(
+            classify_viewport(1366.0, 768.0),
+            ViewportClass::Desktop1080
+        );
+        assert_eq!(
+            classify_viewport(1360.0, 768.0),
+            ViewportClass::Desktop1080
+        );
+        // Windows 125% scale on a 1080p panel → ~1536×864 CSS.
+        assert_eq!(
+            classify_viewport(1536.0, 864.0),
+            ViewportClass::Desktop1080
+        );
+        assert_eq!(
+            classify_viewport(1280.0, 720.0),
+            ViewportClass::Desktop1080
+        );
+        assert_eq!(
+            classify_viewport(1440.0, 900.0),
+            ViewportClass::Desktop1080
+        );
+        assert_eq!(
+            classify_viewport(1600.0, 900.0),
+            ViewportClass::Desktop1080
+        );
+        // 4:3 tablet landscape must stay tablet (not swept into laptop rule).
+        assert_eq!(
+            classify_viewport(1024.0, 768.0),
+            ViewportClass::TabletLandscape
+        );
     }
 
     #[test]

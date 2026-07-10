@@ -1,6 +1,26 @@
 {
   "matrix": {
-    "description": "Full UI/UX QA matrix: every screen × every format. Update this file whenever a screen or format is added/removed; keep skill + scripts in sync.",
+    "description": "Full UI/UX QA matrix: every screen × every format. Sizes are CSS viewports (logical px). Flagship phones use high DPR + their CSS size — NOT physical panel resolution (e.g. Pro Max is 440×956 CSS, not 1320×2868).",
+    "selection_rationale": {
+      "phone_android": "360×800 — top Android CSS viewport (StatCounter mobile)",
+      "phone_android_landscape": "800×360 — same device rotated",
+      "phone_portrait": "390×844 — iPhone 12–14 CSS",
+      "phone_landscape": "844×390 — iPhone landscape",
+      "phone_large": "430×932 — iPhone 15/16 Plus & 15 Pro Max-class CSS",
+      "tablet_portrait": "768×1024 — classic iPad / common tablet portrait",
+      "tablet_landscape": "1024×768 — classic iPad landscape (4:3, must stay tablet)",
+      "tablet_large_portrait": "820×1180 — modern iPad Air-class CSS",
+      "laptop_hd": "1366×768 — budget laptop HD (critical; was misclassified as tablet)",
+      "laptop_scaled": "1536×864 — 1920×1080 at Windows 125% scale",
+      "laptop_720": "1280×720 — entry HD laptop / small window",
+      "1080p": "1920×1080 — default Full HD desktop/laptop",
+      "qhd": "2560×1440 — QHD monitors / high-end laptops",
+      "4k": "3840×2160 — 4K desktop reference",
+      "phone_iphone_promax": "440×956 — iPhone 16 Pro Max CSS points (physical 1320×2868 @3x is not the layout size)",
+      "phone_iphone_promax_landscape": "956×440 — Pro Max landscape CSS",
+      "phone_samsung_ultra": "412×915 — Galaxy Ultra-class CSS (physical ~1440×3120 is not the layout size)",
+      "phone_samsung_ultra_landscape": "915×412 — Ultra landscape CSS"
+    },
     "screens": [
       {
         "id": "boot",
@@ -35,22 +55,101 @@
     ],
     "formats": [
       {
-        "id": "4k",
-        "label": "4K desktop",
-        "width": 3840,
-        "height": 2160,
-        "dpr": 1,
-        "touch": false,
-        "input_primary": "keyboard"
+        "id": "phone_android",
+        "label": "Android phone vertical",
+        "width": 360,
+        "height": 800,
+        "dpr": 2,
+        "touch": true,
+        "input_primary": "touch",
+        "expected_class": "PhonePortrait",
+        "notes": "360×800 CSS common Android (incl. many Galaxy non-Ultra)"
       },
       {
-        "id": "1080p",
-        "label": "1080p desktop",
-        "width": 1920,
-        "height": 1080,
-        "dpr": 1,
-        "touch": false,
-        "input_primary": "keyboard"
+        "id": "phone_android_landscape",
+        "label": "Android phone horizontal",
+        "width": 800,
+        "height": 360,
+        "dpr": 2,
+        "touch": true,
+        "input_primary": "touch",
+        "expected_class": "PhoneLandscape"
+      },
+      {
+        "id": "phone_portrait",
+        "label": "iPhone-class vertical",
+        "width": 390,
+        "height": 844,
+        "dpr": 2,
+        "touch": true,
+        "input_primary": "touch",
+        "expected_class": "PhonePortrait",
+        "notes": "390×844 CSS (iPhone 12–14 / 16e class)"
+      },
+      {
+        "id": "phone_landscape",
+        "label": "iPhone-class horizontal",
+        "width": 844,
+        "height": 390,
+        "dpr": 2,
+        "touch": true,
+        "input_primary": "touch",
+        "expected_class": "PhoneLandscape"
+      },
+      {
+        "id": "phone_large",
+        "label": "iPhone Plus / Pro Max 15-class vertical",
+        "width": 430,
+        "height": 932,
+        "dpr": 2,
+        "touch": true,
+        "input_primary": "touch",
+        "expected_class": "PhonePortrait",
+        "notes": "430×932 CSS (iPhone 15/16 Plus & earlier Pro Max class)"
+      },
+      {
+        "id": "phone_iphone_promax",
+        "label": "iPhone 16 Pro Max vertical",
+        "width": 440,
+        "height": 956,
+        "dpr": 3,
+        "touch": true,
+        "input_primary": "touch",
+        "expected_class": "PhonePortrait",
+        "notes": "CSS viewport 440×956; physical ~1320×2868 @3x — not used for layout"
+      },
+      {
+        "id": "phone_iphone_promax_landscape",
+        "label": "iPhone 16 Pro Max horizontal",
+        "width": 956,
+        "height": 440,
+        "dpr": 3,
+        "touch": true,
+        "input_primary": "touch",
+        "expected_class": "PhoneLandscape",
+        "notes": "Landscape of Pro Max CSS; short=440 still phone class"
+      },
+      {
+        "id": "phone_samsung_ultra",
+        "label": "Galaxy S25 Ultra-class vertical",
+        "width": 412,
+        "height": 915,
+        "dpr": 3,
+        "touch": true,
+        "input_primary": "touch",
+        "expected_class": "PhonePortrait",
+        "notes": "CSS ~412×915; physical often 1440×3120+ — layout uses CSS"
+      },
+      {
+        "id": "phone_samsung_ultra_landscape",
+        "label": "Galaxy Ultra-class horizontal",
+        "width": 915,
+        "height": 412,
+        "dpr": 3,
+        "touch": true,
+        "input_primary": "touch",
+        "expected_class": "PhoneLandscape",
+        "notes": "Landscape Ultra CSS"
       },
       {
         "id": "tablet_portrait",
@@ -59,7 +158,8 @@
         "height": 1024,
         "dpr": 2,
         "touch": true,
-        "input_primary": "touch"
+        "input_primary": "touch",
+        "expected_class": "TabletPortrait"
       },
       {
         "id": "tablet_landscape",
@@ -68,33 +168,87 @@
         "height": 768,
         "dpr": 2,
         "touch": true,
-        "input_primary": "touch"
+        "input_primary": "touch",
+        "expected_class": "TabletLandscape"
       },
       {
-        "id": "phone_portrait",
-        "label": "Phone vertical",
-        "width": 390,
-        "height": 844,
+        "id": "tablet_large_portrait",
+        "label": "Large tablet vertical",
+        "width": 820,
+        "height": 1180,
         "dpr": 2,
         "touch": true,
-        "input_primary": "touch"
+        "input_primary": "touch",
+        "expected_class": "TabletPortrait"
       },
       {
-        "id": "phone_landscape",
-        "label": "Phone horizontal",
-        "width": 844,
-        "height": 390,
-        "dpr": 2,
-        "touch": true,
-        "input_primary": "touch"
+        "id": "laptop_hd",
+        "label": "Budget laptop HD 1366×768",
+        "width": 1366,
+        "height": 768,
+        "dpr": 1,
+        "touch": false,
+        "input_primary": "keyboard",
+        "expected_class": "Desktop1080"
+      },
+      {
+        "id": "laptop_scaled",
+        "label": "Laptop 1080p @ 125% (1536×864)",
+        "width": 1536,
+        "height": 864,
+        "dpr": 1,
+        "touch": false,
+        "input_primary": "keyboard",
+        "expected_class": "Desktop1080"
+      },
+      {
+        "id": "laptop_720",
+        "label": "Entry laptop / HD 720p",
+        "width": 1280,
+        "height": 720,
+        "dpr": 1,
+        "touch": false,
+        "input_primary": "keyboard",
+        "expected_class": "Desktop1080"
+      },
+      {
+        "id": "1080p",
+        "label": "1080p desktop",
+        "width": 1920,
+        "height": 1080,
+        "dpr": 1,
+        "touch": false,
+        "input_primary": "keyboard",
+        "expected_class": "Desktop1080"
+      },
+      {
+        "id": "qhd",
+        "label": "QHD desktop",
+        "width": 2560,
+        "height": 1440,
+        "dpr": 1,
+        "touch": false,
+        "input_primary": "keyboard",
+        "expected_class": "Desktop4k"
+      },
+      {
+        "id": "4k",
+        "label": "4K desktop",
+        "width": 3840,
+        "height": 2160,
+        "dpr": 1,
+        "touch": false,
+        "input_primary": "keyboard",
+        "expected_class": "Desktop4k"
       }
     ],
-    "expected_cells": 30,
+    "expected_cells": 90,
     "artifact_pattern": "screenshots/viewports/{format}_{shot_suffix}.png",
+    "critique_file": "screenshots/viewports/matrix_critique.md",
     "e2e_note": "e2e_inputs.mjs must exercise keyboard (desktop formats), mouse (desktop), and touch (handheld) on every format in formats[]"
   },
-  "cells": 30,
+  "cells": 90,
   "missing": [],
   "out": "/code/1st-rust-game/screenshots/viewports",
-  "at": "2026-07-10T22:56:42.332Z"
+  "at": "2026-07-10T23:47:59.201Z"
 }
