@@ -7,7 +7,7 @@ Tracking for **RustyDasher** and the studio brand. Check items off as we go.
 - [ ] Polish remaining UX from beta feedback
 - [ ] Pick a few beta testers (friends / Rust community / small closed group)
 - [ ] Collect feedback, fix blockers
-- [ ] Once solid: **share the game publicly** (repo is ready; also itch / socials as desired)
+- [ ] Once solid: **share the game publicly** (repo + Pages link; itch / socials optional)
 
 ## Brand & creative
 
@@ -18,22 +18,19 @@ Tracking for **RustyDasher** and the studio brand. Check items off as we go.
 
 ## Web presence
 
-- [ ] Get a domain for **IntRUSTing Games** (studio)
-- [ ] Get a domain for **RustyDasher** (or a path under the studio domain)
-- [ ] Create an **SEO-optimized site** for IntRUSTing Games (separate domain)
-  - Studio story, games grid, contact / socials
-  - Meta titles, descriptions, OG images, sitemap, robots.txt
-- [x] Host RustyDasher publicly via **GitHub Pages** (Actions → `dist/`)
+- [x] **Host RustyDasher publicly on GitHub Pages** (no separate game server for now)
   - Live: https://intrusting-games.github.io/rusty-dasher/
-  - Still open: custom domain / Cloudflare / etc. later
-  - Studio site can be static too (Astro, Zola, plain HTML, etc.)
+  - Deploy: CI on every push to `main` (Trunk → Pages)
+- [x] **Cross off custom domains / separate public server** (not needed for now)
+- [x] **SEO for now = this repo’s README** (+ org/repo description & topics)
+  - Later optional: dedicated studio marketing site / custom domain
 
 ## Ops
 
-- [ ] Point DNS when domains are ready
-- [ ] HTTPS everywhere
-- [ ] Optional: CI deploy of `dist/` on push to `main`
+- [x] HTTPS via GitHub Pages
+- [x] CI deploy of `dist/` on push to `main`
 - [ ] Optional: analytics (privacy-friendly) once public
+- [ ] Optional: custom domain later if we want a prettier URL
 
 ## Done
 
@@ -41,7 +38,8 @@ Tracking for **RustyDasher** and the studio brand. Check items off as we go.
 - [x] GitHub org **IntRUSTing-Games**
 - [x] Public repo **rusty-dasher**
 - [x] MIT license + README + CI scaffold
+- [x] GitHub Pages live play URL
 
 ---
 
-*Last updated: wrapping the session — next time starts with domains / logos / beta.*
+*Hosting decision: GitHub Pages only. No separate domain or VPS until we choose to invest in brand polish.*

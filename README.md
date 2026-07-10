@@ -21,6 +21,15 @@
 
 ---
 
+## Links
+
+| | |
+|--|--|
+| **Play** | [intrusting-games.github.io/rusty-dasher](https://intrusting-games.github.io/rusty-dasher/) |
+| **Repo** | [github.com/IntRUSTing-Games/rusty-dasher](https://github.com/IntRUSTing-Games/rusty-dasher) |
+| **Studio** | [IntRUSTing Games](https://github.com/IntRUSTing-Games) |
+| **CTA** | *Wanna try out a new 2010's vibe browser game? Check out RustyDasher.* |
+
 Dash through the field, collect yellow stars, dodge red hazards, and chain combos.
 Same game on desktop and in the browser — crisp meshes from phone to 4K.
 
