@@ -10,9 +10,11 @@ permissions:
   pages: write
   id-token: write
 
+# Don't cancel mid-build: cancelled jobs never write rust-cache, so every
+# push would look like a cold compile.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   CARGO_TERM_COLOR: always
@@ -24,21 +26,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Linux deps (Bevy native build-deps occasionally pulled)
+      - name: Install Linux deps
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             g++ pkg-config libx11-dev libasound2-dev libudev-dev \
-            libwayland-dev libxkbcommon-dev binaryen
+            libwayland-dev libxkbcommon-dev
 
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
 
-      - uses: Swatinem/rust-cache@v2
+      # GitHub Actions cache is opt-in via this action (not automatic).
+      # After the first *successful* run, Cargo registry + target/ are restored.
+      - name: Cache Rust / Cargo / WASM target
+        uses: Swatinem/rust-cache@v2
         with:
-          shared-key: wasm-pages
+          # Stable key across jobs so Pages rebuilds hit the same cache
+          shared-key: wasm-pages-v2
+          prefix-key: rusty-dasher
+          # Don't fragment the key by job id (would defeat shared-key)
+          add-job-id-key: false
           workspaces: ". -> target"
+          cache-targets: true
+          cache-all-crates: true
+          # Still save if a later step fails (e.g. upload), so next run is warmer
+          cache-on-failure: true
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Install Trunk
         uses: jetli/trunk-action@v0.5.0
@@ -46,10 +60,9 @@ jobs:
           version: latest
 
       - name: Build WASM site
-        # Relative public_url (./) works under /rusty-dasher/ on project Pages
+        # data-wasm-opt="0" in index.html — wasm-opt breaks Table.grow()
         run: trunk build --release
         env:
-          # Keep peak memory down on free runners
           CARGO_INCREMENTAL: "0"
           RUSTFLAGS: "-C debuginfo=0"
 

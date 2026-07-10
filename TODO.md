@@ -29,6 +29,7 @@ Tracking for **RustyDasher** and the studio brand. Check items off as we go.
 
 - [x] HTTPS via GitHub Pages
 - [x] CI deploy of `dist/` on push to `main`
+- [x] Rust/WASM CI cache tuned (Swatinem/rust-cache; don't cancel mid-build)
 - [ ] **Update Node.js in CI** — Actions still target Node 20 (deprecated; runners force Node 24). Bump `actions/checkout`, `upload-pages-artifact` / related actions when stable Node 24-ready versions land (or pin newer majors).
 - [ ] Optional: analytics (privacy-friendly) once public
 - [ ] Optional: custom domain later if we want a prettier URL
