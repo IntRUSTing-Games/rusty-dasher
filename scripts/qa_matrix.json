@@ -1,0 +1,94 @@
+{
+  "description": "Full UI/UX QA matrix: every screen × every format. Update this file whenever a screen or format is added/removed; keep skill + scripts in sync.",
+  "screens": [
+    {
+      "id": "boot",
+      "label": "Boot / download overlay",
+      "source": "index.html #boot",
+      "shot_suffix": "01_boot"
+    },
+    {
+      "id": "menu",
+      "label": "Main menu",
+      "source": "GameState::Menu",
+      "shot_suffix": "02_menu"
+    },
+    {
+      "id": "mode_select",
+      "label": "Mode select",
+      "source": "GameState::ModeSelect",
+      "shot_suffix": "03_mode_select"
+    },
+    {
+      "id": "playing",
+      "label": "Playing / HUD",
+      "source": "GameState::Playing",
+      "shot_suffix": "04_playing"
+    },
+    {
+      "id": "game_over",
+      "label": "Game over",
+      "source": "GameState::GameOver",
+      "shot_suffix": "05_game_over"
+    }
+  ],
+  "formats": [
+    {
+      "id": "4k",
+      "label": "4K desktop",
+      "width": 3840,
+      "height": 2160,
+      "dpr": 1,
+      "touch": false,
+      "input_primary": "keyboard"
+    },
+    {
+      "id": "1080p",
+      "label": "1080p desktop",
+      "width": 1920,
+      "height": 1080,
+      "dpr": 1,
+      "touch": false,
+      "input_primary": "keyboard"
+    },
+    {
+      "id": "tablet_portrait",
+      "label": "Tablet vertical",
+      "width": 768,
+      "height": 1024,
+      "dpr": 2,
+      "touch": true,
+      "input_primary": "touch"
+    },
+    {
+      "id": "tablet_landscape",
+      "label": "Tablet horizontal",
+      "width": 1024,
+      "height": 768,
+      "dpr": 2,
+      "touch": true,
+      "input_primary": "touch"
+    },
+    {
+      "id": "phone_portrait",
+      "label": "Phone vertical",
+      "width": 390,
+      "height": 844,
+      "dpr": 2,
+      "touch": true,
+      "input_primary": "touch"
+    },
+    {
+      "id": "phone_landscape",
+      "label": "Phone horizontal",
+      "width": 844,
+      "height": 390,
+      "dpr": 2,
+      "touch": true,
+      "input_primary": "touch"
+    }
+  ],
+  "expected_cells": 30,
+  "artifact_pattern": "screenshots/viewports/{format}_{shot_suffix}.png",
+  "e2e_note": "e2e_inputs.mjs must exercise keyboard (desktop formats), mouse (desktop), and touch (handheld) on every format in formats[]"
+}

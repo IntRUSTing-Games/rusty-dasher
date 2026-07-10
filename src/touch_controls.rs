@@ -12,6 +12,7 @@
 
 use crate::components::{MainCamera, Player};
 use crate::state::GameState;
+use crate::web_pointer;
 use bevy::prelude::*;
 
 /// World-space distance at which point-to-move is considered "arrived".
@@ -46,7 +47,6 @@ pub fn update_touch_controls(
     state: Res<State<GameState>>,
     mut controls: ResMut<TouchControls>,
 ) {
-    // Clear edge-triggered flags each frame
     controls.dash_just = false;
     controls.confirm_just = false;
     controls.back_just = false;
@@ -73,15 +73,11 @@ pub fn update_touch_controls(
 
     match *state.get() {
         GameState::Playing => {
-            // --- Multi-touch: 1st finger moves, 2nd finger dashes ---
             let active: Vec<_> = touches.iter().collect();
             let just_pressed: Vec<_> = touches.iter_just_pressed().collect();
             let touch_count = active.len();
-            // Touches that were already down before this frame (steering finger).
             let held_prior = touch_count.saturating_sub(just_pressed.len());
 
-            // Dash only when a *new* finger lands while another is already steering.
-            // Two fingers landing on the same frame do not dash (avoids accidental dash).
             if held_prior >= 1 && !just_pressed.is_empty() {
                 controls.dash_just = true;
                 controls.dash = true;
@@ -89,14 +85,11 @@ pub fn update_touch_controls(
                 controls.dash = true;
             }
 
-            // Desktop mouse: right-click = dash (no second finger).
             if mouse_right_just {
                 controls.dash_just = true;
                 controls.dash = true;
             }
 
-            // Move finger = oldest active touch (not a just-pressed dash finger if
-            // we can exclude it), else any remaining held touch, else left mouse.
             let move_screen = pick_move_pointer(&active, &just_pressed, touch_count)
                 .or_else(|| {
                     if mouse_down {
@@ -104,7 +97,8 @@ pub fn update_touch_controls(
                     } else {
                         None
                     }
-                });
+                })
+                .map(|p| web_pointer::remap_to_window(p, window));
 
             if let Some(screen) = move_screen {
                 if let Ok((camera, cam_tf)) = camera_q.single() {
@@ -135,18 +129,18 @@ pub fn update_touch_controls(
                     } else {
                         None
                     }
-                });
+                })
+                .map(|p| web_pointer::remap_to_window(p, window));
 
             let Some(pos) = tap else {
-                // Two fingers held on menus → back
                 if touches.iter().count() >= 2 {
                     controls.back_just = true;
                 }
                 return;
             };
 
-            let y_ratio = pos.y / size.y;
-            let x_ratio = pos.x / size.x;
+            let y_ratio = (pos.y / size.y).clamp(0.0, 1.0);
+            let x_ratio = (pos.x / size.x).clamp(0.0, 1.0);
 
             if x_ratio < 0.08 && !matches!(*state.get(), GameState::ModeSelect) {
                 controls.back_just = true;
@@ -172,7 +166,6 @@ pub fn update_touch_controls(
     }
 }
 
-/// Prefer a finger that is held for steering, not the brand-new second finger.
 fn pick_move_pointer(
     active: &[&bevy::input::touch::Touch],
     just_pressed: &[&bevy::input::touch::Touch],
@@ -182,7 +175,6 @@ fn pick_move_pointer(
         return None;
     }
 
-    // If multi-touch and some fingers were already down, steer with a non-just-pressed one.
     if touch_count >= 2 && !just_pressed.is_empty() {
         let just_ids: Vec<_> = just_pressed.iter().map(|t| t.id()).collect();
         if let Some(held) = active.iter().find(|t| !just_ids.contains(&t.id())) {
@@ -190,6 +182,5 @@ fn pick_move_pointer(
         }
     }
 
-    // Single finger, or all new: use first active (stable order from Bevy).
     Some(active[0].position())
 }

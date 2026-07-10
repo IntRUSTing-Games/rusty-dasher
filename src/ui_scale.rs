@@ -51,7 +51,6 @@ impl ViewportClass {
         matches!(self, Self::PhonePortrait | Self::TabletPortrait)
     }
 
-    #[allow(dead_code)]
     pub fn is_phone(self) -> bool {
         matches!(self, Self::PhonePortrait | Self::PhoneLandscape)
     }
@@ -139,17 +138,19 @@ impl Default for UiScale {
 }
 
 /// Design panel (world units) that fits the viewport class shape.
+/// Phone designs stay compact so content is dense (less empty "garbo" padding).
 pub fn menu_design_for(class: ViewportClass, aspect: f32) -> Vec2 {
     match class {
-        ViewportClass::PhonePortrait => Vec2::new(360.0, 580.0),
-        ViewportClass::PhoneLandscape => Vec2::new(800.0, 340.0),
-        ViewportClass::TabletPortrait => Vec2::new(480.0, 640.0),
-        ViewportClass::TabletLandscape => Vec2::new(700.0, 480.0),
+        // Tighter portrait: content-sized, not a tall empty card
+        ViewportClass::PhonePortrait => Vec2::new(340.0, 420.0),
+        ViewportClass::PhoneLandscape => Vec2::new(720.0, 300.0),
+        ViewportClass::TabletPortrait => Vec2::new(460.0, 560.0),
+        ViewportClass::TabletLandscape => Vec2::new(680.0, 440.0),
         ViewportClass::Desktop1080 | ViewportClass::Desktop4k => {
             if aspect < 0.80 {
-                Vec2::new(400.0, 560.0)
+                Vec2::new(400.0, 520.0)
             } else {
-                Vec2::new(720.0, 520.0)
+                Vec2::new(720.0, 500.0)
             }
         }
     }

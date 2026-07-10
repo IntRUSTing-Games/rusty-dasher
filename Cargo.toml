@@ -28,6 +28,9 @@ web-sys = { version = "0.3", features = [
   "HtmlElement",
   "Storage",
   "console",
+  "DomRect",
+  "VisualViewport",
+  "Location",
 ] }
 
 [profile.dev]
@@ -36,11 +39,26 @@ opt-level = 1
 [profile.dev.package."*"]
 opt-level = 3
 
+# Production ship profile (GitHub Pages / `trunk build --release`).
+# Keep codegen-units=1 + thin LTO — smaller/faster WASM for players.
 [profile.release]
 codegen-units = 1
 lto = "thin"
 
+# Production-oriented WASM size profile (optional explicit use).
 [profile.wasm-release]
 inherits = "release"
 opt-level = "s"
 strip = "debuginfo"
+
+# Local-only WASM iteration profile (scripts/web-build.sh default).
+# CI does NOT use this — still `trunk build --release` on Pages.
+# Faster link + more parallel codegen; still opt-level 2 so play is fine.
+[profile.wasm-fast]
+inherits = "release"
+lto = false
+codegen-units = 16
+opt-level = 2
+incremental = true
+strip = "none"
+debug = false

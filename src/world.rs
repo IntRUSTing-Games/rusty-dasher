@@ -136,7 +136,7 @@ pub fn start_run(
     commands.insert_resource(HurtCooldown(hurt));
 
     crate::player::spawn_player(&mut commands, &mut meshes, &mut materials);
-    crate::ui::spawn_hud(&mut commands, &stats, &bounds, ui_scale.text, &assets);
+    crate::ui::spawn_hud(&mut commands, &stats, &bounds, &ui_scale, &assets);
 
     let starter = if selected.0 == GameMode::Zen { 6 } else { 4 };
     for _ in 0..starter {
@@ -595,5 +595,39 @@ pub fn hit_hazards(
 pub fn check_timed_end(stats: Res<GameStats>, mut next: ResMut<NextState<GameState>>) {
     if stats.mode == GameMode::Timed && stats.time_left <= 0.0 {
         next.set(GameState::GameOver);
+    }
+}
+
+/// When the page URL contains `?qa_matrix=1` (or `&qa_matrix=1`), force Game Over
+/// shortly after play starts so the visual QA matrix can capture that screen
+/// reliably. No effect in normal play.
+pub fn qa_matrix_force_gameover(
+    time: Res<Time>,
+    mut elapsed: Local<f32>,
+    mut done: Local<bool>,
+    mut next: ResMut<NextState<GameState>>,
+) {
+    if *done || !qa_matrix_query_enabled() {
+        return;
+    }
+    *elapsed += time.delta_secs();
+    // Long enough for HUD/playfield to paint; short enough for CI.
+    if *elapsed >= 2.2 {
+        *done = true;
+        next.set(GameState::GameOver);
+    }
+}
+
+fn qa_matrix_query_enabled() -> bool {
+    #[cfg(target_arch = "wasm32")]
+    {
+        web_sys::window()
+            .and_then(|w| w.location().search().ok())
+            .map(|s| s.contains("qa_matrix=1"))
+            .unwrap_or(false)
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        false
     }
 }

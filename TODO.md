@@ -13,6 +13,7 @@ Tracking for **RustyDasher** and the studio brand. Check items off as we go.
 - [ ] Pick a few beta testers (friends / Rust community / small closed group)
 - [ ] Collect feedback, fix blockers
 - [ ] Once solid: **share the game publicly** (repo + Pages link; itch / socials optional)
+- [ ] **Multiplayer** (design + implement; hosting may need more than static Pages)
 
 ## Brand & creative
 

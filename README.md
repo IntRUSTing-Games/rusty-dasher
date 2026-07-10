@@ -58,10 +58,14 @@ cargo build --release
 rustup target add wasm32-unknown-unknown
 # install trunk: https://trunkrs.dev /
 
-./scripts/web-build.sh          # → ./dist
-./scripts/web-serve-dist.sh     # http://127.0.0.1:8080/
-./scripts/web-serve.sh          # live reload
+./scripts/web-build.sh              # local fast (cargo profile wasm-fast) → ./dist
+./scripts/web-build.sh --release    # production-like (same as GitHub Pages)
+./scripts/web-serve-dist.sh         # http://127.0.0.1:8080/
+./scripts/web-serve.sh              # live reload
 ```
+
+Local builds default to a faster `wasm-fast` profile (no LTO, more codegen units).
+CI / Pages still use `trunk build --release` for ship-quality WASM.
 
 Ship `dist/` to any static host (itch.io, GitHub Pages, Cloudflare Pages, nginx).
 
@@ -69,16 +73,30 @@ Ship `dist/` to any static host (itch.io, GitHub Pages, Cloudflare Pages, nginx)
 
 ## Controls
 
+On-screen help adapts to the device: **keyboard on PC**, **touch on phone/tablet**.
+
+### Desktop (PC)
+
 | Input | Action |
 |-------|--------|
-| **WASD** / arrows | Move |
-| **Space** / right-click | Dash (desktop) |
-| **1 finger** hold / drag | Point-to-move (walk toward finger) |
-| **2nd finger** tap | Dash (while first finger is steering) |
-| **Enter** / tap | Confirm / start / retry |
+| **WASD** / **arrows** | Move |
+| **Space** | Dash |
+| Hold mouse / right-click | Point-to-move / dash |
+| **Enter** / **Space** | Confirm / start / retry |
 | **Escape** | Back / menu |
-| **Up / Down** | Mode select — mode |
-| **Left / Right** (or **A / D**) | Mode select — difficulty |
+| **Up / Down** or **W / S** | Mode select — mode |
+| **Left / Right** or **A / D** | Mode select — difficulty |
+
+### Phone / tablet
+
+| Input | Action |
+|-------|--------|
+| **1 finger** hold | Point-to-move (walk toward finger) |
+| **2nd finger** tap | Dash (while first finger is steering) |
+| Tap | Confirm / start / retry |
+| Top / bottom thirds | Mode select — mode |
+| Left / right sides | Mode select — difficulty |
+| Two-finger / left edge | Back |
 
 High scores: `save_data.json` (desktop), **localStorage** (web).
 

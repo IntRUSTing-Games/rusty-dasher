@@ -26,6 +26,7 @@ mod ui;
 mod ui_scale;
 mod util;
 mod viewport;
+mod web_pointer;
 mod world;
 
 use bevy::asset::AssetMetaCheck;
@@ -138,6 +139,7 @@ fn main() {
                     world::collect_powerups,
                     world::hit_hazards,
                     world::check_timed_end,
+                    world::qa_matrix_force_gameover,
                 ),
                 (
                     particles::update_particles,

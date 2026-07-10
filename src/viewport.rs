@@ -293,13 +293,16 @@ pub fn sync_hud_layout(
     let left = -bounds.view_half.x + bounds.margin * 0.55;
     let right = bounds.view_half.x - bounds.margin * 0.55;
 
+    let phone = scale.class.is_phone();
+    // Keep score fully on-screen (left-anchored entity).
+    let score_x = left + if phone { 8.0 } else { 16.0 };
     if let Ok(mut tf) = score.single_mut() {
-        tf.translation = Vec3::new(left + 70.0, top, 20.0);
+        tf.translation = Vec3::new(score_x, top, 20.0);
     }
-    let heart_size = 28.0 * scale.text.clamp(0.75, 1.8);
+    let heart_size = (if phone { 22.0 } else { 28.0 }) * scale.text.clamp(0.75, 1.8);
     let spacing = heart_size + 6.0;
     for (heart, mut tf, mut sprite) in &mut hearts {
-        let x = right - 14.0 - (2 - heart.index) as f32 * spacing;
+        let x = right - 8.0 - (2 - heart.index) as f32 * spacing;
         tf.translation = Vec3::new(x, top, 20.0);
         sprite.custom_size = Some(Vec2::splat(heart_size));
     }
@@ -307,7 +310,12 @@ pub fn sync_hud_layout(
         tf.translation = Vec3::new(0.0, top, 20.0);
     }
     if let Ok(mut tf) = level.single_mut() {
-        tf.translation = Vec3::new(0.0, top - (bounds.margin * 0.28).clamp(18.0, 32.0), 20.0);
+        let level_y = if phone {
+            top - (bounds.margin * 0.42).clamp(22.0, 40.0)
+        } else {
+            top - (bounds.margin * 0.28).clamp(18.0, 32.0)
+        };
+        tf.translation = Vec3::new(0.0, level_y, 20.0);
     }
     if let Ok(mut tf) = status.single_mut() {
         tf.translation = Vec3::new(0.0, bot, 20.0);
@@ -316,39 +324,16 @@ pub fn sync_hud_layout(
 
 #[cfg(target_arch = "wasm32")]
 fn sync_web_resolution(windows: &mut Query<&mut Window>) {
-    use wasm_bindgen::JsCast;
-
-    let Some(win) = web_sys::window() else {
-        return;
-    };
-    let Some(doc) = win.document() else {
-        return;
-    };
-    let Ok(Some(el)) = doc.query_selector("canvas") else {
-        return;
-    };
-    let Ok(canvas) = el.dyn_into::<web_sys::HtmlCanvasElement>() else {
+    // CSS size from canvas / visualViewport (handles mobile chrome + zoom).
+    let Some((css_w, css_h, dpr)) = crate::web_pointer::canvas_css_and_dpr() else {
         return;
     };
 
-    let mut css_w = canvas.client_width();
-    let mut css_h = canvas.client_height();
-    if css_w < 2 || css_h < 2 {
-        if let Some(body) = doc.document_element() {
-            css_w = body.client_width();
-            css_h = body.client_height();
-        }
-    }
-    if css_w < 2 || css_h < 2 {
-        return;
-    }
+    let mut phys_w = (css_w * dpr).round().max(320.0) as u32;
+    let mut phys_h = (css_h * dpr).round().max(240.0) as u32;
 
-    // Full device pixel ratio for sharp 4K (and retina 4K up to cap below).
-    let dpr = win.device_pixel_ratio().clamp(1.0, 2.5) as f32;
-    let mut phys_w = ((css_w as f32) * dpr).round() as u32;
-    let mut phys_h = ((css_h as f32) * dpr).round() as u32;
-
-    // Allow true 4K framebuffers; only soft-cap beyond UHD.
+    // Soft-cap beyond UHD — then *recompute* scale factor so logical size stays
+    // equal to CSS. Using raw dpr after a cap desyncs touch coordinates.
     const MAX_W: u32 = 3840;
     const MAX_H: u32 = 2160;
     if phys_w > MAX_W || phys_h > MAX_H {
@@ -359,14 +344,19 @@ fn sync_web_resolution(windows: &mut Query<&mut Window>) {
         phys_h = ((phys_h as f32) * s).round().max(240.0) as u32;
     }
 
+    // logical = physical / scale_factor  →  force logical ≈ CSS
+    let sf_x = phys_w as f32 / css_w.max(1.0);
+    let sf_y = phys_h as f32 / css_h.max(1.0);
+    let scale_factor = ((sf_x + sf_y) * 0.5).clamp(1.0, 2.5);
+
     for mut window in windows.iter_mut() {
         let cur_w = window.resolution.physical_width();
         let cur_h = window.resolution.physical_height();
         let cur_sf = window.resolution.scale_factor();
-        if cur_w == phys_w && cur_h == phys_h && (cur_sf - dpr).abs() < 0.01 {
+        if cur_w == phys_w && cur_h == phys_h && (cur_sf - scale_factor).abs() < 0.02 {
             continue;
         }
-        window.resolution.set_scale_factor_override(Some(dpr));
+        window.resolution.set_scale_factor_override(Some(scale_factor));
         window.resolution.set_physical_resolution(phys_w, phys_h);
     }
 }

@@ -1,50 +1,116 @@
 /**
- * Capture title + mode-select on all six target surfaces:
- * 4K, 1080p, tablet portrait/landscape, phone portrait/landscape.
- * Click boot CTA (not Enter) so we don't double-advance menus.
+ * Full visual matrix: every SCREEN × every FORMAT (see scripts/qa_matrix.json).
+ * Produces screenshots/viewports/{format}_{shot_suffix}.png for all 30 cells.
+ *
+ * Uses ?qa_matrix=1 so Game Over can be forced after a brief play (reliable).
+ * Requires dist served at http://127.0.0.1:8080/
  */
 import puppeteer from 'puppeteer-core';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-const OUT = '/code/1st-rust-game/screenshots/viewports';
-const URL = 'http://127.0.0.1:8080/';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.join(__dirname, '..');
+const OUT = path.join(ROOT, 'screenshots/viewports');
+const MATRIX = JSON.parse(fs.readFileSync(path.join(__dirname, 'qa_matrix.json'), 'utf8'));
+const URL = 'http://127.0.0.1:8080/?qa_matrix=1';
+
 fs.mkdirSync(OUT, { recursive: true });
-
-const VIEWPORTS = [
-  { name: '4k', width: 3840, height: 2160, dpr: 1, touch: false },
-  { name: '1080p', width: 1920, height: 1080, dpr: 1, touch: false },
-  { name: 'tablet_portrait', width: 768, height: 1024, dpr: 2, touch: true },
-  { name: 'tablet_landscape', width: 1024, height: 768, dpr: 2, touch: true },
-  { name: 'phone_portrait', width: 390, height: 844, dpr: 2, touch: true },
-  { name: 'phone_landscape', width: 844, height: 390, dpr: 2, touch: true },
-];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function boot(page) {
-  await page.waitForSelector('canvas', { timeout: 120000 });
+async function shot(page, name) {
+  const file = path.join(OUT, name + '.png');
+  await page.screenshot({ path: file, fullPage: false });
+  console.log('saved', name, fs.statSync(file).size);
+  return file;
+}
+
+async function waitBootReady(page) {
+  await page.waitForSelector('canvas', { timeout: 180000 });
   await page.waitForFunction(
     () => document.getElementById('boot-cta')?.style?.display === 'inline-block',
-    { timeout: 120000 }
+    { timeout: 180000 }
   );
-  // Click the HTML boot button so the game doesn't also receive Enter
-  await page.click('#boot-cta');
-  await sleep(900);
+}
+
+async function dismissBoot(page, vp) {
+  const cx = Math.floor(vp.width / 2);
+  const cy = Math.floor(vp.height / 2);
+  // Prefer CTA click so we don't double-advance Bevy menus with Enter.
+  try {
+    await page.click('#boot-cta');
+  } catch {
+    if (vp.touch) await page.touchscreen.tap(cx, cy);
+    else await page.mouse.click(cx, cy);
+  }
+  await sleep(700);
   await page.evaluate(() => {
     const c = document.querySelector('canvas');
     if (c) {
       c.tabIndex = 0;
-      c.focus();
+      c.focus({ preventScroll: true });
     }
   });
   await sleep(500);
 }
 
-async function shot(page, name) {
-  const file = path.join(OUT, name + '.png');
-  await page.screenshot({ path: file, fullPage: false });
-  console.log('saved', file, fs.statSync(file).size);
+async function captureFormat(browser, format) {
+  const page = await browser.newPage();
+  await page.setViewport({
+    width: format.width,
+    height: format.height,
+    deviceScaleFactor: format.dpr,
+    isMobile: format.touch,
+    hasTouch: format.touch,
+  });
+  if (format.touch) {
+    const client = await page.createCDPSession();
+    await client.send('Emulation.setTouchEmulationEnabled', {
+      enabled: true,
+      maxTouchPoints: 2,
+    });
+  }
+
+  console.log('=== format', format.id, `${format.width}x${format.height}`);
+  await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 180000 });
+
+  // 01 boot (ready state — CTA visible)
+  await waitBootReady(page);
+  await sleep(400);
+  await shot(page, `${format.id}_01_boot`);
+
+  await dismissBoot(page, format);
+  await sleep(1000);
+  // 02 menu
+  await shot(page, `${format.id}_02_menu`);
+
+  // 03 mode select
+  const cx = Math.floor(format.width / 2);
+  const cy = Math.floor(format.height / 2);
+  if (format.touch) {
+    await page.touchscreen.tap(cx, cy);
+  } else {
+    await page.keyboard.press('Enter');
+  }
+  await sleep(1200);
+  await shot(page, `${format.id}_03_mode_select`);
+
+  // 04 playing
+  if (format.touch) {
+    await page.touchscreen.tap(cx, cy);
+  } else {
+    await page.keyboard.press('Space');
+  }
+  await sleep(1600);
+  await shot(page, `${format.id}_04_playing`);
+
+  // 05 game over (qa_matrix=1 forces after ~2.2s of play)
+  await sleep(2800);
+  await shot(page, `${format.id}_05_game_over`);
+
+  await page.close();
 }
 
 const browser = await puppeteer.launch({
@@ -54,34 +120,47 @@ const browser = await puppeteer.launch({
     '--no-sandbox',
     '--disable-gpu-sandbox',
     '--use-gl=angle',
-    '--use-angle=gl-egl',
+    '--use-angle=swiftshader-webgl',
     '--enable-webgl',
     '--ignore-gpu-blocklist',
     '--window-size=1920,1080',
   ],
 });
 
-for (const vp of VIEWPORTS) {
-  const page = await browser.newPage();
-  await page.setViewport({
-    width: vp.width,
-    height: vp.height,
-    deviceScaleFactor: vp.dpr,
-    isMobile: vp.touch,
-    hasTouch: vp.touch,
-  });
-  console.log('viewport', vp.name);
-  await page.goto(URL, { waitUntil: 'networkidle0', timeout: 120000 });
-  await boot(page);
-  await sleep(1400);
-  await shot(page, `${vp.name}_01_menu`);
+const missing = [];
+try {
+  for (const format of MATRIX.formats) {
+    await captureFormat(browser, format);
+  }
 
-  // Title → mode select (one Enter only)
-  await page.keyboard.press('Enter');
-  await sleep(1200);
-  await shot(page, `${vp.name}_02_mode_select`);
-  await page.close();
+  // Verify all 30 cells exist
+  for (const format of MATRIX.formats) {
+    for (const screen of MATRIX.screens) {
+      const name = `${format.id}_${screen.shot_suffix}.png`;
+      const file = path.join(OUT, name);
+      if (!fs.existsSync(file) || fs.statSync(file).size < 500) {
+        missing.push(name);
+      }
+    }
+  }
+} finally {
+  await browser.close();
 }
 
-await browser.close();
-console.log('done');
+const manifest = {
+  matrix: MATRIX,
+  cells: MATRIX.formats.length * MATRIX.screens.length,
+  missing,
+  out: OUT,
+  at: new Date().toISOString(),
+};
+fs.writeFileSync(path.join(OUT, 'matrix_results.json'), JSON.stringify(manifest, null, 2));
+
+console.log('\n=== VIEWPORT MATRIX ===');
+console.log('expected', MATRIX.expected_cells, 'missing', missing.length);
+if (missing.length) {
+  console.error('MISSING:', missing);
+  process.exit(1);
+}
+console.log('all', MATRIX.expected_cells, 'cells present');
+process.exit(0);

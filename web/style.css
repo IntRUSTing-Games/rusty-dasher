@@ -14,6 +14,10 @@ html, body {
   /* Prevent iOS rubber-band */
   position: fixed;
   inset: 0;
+  /* Safe areas for notched phones */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+  box-sizing: border-box;
 }
 
 /* Full-bleed canvas. Bevy fit_canvas_to_parent + DPR sync set the bitmap size. */
@@ -40,6 +44,9 @@ canvas {
   color: #e8ecf8;
   background: radial-gradient(ellipse at center, #14182a 0%, #090a12 70%);
   cursor: pointer;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+  box-sizing: border-box;
 }
 
 #boot .title {
@@ -88,4 +95,70 @@ canvas {
   opacity: 0.85;
   max-width: 22rem;
   line-height: 1.35;
+  text-align: center;
+  padding: 0 1rem;
+}
+
+/* Circular progress bar (download / init) */
+#boot .progress {
+  position: relative;
+  width: 5.5rem;
+  height: 5.5rem;
+  margin: 0.5rem 0 0.25rem;
+  flex-shrink: 0;
+}
+
+#boot .progress.hidden {
+  display: none;
+}
+
+#boot .progress-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  display: block;
+}
+
+#boot .progress-track {
+  fill: none;
+  stroke: rgba(90, 122, 212, 0.22);
+  stroke-width: 8;
+}
+
+#boot .progress-value {
+  fill: none;
+  stroke: #ffd954;
+  stroke-width: 8;
+  stroke-linecap: round;
+  /* dash set in JS: circumference ≈ 326.7 for r=52 */
+  stroke-dasharray: 326.7256;
+  stroke-dashoffset: 326.7256;
+  transition: stroke-dashoffset 0.12s linear;
+}
+
+#boot .progress.done .progress-value {
+  stroke: #6ddea0;
+  transition: stroke-dashoffset 0.2s ease-out, stroke 0.2s ease;
+}
+
+#boot .progress-label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+#boot .progress-label span {
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: #e8ecf8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #boot .progress-value {
+    transition: none;
+  }
 }

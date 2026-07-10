@@ -27,12 +27,18 @@ fn spawn_menu_with(commands: &mut Commands, save: &SaveData, scale: &UiScale) {
             .max(save.high_scores.survival.max(save.high_scores.timed)),
     );
     let s = scale.panel;
+    let phone = scale.class.is_phone();
     let compact = scale.class.is_compact() || scale.aspect < 0.85;
-    // Fit inside design with margin so body text never kisses the border.
-    let panel = if compact {
+    // Content-tight panel: phones use almost full design (already compact).
+    let panel = if phone {
         Vec2::new(
-            (scale.design.x * 0.96).clamp(320.0, 480.0),
-            (scale.design.y * 0.90).clamp(300.0, 560.0),
+            (scale.design.x * 0.98).clamp(300.0, 360.0),
+            (scale.design.y * 0.96).clamp(280.0, 440.0),
+        )
+    } else if compact {
+        Vec2::new(
+            (scale.design.x * 0.94).clamp(320.0, 480.0),
+            (scale.design.y * 0.90).clamp(280.0, 520.0),
         )
     } else {
         Vec2::new(
@@ -43,31 +49,44 @@ fn spawn_menu_with(commands: &mut Commands, save: &SaveData, scale: &UiScale) {
 
     spawn_panel_frame(commands, MenuUi, panel, s);
 
-    let title_px = if compact { 34.0 } else { 46.0 };
-    let body_px = if compact { 14.0 } else { 18.0 };
+    let title_px = if phone {
+        30.0
+    } else if compact {
+        34.0
+    } else {
+        46.0
+    };
+    let body_px = if phone {
+        13.0
+    } else if compact {
+        14.0
+    } else {
+        18.0
+    };
+    // Copy is format-specific: touch on phone/tablet, keyboard on PC.
     let body = if scale.class.is_handheld() {
         format!(
-            "Collect yellow stars. Avoid red hazards.\n\
-             Hold 1 finger to move  -  2nd finger dashes\n\n\
-             Best score: {best}\n\n\
-             Tap  -  choose mode"
-        )
-    } else if compact {
-        format!(
-            "Collect yellow stars. Avoid red hazards.\n\
-             WASD / arrows move  -  SPACE dash\n\n\
-             Best score: {best}\n\n\
-             ENTER / tap  -  choose mode"
+            "Collect stars · dodge hazards\n\
+             1 finger moves · 2nd finger dashes\n\
+             Best {best}\n\
+             Tap to choose mode"
         )
     } else {
         format!(
-            "Collect yellow stars  -  dodge red hazards\n\
-             WASD / arrows move  -  SPACE / right-click dash\n\
-             Hold mouse to point-to-move  -  power-ups\n\n\
+            "Collect yellow stars · dodge red hazards\n\
+             WASD / arrows move · SPACE dash\n\
+             Mouse: hold to point-to-move · right-click dash\n\n\
              Best score: {best}\n\n\
-             ENTER / SPACE / click  -  choose mode\n\
-             ESC  -  quit (desktop)"
+             ENTER / SPACE — choose mode\n\
+             ESC — quit"
         )
+    };
+
+    // Dense vertical packing for phone (fractions of panel height).
+    let (title_y, sub_y, body_y) = if phone {
+        (0.28, 0.12, -0.12)
+    } else {
+        (0.30, 0.18, -0.08)
     };
 
     commands.spawn((
@@ -77,13 +96,13 @@ fn spawn_menu_with(commands: &mut Commands, save: &SaveData, scale: &UiScale) {
             menu: true,
         },
         ScaledPos {
-            base: Vec2::new(0.0, panel.y * 0.30),
+            base: Vec2::new(0.0, panel.y * title_y),
             menu: true,
         },
         Text2d::new("RUSTY DASHER"),
         font(title_px, s),
         TextColor(Color::srgb(1.0, 0.88, 0.35)),
-        Transform::from_xyz(0.0, panel.y * 0.30 * s, 20.0),
+        Transform::from_xyz(0.0, panel.y * title_y * s, 20.0),
     ));
     commands.spawn((
         MenuUi,
@@ -92,13 +111,13 @@ fn spawn_menu_with(commands: &mut Commands, save: &SaveData, scale: &UiScale) {
             menu: true,
         },
         ScaledPos {
-            base: Vec2::new(0.0, panel.y * 0.18),
+            base: Vec2::new(0.0, panel.y * sub_y),
             menu: true,
         },
         Text2d::new("by IntRUSTing Games"),
         font(body_px, s),
         TextColor(Color::srgb(0.55, 0.75, 1.0)),
-        Transform::from_xyz(0.0, panel.y * 0.18 * s, 20.0),
+        Transform::from_xyz(0.0, panel.y * sub_y * s, 20.0),
     ));
     commands.spawn((
         MenuUi,
@@ -107,14 +126,14 @@ fn spawn_menu_with(commands: &mut Commands, save: &SaveData, scale: &UiScale) {
             menu: true,
         },
         ScaledPos {
-            base: Vec2::new(0.0, -panel.y * 0.08),
+            base: Vec2::new(0.0, panel.y * body_y),
             menu: true,
         },
         Text2d::new(body),
         font(body_px, s),
         TextColor(Color::srgb(0.88, 0.91, 0.97)),
         TextLayout::justify(Justify::Center),
-        Transform::from_xyz(0.0, -panel.y * 0.08 * s, 20.0),
+        Transform::from_xyz(0.0, panel.y * body_y * s, 20.0),
     ));
 }
 
@@ -124,10 +143,11 @@ fn spawn_panel_frame<M: Component + Copy>(
     panel: Vec2,
     s: f32,
 ) {
-    // Full-view dim so the playfield doesn't show through on tall/narrow screens.
+    // Near-opaque full-view dim so the playfield border doesn't fight the menu
+    // (especially ugly on phone portrait).
     commands.spawn((
         marker,
-        Sprite::from_color(Color::srgba(0.02, 0.03, 0.06, 0.72), Vec2::new(4000.0, 4000.0)),
+        Sprite::from_color(Color::srgba(0.02, 0.03, 0.06, 0.92), Vec2::new(5000.0, 5000.0)),
         Transform::from_xyz(0.0, 0.0, 12.0),
     ));
     let border = panel_border(panel);
@@ -140,7 +160,7 @@ fn spawn_panel_frame<M: Component + Copy>(
     commands.spawn((
         marker,
         ScaledPanel { base: panel },
-        Sprite::from_color(Color::srgba(0.09, 0.11, 0.18, 0.96), panel * s),
+        Sprite::from_color(Color::srgba(0.09, 0.11, 0.18, 0.98), panel * s),
         Transform::from_xyz(0.0, 0.0, 15.0),
     ));
 }
@@ -234,11 +254,27 @@ fn spawn_mode_select_with(
     scale: &UiScale,
 ) {
     let s = scale.panel;
-    let panel = scale.design;
+    let phone = scale.class.is_phone();
+    // Phone: slightly inset from design so border never clips labels.
+    let panel = if phone {
+        Vec2::new(
+            (scale.design.x * 0.98).clamp(300.0, 720.0),
+            (scale.design.y * 0.96).clamp(260.0, 440.0),
+        )
+    } else {
+        scale.design
+    };
     spawn_panel_frame(commands, ModeUi, panel, s);
 
     let compact = scale.class.is_compact() || scale.aspect < 0.85 || scale.design.y < 400.0;
-    let title_px = if compact { 26.0 } else { 34.0 };
+    let title_px = if phone {
+        22.0
+    } else if compact {
+        26.0
+    } else {
+        34.0
+    };
+    let title_y = if phone { 0.36 } else { 0.38 };
     commands.spawn((
         ModeUi,
         ScaledText {
@@ -246,39 +282,39 @@ fn spawn_mode_select_with(
             menu: true,
         },
         ScaledPos {
-            base: Vec2::new(0.0, panel.y * 0.38),
+            base: Vec2::new(0.0, panel.y * title_y),
             menu: true,
         },
         Text2d::new("SELECT MODE"),
         font(title_px, s),
         TextColor(Color::srgb(0.95, 0.95, 1.0)),
-        Transform::from_xyz(0.0, panel.y * 0.38 * s, 20.0),
+        Transform::from_xyz(0.0, panel.y * title_y * s, 20.0),
     ));
 
-    refresh_mode_list(commands, save, selected, difficulty, scale);
+    refresh_mode_list(commands, save, selected, difficulty, scale, panel);
 
     let help = if scale.class.is_handheld() {
-        "Tap top/bottom = mode    sides = difficulty\nTap center = start    two-finger = back"
-    } else if compact {
-        "Up/Down = mode    Left/Right = difficulty\nENTER / tap = start    ESC = back"
+        "Top/bottom: mode · sides: difficulty\nCenter: start · two fingers: back"
     } else {
-        "Up/Down = mode     Left/Right = difficulty\nENTER / SPACE / click = start     ESC = back"
+        "Up/Down or W/S: mode · Left/Right or A/D: difficulty\nENTER / SPACE: start · ESC: back"
     };
+    let help_px = if phone { 11.0 } else { 13.0 };
+    let help_y = if phone { -0.36 } else { -0.38 };
     commands.spawn((
         ModeUi,
         ScaledText {
-            base_px: 13.0,
+            base_px: help_px,
             menu: true,
         },
         ScaledPos {
-            base: Vec2::new(0.0, -panel.y * 0.38),
+            base: Vec2::new(0.0, panel.y * help_y),
             menu: true,
         },
         Text2d::new(help),
-        font(13.0, s),
+        font(help_px, s),
         TextColor(Color::srgb(0.6, 0.68, 0.85)),
         TextLayout::justify(Justify::Center),
-        Transform::from_xyz(0.0, -panel.y * 0.38 * s, 20.0),
+        Transform::from_xyz(0.0, panel.y * help_y * s, 20.0),
     ));
 }
 
@@ -286,22 +322,18 @@ fn spawn_mode_select_with(
 pub struct ModeListText;
 
 fn mode_list_body(save: &SaveData, selected: GameMode) -> String {
-    let mut body = String::from("MODE\n");
+    let mut body = String::new();
     for mode in GameMode::ALL {
         let marker = if mode == selected { ">" } else { " " };
         let hs = save.high_scores.get(mode);
-        // Name + score only — no "best", no blurbs.
         body.push_str(&format!("{marker} {:<10}  {:>4}\n", mode.label(), hs));
     }
-    body.push_str("\nDIFFICULTY\n");
     body
 }
 
-const DIFF_ROW_Y: f32 = -55.0;
-
-/// Horizontal difficulty slots scaled to the design panel (fits phone → 4K).
+/// Horizontal difficulty slots for wide layouts.
 fn diff_slot_layout(scale: &UiScale) -> ([f32; 4], f32) {
-    let half = (scale.design.x * 0.40).clamp(110.0, 210.0);
+    let half = (scale.design.x * 0.38).clamp(100.0, 200.0);
     let step = half / 1.5;
     let xs = [-1.5 * step, -0.5 * step, 0.5 * step, 1.5 * step];
     let bracket = (step * 0.55).clamp(28.0, 52.0);
@@ -314,15 +346,30 @@ fn refresh_mode_list(
     selected: GameMode,
     difficulty: Difficulty,
     scale: &UiScale,
+    panel: Vec2,
 ) {
+    let phone = scale.class.is_phone();
     let compact = scale.class.is_compact()
         || scale.aspect < 0.85
         || scale.design.y < 400.0
         || matches!(scale.class, ViewportClass::PhoneLandscape);
     let s = scale.panel;
-    let px = if compact { 15.0 } else { 17.0 };
+    let px = if phone {
+        14.0
+    } else if compact {
+        15.0
+    } else {
+        17.0
+    };
     let body = mode_list_body(save, selected);
-    let mode_y = if compact { 42.0 } else { 50.0 };
+    // Pack mode list higher so difficulty + help aren't cramped.
+    let mode_y = if phone {
+        panel.y * 0.08
+    } else if compact {
+        36.0
+    } else {
+        50.0
+    };
 
     commands.spawn((
         ModeUi,
@@ -343,11 +390,16 @@ fn refresh_mode_list(
         Transform::from_xyz(0.0, mode_y * s, 20.0),
     ));
 
-    // Side-by-side difficulty: fixed design slots so Left/Right never reflows labels.
-    let (slots, bracket_ox) = diff_slot_layout(scale);
-    let diff_px = if compact { 13.0 } else { 16.0 };
-    for (i, d) in Difficulty::ALL.iter().enumerate() {
-        let x = slots[i];
+    let diff_row_y = if phone {
+        -panel.y * 0.12
+    } else {
+        -55.0
+    };
+
+    if phone {
+        // Single selected difficulty with chevrons — fat-finger friendly, no edge overflow.
+        let diff_px = 15.0;
+        let line = format!("<  {}  >", difficulty.label());
         commands.spawn((
             ModeUi,
             ModeListText,
@@ -356,46 +408,71 @@ fn refresh_mode_list(
                 menu: true,
             },
             ScaledPos {
-                base: Vec2::new(x, DIFF_ROW_Y),
+                base: Vec2::new(0.0, diff_row_y),
                 menu: true,
             },
-            Text2d::new(d.label()),
+            Text2d::new(line),
             font(diff_px, s),
-            TextColor(if *d == difficulty {
-                Color::srgb(1.0, 0.92, 0.45)
-            } else {
-                Color::srgb(0.75, 0.8, 0.92)
-            }),
+            TextColor(Color::srgb(1.0, 0.92, 0.45)),
             TextLayout::justify(Justify::Center),
             Anchor::CENTER,
-            Transform::from_xyz(x * s, DIFF_ROW_Y * s, 20.0),
+            Transform::from_xyz(0.0, diff_row_y * s, 20.0),
         ));
-        if *d == difficulty {
-            for (glyph, ox) in [("[", -bracket_ox), ("]", bracket_ox)] {
-                commands.spawn((
-                    ModeUi,
-                    ModeListText,
-                    ScaledText {
-                        base_px: diff_px,
-                        menu: true,
-                    },
-                    ScaledPos {
-                        base: Vec2::new(x + ox, DIFF_ROW_Y),
-                        menu: true,
-                    },
-                    Text2d::new(glyph),
-                    font(diff_px, s),
-                    TextColor(Color::srgb(1.0, 0.92, 0.45)),
-                    Anchor::CENTER,
-                    Transform::from_xyz((x + ox) * s, DIFF_ROW_Y * s, 20.0),
-                ));
+    } else {
+        // Side-by-side difficulty on tablet/desktop.
+        let (slots, bracket_ox) = diff_slot_layout(scale);
+        let diff_px = if compact { 13.0 } else { 16.0 };
+        for (i, d) in Difficulty::ALL.iter().enumerate() {
+            let x = slots[i];
+            commands.spawn((
+                ModeUi,
+                ModeListText,
+                ScaledText {
+                    base_px: diff_px,
+                    menu: true,
+                },
+                ScaledPos {
+                    base: Vec2::new(x, diff_row_y),
+                    menu: true,
+                },
+                Text2d::new(d.label()),
+                font(diff_px, s),
+                TextColor(if *d == difficulty {
+                    Color::srgb(1.0, 0.92, 0.45)
+                } else {
+                    Color::srgb(0.75, 0.8, 0.92)
+                }),
+                TextLayout::justify(Justify::Center),
+                Anchor::CENTER,
+                Transform::from_xyz(x * s, diff_row_y * s, 20.0),
+            ));
+            if *d == difficulty {
+                for (glyph, ox) in [("[", -bracket_ox), ("]", bracket_ox)] {
+                    commands.spawn((
+                        ModeUi,
+                        ModeListText,
+                        ScaledText {
+                            base_px: diff_px,
+                            menu: true,
+                        },
+                        ScaledPos {
+                            base: Vec2::new(x + ox, diff_row_y),
+                            menu: true,
+                        },
+                        Text2d::new(glyph),
+                        font(diff_px, s),
+                        TextColor(Color::srgb(1.0, 0.92, 0.45)),
+                        Anchor::CENTER,
+                        Transform::from_xyz((x + ox) * s, diff_row_y * s, 20.0),
+                    ));
+                }
             }
         }
     }
 
-    let stats_y = DIFF_ROW_Y - if compact { 30.0 } else { 36.0 };
+    let stats_y = diff_row_y - if phone { 26.0 } else if compact { 30.0 } else { 36.0 };
     let stats = format!(
-        "score x{:.1}   speed x{:.1}",
+        "score x{:.1} · speed x{:.1}",
         difficulty.score_mult(),
         difficulty.speed_mult()
     );
@@ -403,7 +480,13 @@ fn refresh_mode_list(
         ModeUi,
         ModeListText,
         ScaledText {
-            base_px: if compact { 12.0 } else { 15.0 },
+            base_px: if phone {
+                11.0
+            } else if compact {
+                12.0
+            } else {
+                15.0
+            },
             menu: true,
         },
         ScaledPos {
@@ -411,7 +494,16 @@ fn refresh_mode_list(
             menu: true,
         },
         Text2d::new(stats),
-        font(if compact { 12.0 } else { 15.0 }, s),
+        font(
+            if phone {
+                11.0
+            } else if compact {
+                12.0
+            } else {
+                15.0
+            },
+            s,
+        ),
         TextColor(Color::srgb(0.7, 0.78, 0.9)),
         TextLayout::justify(Justify::Center),
         Anchor::CENTER,
@@ -483,7 +575,22 @@ pub fn mode_select_input(
         for e in &list {
             commands.entity(e).despawn();
         }
-        refresh_mode_list(&mut commands, &save, selected.0, difficulty.0, &scale);
+        let panel = if scale.class.is_phone() {
+            Vec2::new(
+                (scale.design.x * 0.98).clamp(300.0, 720.0),
+                (scale.design.y * 0.96).clamp(260.0, 440.0),
+            )
+        } else {
+            scale.design
+        };
+        refresh_mode_list(
+            &mut commands,
+            &save,
+            selected.0,
+            difficulty.0,
+            &scale,
+            panel,
+        );
     }
     if confirm_just_pressed(&keyboard) || touch.confirm_just {
         next.set(GameState::Playing);
@@ -543,19 +650,26 @@ pub fn spawn_game_over(
             menu: true,
         },
         Text2d::new(format!(
-            "{}  -  {}  -  Score {}\n\
-             Level {}  -  Best combo x{}  -  Stars {}\n\
-             High score {}\n\n\
-             ENTER / tap  -  play again     ESC  -  menu",
+            "{} - {} - Score {}\n\
+             Lv {} - Combo x{} - Stars {}\n\
+             High {}\n\n\
+             {}",
             stats.mode.label(),
             stats.chosen_difficulty.label(),
             stats.score,
             stats.level,
             stats.best_combo.max(1),
             stats.stars_collected,
-            hs
+            hs,
+            if scale.class.is_phone() {
+                "Tap: again\nTwo fingers: menu"
+            } else if scale.class.is_handheld() {
+                "Tap: play again\nTwo fingers / left edge: menu"
+            } else {
+                "ENTER / SPACE: play again\nESC: menu"
+            }
         )),
-        font(20.0, s),
+        font(if scale.class.is_phone() { 14.0 } else { 18.0 }, s),
         TextColor(Color::srgb(0.9, 0.92, 0.98)),
         TextLayout::justify(Justify::Center),
         Transform::from_xyz(0.0, -panel.y * 0.06 * s, 30.0),
@@ -589,33 +703,39 @@ pub fn spawn_hud(
     commands: &mut Commands,
     stats: &GameStats,
     bounds: &PlayBounds,
-    scale: f32,
+    ui: &UiScale,
     assets: &GameAssets,
 ) {
+    let scale = ui.text;
     let top = bounds.hud_top_y;
     let bot = bounds.hud_bottom_y;
     let left = -bounds.view_half.x + bounds.margin * 0.55;
     let right = bounds.view_half.x - bounds.margin * 0.55;
 
+    let phone = ui.class.is_phone();
+    let score_px = if phone { 18.0 } else { 26.0 };
+    // Left-anchored so "Score" never clips off the left edge on short/narrow views.
+    let score_x = left + if phone { 8.0 } else { 16.0 };
     commands.spawn((
         PlayEntity,
         HudScore,
         ScaledText {
-            base_px: 26.0,
+            base_px: score_px,
             menu: false,
         },
         Text2d::new(format!("Score  {}", stats.score)),
-        font(26.0, scale),
+        font(score_px, scale),
         TextColor(Color::srgb(0.95, 0.96, 1.0)),
-        Transform::from_xyz(left + 80.0, top, 20.0),
+        Anchor::CENTER_LEFT,
+        Transform::from_xyz(score_x, top, 20.0),
     ));
     // Real heart icons (not "1 heart" text — default font has no ♥ glyph).
-    let heart_size = 28.0 * scale.clamp(0.75, 1.8);
+    let heart_size = (if phone { 22.0 } else { 28.0 }) * scale.clamp(0.75, 1.8);
     let spacing = heart_size + 6.0;
     let max_hearts = 3u32;
     for i in 0..max_hearts {
         let filled = stats.mode == GameMode::Zen || i < stats.lives;
-        let x = right - 14.0 - (max_hearts - 1 - i) as f32 * spacing;
+        let x = right - 8.0 - (max_hearts - 1 - i) as f32 * spacing;
         commands.spawn((
             PlayEntity,
             HudLives,
@@ -633,23 +753,31 @@ pub fn spawn_hud(
             Transform::from_xyz(x, top, 20.0),
         ));
     }
+    let combo_px = if phone { 18.0 } else { 26.0 };
     commands.spawn((
         PlayEntity,
         HudCombo,
         ScaledText {
-            base_px: 26.0,
+            base_px: combo_px,
             menu: false,
         },
         Text2d::new(""),
-        font(26.0, scale),
+        font(combo_px, scale),
         TextColor(Color::srgb(1.0, 0.85, 0.3)),
         Transform::from_xyz(0.0, top, 20.0),
     ));
+    // Phone: short label under the top margin so it doesn't collide with score/hearts.
+    let level_px = if phone { 13.0 } else { 17.0 };
+    let level_y = if phone {
+        top - (bounds.margin * 0.42).clamp(22.0, 40.0)
+    } else {
+        top - (bounds.margin * 0.28).clamp(16.0, 30.0)
+    };
     commands.spawn((
         PlayEntity,
         HudLevel,
         ScaledText {
-            base_px: 17.0,
+            base_px: level_px,
             menu: false,
         },
         Text2d::new(format!(
@@ -657,19 +785,26 @@ pub fn spawn_hud(
             stats.mode.label(),
             stats.chosen_difficulty.label()
         )),
-        font(17.0, scale),
+        font(level_px, scale),
         TextColor(Color::srgb(0.65, 0.75, 0.95)),
-        Transform::from_xyz(0.0, top - (bounds.margin * 0.28).clamp(16.0, 30.0), 20.0),
+        Transform::from_xyz(0.0, level_y, 20.0),
     ));
+    // Format-specific control hint until power-ups / dash cooldown take over.
+    let hint = if ui.class.is_handheld() {
+        "1 finger move - 2nd finger dash"
+    } else {
+        "WASD / arrows move - SPACE dash"
+    };
+    let status_px = if ui.class.is_phone() { 12.0 } else { 15.0 };
     commands.spawn((
         PlayEntity,
         HudStatus,
         ScaledText {
-            base_px: 15.0,
+            base_px: status_px,
             menu: false,
         },
-        Text2d::new("WASD move  -  SPACE / 2nd finger dash  -  hold to move"),
-        font(15.0, scale),
+        Text2d::new(hint),
+        font(status_px, scale),
         TextColor(Color::srgb(0.55, 0.62, 0.78)),
         Transform::from_xyz(0.0, bot, 20.0),
     ));

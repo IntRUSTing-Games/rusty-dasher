@@ -1,13 +1,21 @@
 /**
- * E2E: every screen must work with keyboard, mouse, and touch.
- * Exit 0 only if all paths pass.
+ * E2E input matrix: keyboard / mouse / touch on EVERY format in qa_matrix.json.
+ * Exit 0 only if all format×input paths that apply pass.
+ *
+ * Desktop formats (touch:false): keyboard + mouse
+ * Handheld formats (touch:true): touch (+ keyboard smoke still runs where useful)
  */
 import puppeteer from 'puppeteer-core';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-const OUT = '/code/1st-rust-game/screenshots/web/e2e';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.join(__dirname, '..');
+const OUT = path.join(ROOT, 'screenshots/web/e2e');
+const MATRIX = JSON.parse(fs.readFileSync(path.join(__dirname, 'qa_matrix.json'), 'utf8'));
 const URL = 'http://127.0.0.1:8080/';
+
 fs.mkdirSync(OUT, { recursive: true });
 
 const results = [];
@@ -26,56 +34,6 @@ async function shot(page, name) {
   await page.screenshot({ path: path.join(OUT, name + '.png') });
 }
 
-async function waitCanvas(page) {
-  await page.waitForSelector('canvas', { timeout: 120000 });
-  await sleep(2500);
-}
-
-async function dismissBootKeyboard(page) {
-  // Wait until boot says Ready
-  await page.waitForFunction(
-    () => document.getElementById('boot-cta')?.style?.display === 'inline-block',
-    { timeout: 120000 }
-  );
-  await page.keyboard.press('Enter');
-  await sleep(400);
-  const hidden = await page.evaluate(() =>
-    document.getElementById('boot')?.classList.contains('hidden')
-  );
-  if (!hidden) {
-    // try Space
-    await page.keyboard.press('Space');
-    await sleep(300);
-  }
-  const hidden2 = await page.evaluate(() =>
-    document.getElementById('boot')?.classList.contains('hidden')
-  );
-  return hidden2;
-}
-
-async function focusCanvas(page) {
-  await page.evaluate(() => {
-    const c = document.querySelector('canvas');
-    if (c) {
-      c.tabIndex = 0;
-      c.focus();
-    }
-  });
-  await sleep(100);
-}
-
-async function getScoreText(page) {
-  // can't easily read bevy text - use console or visual. Check no panic.
-  return page.evaluate(() => document.body.innerText.slice(0, 200));
-}
-
-async function noPanic(page, logs) {
-  return !logs.some((l) => /panicked|PAGEERROR|unreachable/i.test(l));
-}
-
-const logs = [];
-const pageErrors = [];
-
 const browser = await puppeteer.launch({
   executablePath: '/home/viny/bin/google-chrome',
   headless: 'new',
@@ -85,216 +43,237 @@ const browser = await puppeteer.launch({
     '--enable-unsafe-swiftshader',
     '--use-gl=angle',
     '--use-angle=swiftshader-webgl',
-    '--window-size=1280,720',
+    '--window-size=1920,1080',
     '--force-device-scale-factor=1',
   ],
-  defaultViewport: { width: 1280, height: 720, deviceScaleFactor: 1 },
 });
 
-async function newPage() {
+async function newPage(format) {
   const page = await browser.newPage();
-  page.on('console', (msg) => {
-    const t = `${msg.type()}: ${msg.text()}`;
-    logs.push(t);
-  });
+  const logs = [];
+  const pageErrors = [];
+  page.on('console', (msg) => logs.push(`${msg.type()}: ${msg.text()}`));
   page.on('pageerror', (err) => {
     pageErrors.push(String(err));
     logs.push('PAGEERROR ' + err);
   });
+  await page.setViewport({
+    width: format.width,
+    height: format.height,
+    deviceScaleFactor: format.dpr,
+    isMobile: !!format.touch,
+    hasTouch: !!format.touch,
+  });
+  page.__logs = logs;
+  page.__errors = pageErrors;
   return page;
 }
 
-// --- Path A: KEYBOARD only ---
-{
-  logs.length = 0;
-  pageErrors.length = 0;
-  const page = await newPage();
-  await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 120000 });
-  await waitCanvas(page);
-  await shot(page, 'kb_01_boot');
-
-  const bootOk = await dismissBootKeyboard(page);
-  if (bootOk) pass('keyboard: boot dismiss (Enter/Space)');
-  else fail('keyboard: boot dismiss (Enter/Space)', 'boot still visible');
-  await focusCanvas(page);
-  await shot(page, 'kb_02_menu');
-
-  // Menu -> ModeSelect
-  await page.keyboard.press('Enter');
-  await sleep(900);
-  await shot(page, 'kb_03_mode');
-  // Mode change
-  await page.keyboard.press('ArrowDown');
-  await sleep(400);
-  await page.keyboard.press('ArrowUp');
-  await sleep(400);
-  // Start
-  await page.keyboard.press('Space');
-  await sleep(2000);
-  await shot(page, 'kb_04_play');
-  const panicPlay = pageErrors.length > 0;
-  if (!panicPlay) pass('keyboard: enter play (Space)');
-  else fail('keyboard: enter play', pageErrors.join('; '));
-
-  // Move + dash
-  await page.keyboard.down('KeyD');
-  await sleep(300);
-  await page.keyboard.up('KeyD');
-  await page.keyboard.press('Space');
-  await sleep(800);
-  await shot(page, 'kb_05_move');
-  if (pageErrors.length === 0) pass('keyboard: move + dash');
-  else fail('keyboard: move + dash', pageErrors.at(-1));
-
-  // Escape to menu
-  await page.keyboard.press('Escape');
-  await sleep(900);
-  await shot(page, 'kb_06_esc');
-  if (pageErrors.length === 0) pass('keyboard: escape to menu');
-  else fail('keyboard: escape to menu', pageErrors.at(-1));
-
-  // Through modes to game over: play then die hard - skip forced game over
-  // Enter modes, enter play, escape is enough for keyboard screens
-  await page.close();
-}
-
-// --- Path B: MOUSE only ---
-{
-  logs.length = 0;
-  pageErrors.length = 0;
-  const page = await newPage();
-  await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 120000 });
-  await waitCanvas(page);
+async function waitReady(page) {
+  await page.waitForSelector('canvas', { timeout: 180000 });
   await page.waitForFunction(
     () => document.getElementById('boot-cta')?.style?.display === 'inline-block',
-    { timeout: 120000 }
+    { timeout: 180000 }
   );
-  // Click boot
-  await page.mouse.click(640, 360);
-  await sleep(500);
-  const hidden = await page.evaluate(() =>
-    document.getElementById('boot')?.classList.contains('hidden')
-  );
-  if (hidden) pass('mouse: boot dismiss (click)');
-  else fail('mouse: boot dismiss (click)');
-  await shot(page, 'mouse_01_menu');
-
-  // Click center for menu confirm
-  await page.mouse.click(640, 360);
-  await sleep(900);
-  await shot(page, 'mouse_02_mode');
-  if (pageErrors.length === 0) pass('mouse: menu -> mode select');
-  else fail('mouse: menu -> mode select', pageErrors.join('; '));
-
-  // Click center to start
-  await page.mouse.click(640, 360);
-  await sleep(2000);
-  await shot(page, 'mouse_03_play');
-  if (pageErrors.length === 0) pass('mouse: start game');
-  else fail('mouse: start game', pageErrors.join('; '));
-
-  // Drag to point-to-move
-  await page.mouse.move(400, 400);
-  await page.mouse.down();
-  await page.mouse.move(700, 300, { steps: 8 });
-  await sleep(500);
-  // Right-click dash (desktop)
-  await page.mouse.click(700, 300, { button: 'right' });
-  await sleep(400);
-  await page.mouse.up();
-  await sleep(400);
-  await shot(page, 'mouse_04_play_input');
-  if (pageErrors.length === 0) pass('mouse: drag move + right-click dash');
-  else fail('mouse: drag move + right-click dash', pageErrors.at(-1));
-
-  await page.close();
 }
 
-// --- Path C: TOUCH only ---
-{
-  logs.length = 0;
-  pageErrors.length = 0;
-  const page = await newPage();
-  // enable touch
+function center(format) {
+  return { x: Math.floor(format.width / 2), y: Math.floor(format.height / 2) };
+}
+
+async function focusCanvas(page) {
+  await page.evaluate(() => {
+    const c = document.querySelector('canvas');
+    if (c) {
+      c.tabIndex = 0;
+      c.focus({ preventScroll: true });
+    }
+  });
+  await sleep(80);
+}
+
+async function runKeyboard(format) {
+  const tag = `${format.id}/keyboard`;
+  const page = await newPage(format);
+  try {
+    page.__errors.length = 0;
+    await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 180000 });
+    await waitReady(page);
+    await shot(page, `${format.id}_kb_01_boot`);
+
+    await page.keyboard.press('Enter');
+    await sleep(500);
+    const hidden = await page.evaluate(() =>
+      document.getElementById('boot')?.classList.contains('hidden')
+    );
+    if (!hidden) await page.keyboard.press('Space');
+    await sleep(400);
+    const hidden2 = await page.evaluate(() =>
+      document.getElementById('boot')?.classList.contains('hidden')
+    );
+    if (hidden2) pass(`${tag}: boot dismiss`);
+    else fail(`${tag}: boot dismiss`);
+
+    await focusCanvas(page);
+    await shot(page, `${format.id}_kb_02_menu`);
+    await page.keyboard.press('Enter');
+    await sleep(900);
+    await shot(page, `${format.id}_kb_03_mode`);
+    await page.keyboard.press('ArrowDown');
+    await sleep(200);
+    await page.keyboard.press('Space');
+    await sleep(1800);
+    await shot(page, `${format.id}_kb_04_play`);
+    if (page.__errors.length === 0) pass(`${tag}: play`);
+    else fail(`${tag}: play`, page.__errors.join('; '));
+
+    await page.keyboard.down('KeyD');
+    await sleep(250);
+    await page.keyboard.up('KeyD');
+    await page.keyboard.press('Space');
+    await sleep(500);
+    await shot(page, `${format.id}_kb_05_input`);
+    if (page.__errors.length === 0) pass(`${tag}: move+dash`);
+    else fail(`${tag}: move+dash`, page.__errors.at(-1));
+
+    await page.keyboard.press('Escape');
+    await sleep(800);
+    await shot(page, `${format.id}_kb_06_esc`);
+    if (page.__errors.length === 0) pass(`${tag}: esc menu`);
+    else fail(`${tag}: esc menu`, page.__errors.at(-1));
+  } finally {
+    await page.close();
+  }
+}
+
+async function runMouse(format) {
+  const tag = `${format.id}/mouse`;
+  const page = await newPage(format);
+  const { x: cx, y: cy } = center(format);
+  try {
+    page.__errors.length = 0;
+    await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 180000 });
+    await waitReady(page);
+    await page.mouse.click(cx, cy);
+    await sleep(500);
+    const hidden = await page.evaluate(() =>
+      document.getElementById('boot')?.classList.contains('hidden')
+    );
+    if (hidden) pass(`${tag}: boot click`);
+    else fail(`${tag}: boot click`);
+    await shot(page, `${format.id}_mouse_01_menu`);
+
+    await page.mouse.click(cx, cy);
+    await sleep(900);
+    await shot(page, `${format.id}_mouse_02_mode`);
+    if (page.__errors.length === 0) pass(`${tag}: mode`);
+    else fail(`${tag}: mode`, page.__errors.join('; '));
+
+    await page.mouse.click(cx, cy);
+    await sleep(1800);
+    await shot(page, `${format.id}_mouse_03_play`);
+    if (page.__errors.length === 0) pass(`${tag}: play`);
+    else fail(`${tag}: play`, page.__errors.join('; '));
+
+    const x0 = Math.floor(format.width * 0.35);
+    const y0 = Math.floor(format.height * 0.55);
+    const x1 = Math.floor(format.width * 0.6);
+    const y1 = Math.floor(format.height * 0.4);
+    await page.mouse.move(x0, y0);
+    await page.mouse.down();
+    await page.mouse.move(x1, y1, { steps: 6 });
+    await sleep(300);
+    await page.mouse.click(x1, y1, { button: 'right' });
+    await sleep(300);
+    await page.mouse.up();
+    await shot(page, `${format.id}_mouse_04_input`);
+    if (page.__errors.length === 0) pass(`${tag}: drag+right-click dash`);
+    else fail(`${tag}: drag+right-click dash`, page.__errors.at(-1));
+  } finally {
+    await page.close();
+  }
+}
+
+async function runTouch(format) {
+  const tag = `${format.id}/touch`;
+  const page = await newPage(format);
   const client = await page.createCDPSession();
-  await client.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 2 });
-  await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 120000 });
-  await waitCanvas(page);
-  await page.waitForFunction(
-    () => document.getElementById('boot-cta')?.style?.display === 'inline-block',
-    { timeout: 120000 }
-  );
-
-  await page.touchscreen.tap(640, 360);
-  await sleep(500);
-  const hidden = await page.evaluate(() =>
-    document.getElementById('boot')?.classList.contains('hidden')
-  );
-  if (hidden) pass('touch: boot dismiss (tap)');
-  else fail('touch: boot dismiss (tap)');
-  await shot(page, 'touch_01_menu');
-
-  await page.touchscreen.tap(640, 360);
-  await sleep(900);
-  await shot(page, 'touch_02_mode');
-  if (pageErrors.length === 0) pass('touch: menu -> mode');
-  else fail('touch: menu -> mode', pageErrors.join('; '));
-
-  // tap center start
-  await page.touchscreen.tap(640, 400);
-  await sleep(2000);
-  await shot(page, 'touch_03_play');
-  if (pageErrors.length === 0) pass('touch: start game');
-  else fail('touch: start game', pageErrors.join('; '));
-
-  // 1st finger steers; 2nd finger taps = dash (via CDP multi-touch)
-  const clientPlay = await page.createCDPSession();
-  await clientPlay.send('Input.dispatchTouchEvent', {
-    type: 'touchStart',
-    touchPoints: [{ x: 400, y: 400, id: 1 }],
+  await client.send('Emulation.setTouchEmulationEnabled', {
+    enabled: true,
+    maxTouchPoints: 2,
   });
-  await sleep(150);
-  await clientPlay.send('Input.dispatchTouchEvent', {
-    type: 'touchMove',
-    touchPoints: [{ x: 650, y: 280, id: 1 }],
-  });
-  await sleep(200);
-  // Second finger down while first still held → dash
-  await clientPlay.send('Input.dispatchTouchEvent', {
-    type: 'touchStart',
-    touchPoints: [
-      { x: 650, y: 280, id: 1 },
-      { x: 900, y: 500, id: 2 },
-    ],
-  });
-  await sleep(200);
-  await clientPlay.send('Input.dispatchTouchEvent', {
-    type: 'touchEnd',
-    touchPoints: [{ x: 650, y: 280, id: 1 }],
-  });
-  await sleep(400);
-  await shot(page, 'touch_04_play_input');
-  if (pageErrors.length === 0) pass('touch: point-to-move + second-finger dash');
-  else fail('touch: point-to-move + second-finger dash', pageErrors.at(-1));
+  const { x: cx, y: cy } = center(format);
+  try {
+    page.__errors.length = 0;
+    await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 180000 });
+    await waitReady(page);
+    await page.touchscreen.tap(cx, cy);
+    await sleep(500);
+    const hidden = await page.evaluate(() =>
+      document.getElementById('boot')?.classList.contains('hidden')
+    );
+    if (hidden) pass(`${tag}: boot tap`);
+    else fail(`${tag}: boot tap`);
+    await shot(page, `${format.id}_touch_01_menu`);
 
-  await page.close();
+    await page.touchscreen.tap(cx, cy);
+    await sleep(900);
+    await shot(page, `${format.id}_touch_02_mode`);
+    if (page.__errors.length === 0) pass(`${tag}: mode`);
+    else fail(`${tag}: mode`, page.__errors.join('; '));
+
+    await page.touchscreen.tap(cx, Math.floor(format.height * 0.55));
+    await sleep(1800);
+    await shot(page, `${format.id}_touch_03_play`);
+    if (page.__errors.length === 0) pass(`${tag}: play`);
+    else fail(`${tag}: play`, page.__errors.join('; '));
+
+    const x0 = Math.floor(format.width * 0.35);
+    const y0 = Math.floor(format.height * 0.55);
+    const x1 = Math.floor(format.width * 0.55);
+    const y1 = Math.floor(format.height * 0.4);
+    const x2 = Math.floor(format.width * 0.75);
+    const y2 = Math.floor(format.height * 0.65);
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: x0, y: y0, id: 1 }],
+    });
+    await sleep(120);
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: x1, y: y1, id: 1 }],
+    });
+    await sleep(150);
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [
+        { x: x1, y: y1, id: 1 },
+        { x: x2, y: y2, id: 2 },
+      ],
+    });
+    await sleep(200);
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: [{ x: x1, y: y1, id: 1 }],
+    });
+    await sleep(400);
+    await shot(page, `${format.id}_touch_04_input`);
+    if (page.__errors.length === 0) pass(`${tag}: move+2nd-finger dash`);
+    else fail(`${tag}: move+2nd-finger dash`, page.__errors.at(-1));
+  } finally {
+    await page.close();
+  }
 }
 
-// --- Path D: small window text scale (visual) ---
-{
-  const page = await newPage();
-  await page.setViewport({ width: 480, height: 360, deviceScaleFactor: 1 });
-  await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 120000 });
-  await waitCanvas(page);
-  await page.waitForFunction(
-    () => document.getElementById('boot-cta')?.style?.display === 'inline-block',
-    { timeout: 120000 }
-  );
-  await page.keyboard.press('Enter');
-  await sleep(800);
-  await shot(page, 'small_window_menu');
-  pass('small-window: menu screenshot (manual readability check)');
-  await page.close();
+for (const format of MATRIX.formats) {
+  console.log('\n==== format', format.id, '====');
+  // Always exercise keyboard (WASD/arrows/Space) so desktop keys work on all sizes
+  await runKeyboard(format);
+  if (!format.touch) {
+    await runMouse(format);
+  } else {
+    await runTouch(format);
+  }
 }
 
 await browser.close();
@@ -302,9 +281,18 @@ await browser.close();
 const failed = results.filter((r) => !r.ok);
 fs.writeFileSync(
   path.join(OUT, 'results.json'),
-  JSON.stringify({ results, pageErrors, failed: failed.length }, null, 2)
+  JSON.stringify(
+    {
+      matrix_formats: MATRIX.formats.map((f) => f.id),
+      results,
+      failed: failed.length,
+      at: new Date().toISOString(),
+    },
+    null,
+    2
+  )
 );
-console.log('\n=== SUMMARY ===');
+console.log('\n=== E2E SUMMARY ===');
 console.log('passed', results.filter((r) => r.ok).length, '/', results.length);
 if (failed.length) {
   console.error('FAILED:', failed);

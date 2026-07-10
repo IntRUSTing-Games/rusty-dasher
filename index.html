@@ -20,8 +20,28 @@
     <div id="boot">
       <div class="title">RUSTY DASHER</div>
       <div class="tagline">Wanna try out a new 2010's vibe browser game?</div>
+
+      <!-- Circular progress bar (download / init) -->
+      <div
+        class="progress"
+        id="boot-progress"
+        role="progressbar"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0"
+        aria-label="Downloading game"
+      >
+        <svg class="progress-svg" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="progress-track" cx="60" cy="60" r="52" />
+          <circle class="progress-value" id="boot-progress-arc" cx="60" cy="60" r="52" />
+        </svg>
+        <div class="progress-label">
+          <span id="boot-progress-pct">0%</span>
+        </div>
+      </div>
+
       <div class="sub" id="boot-msg">
-        Loading game… first visit downloads ~45&nbsp;MB of WASM.<br />
+        Downloading game… first visit is ~45&nbsp;MB of WASM.<br />
         On phones use Wi-Fi. Keep this tab open.
       </div>
       <div class="cta" id="boot-cta" style="display:none">ENTER / click / tap to play</div>
@@ -32,23 +52,113 @@
       const msg = document.getElementById("boot-msg");
       const cta = document.getElementById("boot-cta");
       const err = document.getElementById("boot-err");
+      const progressEl = document.getElementById("boot-progress");
+      const progressArc = document.getElementById("boot-progress-arc");
+      const progressPct = document.getElementById("boot-progress-pct");
+
+      // Circumference of r=52 → 2πr
+      const CIRC = 2 * Math.PI * 52;
+      if (progressArc) {
+        progressArc.style.strokeDasharray = String(CIRC);
+        progressArc.style.strokeDashoffset = String(CIRC);
+      }
+
       let ready = false;
       let dismissed = false;
+      let progress = 0; // 0..100, monotonic
+
+      function setProgress(p) {
+        const next = Math.max(0, Math.min(100, p));
+        if (next < progress && next < 99.5) return; // keep monotonic until finish
+        progress = next;
+        const shown = Math.round(progress);
+        if (progressPct) progressPct.textContent = shown + "%";
+        if (progressEl) progressEl.setAttribute("aria-valuenow", String(shown));
+        if (progressArc) {
+          const offset = CIRC * (1 - progress / 100);
+          progressArc.style.strokeDashoffset = String(offset);
+        }
+      }
+
+      /** Best-effort download progress from Resource Timing (js + wasm). */
+      function resourceProgress() {
+        try {
+          const entries = performance.getEntriesByType("resource");
+          let total = 0;
+          let transferred = 0;
+          for (const e of entries) {
+            const name = e.name || "";
+            if (!/\.(wasm|js)(\?|$)/i.test(name) && !/rusty_dasher/i.test(name)) continue;
+            // encodedBodySize is final size; transferSize is on wire (0 if cache)
+            const size = e.encodedBodySize || e.decodedBodySize || 0;
+            if (size <= 0) continue;
+            total += size;
+            // responseEnd set when complete; while loading duration may be partial
+            if (e.responseEnd > 0) {
+              transferred += size;
+            } else if (e.responseStart > 0 && e.startTime > 0) {
+              // Rough partial estimate
+              transferred += size * 0.35;
+            }
+          }
+          if (total > 0) {
+            // Cap resource-based estimate at 92% — init still remaining
+            return Math.min(92, (transferred / total) * 92);
+          }
+        } catch (_) {}
+        return null;
+      }
+
+      // Smooth fill: blend resource estimate with slow creep toward 90%
+      const start = performance.now();
+      const tick = setInterval(() => {
+        if (ready) return;
+        const elapsed = (performance.now() - start) / 1000;
+        // Asymptotic creep so bar never sits at 0% for long
+        const creep = Math.min(88, 100 * (1 - Math.exp(-elapsed / 18)));
+        const res = resourceProgress();
+        const target = res == null ? creep : Math.max(creep * 0.35, res);
+        // Ease toward target
+        setProgress(progress + (target - progress) * 0.18);
+      }, 100);
+
+      function finishProgress(cb) {
+        clearInterval(tick);
+        setProgress(100);
+        if (progressEl) {
+          progressEl.classList.add("done");
+          // Brief beat on 100% then hide ring
+          setTimeout(() => {
+            progressEl.classList.add("hidden");
+            if (cb) cb();
+          }, 280);
+        } else if (cb) {
+          cb();
+        }
+      }
 
       window.addEventListener("error", (e) => {
         err.textContent = String(e.message || e.error || e);
+        clearInterval(tick);
+        if (progressEl) progressEl.classList.add("hidden");
       });
       window.addEventListener("unhandledrejection", (e) => {
         err.textContent = String(e.reason || e);
+        clearInterval(tick);
+        if (progressEl) progressEl.classList.add("hidden");
       });
 
       const obs = new MutationObserver(() => {
         if (document.querySelector("canvas")) {
           ready = true;
-          msg.innerHTML =
-            "Wanna try out a new 2010's vibe browser game?<br/>ENTER / SPACE / click / tap to start.";
-          cta.style.display = "inline-block";
           obs.disconnect();
+          finishProgress(() => {
+            // Don't repeat the tagline already shown above.
+            const tag = document.querySelector("#boot .tagline");
+            if (tag) tag.style.display = "none";
+            msg.innerHTML = "ENTER / SPACE / click / tap to start.";
+            cta.style.display = "inline-block";
+          });
         }
       });
       obs.observe(document.body, { childList: true, subtree: true });
@@ -64,7 +174,6 @@
         if (canvas) {
           canvas.setAttribute("tabindex", "0");
           canvas.focus({ preventScroll: true });
-          // Re-focus if something steals it
           setTimeout(() => canvas.focus({ preventScroll: true }), 50);
         }
       }
@@ -74,7 +183,6 @@
         "keydown",
         (e) => {
           if (!ready || dismissed) return;
-          // Allow Enter / Space / NumpadEnter to unlock without needing a mouse.
           if (
             e.code === "Enter" ||
             e.code === "NumpadEnter" ||
@@ -92,8 +200,12 @@
         if (!document.querySelector("canvas")) {
           err.textContent =
             "Still loading or WebGL failed. Try Chrome/Firefox and check the browser console.";
+          clearInterval(tick);
+          if (progressEl) progressEl.classList.add("hidden");
         }
       }, 90000);
+
+      setProgress(2);
     </script>
   </body>
 </html>
