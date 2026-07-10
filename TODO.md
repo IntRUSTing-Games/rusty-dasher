@@ -23,8 +23,9 @@ Tracking for **RustyDasher** and the studio brand. Check items off as we go.
 - [ ] Create an **SEO-optimized site** for IntRUSTing Games (separate domain)
   - Studio story, games grid, contact / socials
   - Meta titles, descriptions, OG images, sitemap, robots.txt
-- [ ] Find a server / host to run RustyDasher **publicly**
-  - Static WASM on Pages / Cloudflare / S3+CDN is enough for the game
+- [x] Host RustyDasher publicly via **GitHub Pages** (Actions → `dist/`)
+  - Live: https://intrusting-games.github.io/rusty-dasher/
+  - Still open: custom domain / Cloudflare / etc. later
   - Studio site can be static too (Astro, Zola, plain HTML, etc.)
 
 ## Ops

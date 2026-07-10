@@ -1,6 +1,12 @@
 # RustyDasher
 
 <p align="center">
+  <a href="https://intrusting-games.github.io/rusty-dasher/"><strong>▶ Play in the browser</strong></a>
+  &nbsp;·&nbsp;
+  <code>https://intrusting-games.github.io/rusty-dasher/</code>
+</p>
+
+<p align="center">
   <strong>Wanna try out a new 2010's vibe browser game? Check out RustyDasher.</strong>
 </p>
 
