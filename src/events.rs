@@ -18,6 +18,8 @@ pub struct PlayerDashed {
     pub pos: Vec2,
     /// Unit direction of the dash (where the character is going).
     pub dir: Vec2,
+    /// Matches player body colour (power-up tints).
+    pub color: Color,
 }
 
 #[derive(Message, Clone, Copy, Debug)]

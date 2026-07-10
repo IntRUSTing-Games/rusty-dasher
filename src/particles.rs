@@ -105,6 +105,11 @@ pub fn float_score(commands: &mut Commands, origin: Vec2, points: u32, scale: f3
 
 const PLAYER_TRAIL_R: f32 = 13.0;
 
+fn trail_color(base: Color, alpha: f32) -> Color {
+    let c = base.to_srgba();
+    Color::srgba(c.red, c.green, c.blue, alpha)
+}
+
 /// Opening dash streak: largest bubble at the character, smaller ones trail behind,
 /// all coasting **forward** with the dash so the effect propagates with motion.
 fn dash_forward_burst(
@@ -113,6 +118,7 @@ fn dash_forward_burst(
     materials: &mut Assets<ColorMaterial>,
     origin: Vec2,
     dir: Vec2,
+    color: Color,
 ) {
     let dir = if dir.length_squared() > 0.01 {
         dir.normalize()
@@ -128,12 +134,7 @@ fn dash_forward_burst(
         let a = 0.48 - i as f32 * 0.055;
         // Forward velocity — near-character ghosts keep pace with the dash.
         let speed = crate::constants::DASH_SPEED * (0.88 - i as f32 * 0.06);
-        let (mesh, mat) = mesh_gfx::circle(
-            meshes,
-            materials,
-            r,
-            Color::srgba(0.45, 0.9, 1.0, a),
-        );
+        let (mesh, mat) = mesh_gfx::circle(meshes, materials, r, trail_color(color, a));
         commands.spawn((
             PlayEntity,
             Particle {
@@ -156,6 +157,7 @@ fn drop_dash_ghost(
     pos: Vec2,
     dir: Vec2,
     scale: f32,
+    color: Color,
 ) {
     let dir = if dir.length_squared() > 0.01 {
         dir.normalize()
@@ -169,7 +171,7 @@ fn drop_dash_ghost(
         meshes,
         materials,
         r,
-        Color::srgba(0.4, 0.88, 1.0, 0.4 * scale),
+        trail_color(color, 0.4 * scale),
     );
     commands.spawn((
         PlayEntity,
@@ -289,7 +291,14 @@ pub fn on_dash_trail(
         } else {
             Vec2::X
         };
-        dash_forward_burst(&mut commands, &mut meshes, &mut materials, d.pos, dir);
+        dash_forward_burst(
+            &mut commands,
+            &mut meshes,
+            &mut materials,
+            d.pos,
+            dir,
+            d.color,
+        );
     }
 }
 
@@ -334,6 +343,7 @@ pub fn dash_trail_while_moving(
             tf.translation.truncate(),
             dir,
             t,
+            crate::player::status_color(p),
         );
     }
 }

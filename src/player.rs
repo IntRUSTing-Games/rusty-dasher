@@ -100,6 +100,7 @@ pub fn player_input(
         dash_w.write(PlayerDashed {
             pos: transform.translation.truncate(),
             dir: dash_dir,
+            color: status_color(&player),
         });
     } else if player.dash_timer <= 0.0 {
         let speed = PLAYER_SPEED
@@ -139,8 +140,12 @@ pub fn tick_player_fx(
     transform.scale = Vec3::splat(pulse.base_scale * breathe);
 
     // Steady tints only. Invuln keeps normal colour (no ghost flash on dash).
-    // Status powers use solid steady colours.
-    let color = if player.shield > 0.0 {
+    set_material_color(&mut materials, body_mat, status_color(&player));
+}
+
+/// Body / dash-trail colour from active power-ups (same palette everywhere).
+pub fn status_color(player: &Player) -> Color {
+    if player.shield > 0.0 {
         Color::srgb(0.35, 0.95, 0.7)
     } else if player.magnet > 0.0 {
         Color::srgb(0.75, 0.45, 1.0)
@@ -148,6 +153,5 @@ pub fn tick_player_fx(
         Color::srgb(1.0, 0.82, 0.4)
     } else {
         Color::srgb(0.35, 0.82, 1.0)
-    };
-    set_material_color(&mut materials, body_mat, color);
+    }
 }
