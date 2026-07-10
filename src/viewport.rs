@@ -1,5 +1,5 @@
 //! Full-viewport canvas + playfield with equal margins (preview strip for approaching hazards).
-//! Scales cleanly from phone → 1080p → 4K.
+//! Scales cleanly across: 4K, 1080p, tablet V/H, phone V/H.
 
 use crate::components::MainCamera;
 use bevy::camera::ScalingMode;

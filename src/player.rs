@@ -63,6 +63,9 @@ pub fn player_input(
     }
 
     let mut dir = Vec2::ZERO;
+    let mut touch_strength = 1.0;
+    let mut using_touch_move = false;
+
     if keyboard.pressed(KeyCode::KeyW) || keyboard.pressed(KeyCode::ArrowUp) {
         dir.y += 1.0;
     }
@@ -75,9 +78,23 @@ pub fn player_input(
     if keyboard.pressed(KeyCode::KeyD) || keyboard.pressed(KeyCode::ArrowRight) {
         dir.x += 1.0;
     }
-    if touch.move_dir != Vec2::ZERO {
+
+    // Touch / mouse point-to-move overrides keyboard while a pointer is held.
+    if touch.move_target.is_some() {
+        using_touch_move = true;
+        if touch.move_dir != Vec2::ZERO {
+            dir = touch.move_dir;
+            touch_strength = touch.move_strength;
+        } else {
+            dir = Vec2::ZERO;
+            touch_strength = 0.0;
+        }
+    } else if touch.move_dir != Vec2::ZERO {
         dir = touch.move_dir;
+        touch_strength = touch.move_strength.max(0.15);
+        using_touch_move = true;
     }
+
     if dir != Vec2::ZERO {
         dir = dir.normalize();
     }
@@ -105,9 +122,16 @@ pub fn player_input(
     } else if player.dash_timer <= 0.0 {
         let speed = PLAYER_SPEED
             * stats.speed_mult()
-            * if player.speed_boost > 0.0 { 1.48 } else { 1.0 };
+            * if player.speed_boost > 0.0 { 1.48 } else { 1.0 }
+            * if using_touch_move { touch_strength } else { 1.0 };
         let target = dir * speed;
-        player.velocity = player.velocity.lerp(target, (13.0 * dt).min(1.0));
+        // Arrive: ease out near the finger so we don't orbit the target.
+        let lerp_rate = if using_touch_move && touch_strength < 0.45 {
+            18.0
+        } else {
+            13.0
+        };
+        player.velocity = player.velocity.lerp(target, (lerp_rate * dt).min(1.0));
     }
 
     transform.translation += (player.velocity * dt).extend(0.0);

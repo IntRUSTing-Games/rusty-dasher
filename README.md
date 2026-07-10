@@ -12,7 +12,7 @@
 
 <p align="center">
   A polished 2D arcade game in Rust + Bevy 0.19<br/>
-  Native desktop · WebAssembly · Touch-friendly
+  Native desktop · WebAssembly · Phone / tablet / 1080p / 4K
 </p>
 
 <p align="center">
@@ -31,7 +31,8 @@
 | **CTA** | *Wanna try out a new 2010's vibe browser game? Check out RustyDasher.* |
 
 Dash through the field, collect yellow stars, dodge red hazards, and chain combos.
-Same game on desktop and in the browser — crisp meshes from phone to 4K.
+Same game on desktop and in the browser — layouts target **4K**, **1080p**,
+**tablet** (portrait + landscape), and **phone** (portrait + landscape).
 
 ## Screenshots
 
@@ -71,12 +72,13 @@ Ship `dist/` to any static host (itch.io, GitHub Pages, Cloudflare Pages, nginx)
 | Input | Action |
 |-------|--------|
 | **WASD** / arrows | Move |
-| **Space** / tap right edge | Dash |
+| **Space** / right-click | Dash (desktop) |
+| **1 finger** hold / drag | Point-to-move (walk toward finger) |
+| **2nd finger** tap | Dash (while first finger is steering) |
 | **Enter** / tap | Confirm / start / retry |
 | **Escape** | Back / menu |
 | **Up / Down** | Mode select — mode |
 | **Left / Right** (or **A / D**) | Mode select — difficulty |
-| Drag | Move (mouse / touch) |
 
 High scores: `save_data.json` (desktop), **localStorage** (web).
 

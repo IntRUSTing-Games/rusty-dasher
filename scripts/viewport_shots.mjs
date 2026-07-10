@@ -1,5 +1,6 @@
 /**
- * Capture title + mode-select at 4K, 1080p, phone portrait, phone landscape.
+ * Capture title + mode-select on all six target surfaces:
+ * 4K, 1080p, tablet portrait/landscape, phone portrait/landscape.
  * Click boot CTA (not Enter) so we don't double-advance menus.
  */
 import puppeteer from 'puppeteer-core';
@@ -11,10 +12,12 @@ const URL = 'http://127.0.0.1:8080/';
 fs.mkdirSync(OUT, { recursive: true });
 
 const VIEWPORTS = [
-  { name: '4k', width: 3840, height: 2160, dpr: 1 },
-  { name: '1080p', width: 1920, height: 1080, dpr: 1 },
-  { name: 'phone_portrait', width: 390, height: 844, dpr: 2 },
-  { name: 'phone_landscape', width: 844, height: 390, dpr: 2 },
+  { name: '4k', width: 3840, height: 2160, dpr: 1, touch: false },
+  { name: '1080p', width: 1920, height: 1080, dpr: 1, touch: false },
+  { name: 'tablet_portrait', width: 768, height: 1024, dpr: 2, touch: true },
+  { name: 'tablet_landscape', width: 1024, height: 768, dpr: 2, touch: true },
+  { name: 'phone_portrait', width: 390, height: 844, dpr: 2, touch: true },
+  { name: 'phone_landscape', width: 844, height: 390, dpr: 2, touch: true },
 ];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -64,8 +67,8 @@ for (const vp of VIEWPORTS) {
     width: vp.width,
     height: vp.height,
     deviceScaleFactor: vp.dpr,
-    isMobile: vp.name.startsWith('phone'),
-    hasTouch: vp.name.startsWith('phone'),
+    isMobile: vp.touch,
+    hasTouch: vp.touch,
   });
   console.log('viewport', vp.name);
   await page.goto(URL, { waitUntil: 'networkidle0', timeout: 120000 });

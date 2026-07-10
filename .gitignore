@@ -24,3 +24,4 @@ wasm-pack.log
 
 # Large / generated e2e dumps (keep curated screenshots/*.png)
 screenshots/web/
+node_modules/

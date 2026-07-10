@@ -193,18 +193,19 @@ async function newPage() {
   if (pageErrors.length === 0) pass('mouse: start game');
   else fail('mouse: start game', pageErrors.join('; '));
 
-  // Drag to move
+  // Drag to point-to-move
   await page.mouse.move(400, 400);
   await page.mouse.down();
   await page.mouse.move(700, 300, { steps: 8 });
   await sleep(500);
+  // Right-click dash (desktop)
+  await page.mouse.click(700, 300, { button: 'right' });
+  await sleep(400);
   await page.mouse.up();
-  // Click right edge dash
-  await page.mouse.click(1200, 360);
-  await sleep(600);
+  await sleep(400);
   await shot(page, 'mouse_04_play_input');
-  if (pageErrors.length === 0) pass('mouse: drag move + right-edge dash');
-  else fail('mouse: drag move + right-edge dash', pageErrors.at(-1));
+  if (pageErrors.length === 0) pass('mouse: drag move + right-click dash');
+  else fail('mouse: drag move + right-click dash', pageErrors.at(-1));
 
   await page.close();
 }
@@ -246,16 +247,35 @@ async function newPage() {
   if (pageErrors.length === 0) pass('touch: start game');
   else fail('touch: start game', pageErrors.join('; '));
 
-  // touch drag
-  await page.touchscreen.touchStart(400, 400);
-  await page.touchscreen.touchMove(650, 280);
+  // 1st finger steers; 2nd finger taps = dash (via CDP multi-touch)
+  const clientPlay = await page.createCDPSession();
+  await clientPlay.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [{ x: 400, y: 400, id: 1 }],
+  });
+  await sleep(150);
+  await clientPlay.send('Input.dispatchTouchEvent', {
+    type: 'touchMove',
+    touchPoints: [{ x: 650, y: 280, id: 1 }],
+  });
+  await sleep(200);
+  // Second finger down while first still held → dash
+  await clientPlay.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [
+      { x: 650, y: 280, id: 1 },
+      { x: 900, y: 500, id: 2 },
+    ],
+  });
+  await sleep(200);
+  await clientPlay.send('Input.dispatchTouchEvent', {
+    type: 'touchEnd',
+    touchPoints: [{ x: 650, y: 280, id: 1 }],
+  });
   await sleep(400);
-  await page.touchscreen.touchEnd();
-  await page.touchscreen.tap(1180, 360); // dash zone
-  await sleep(500);
   await shot(page, 'touch_04_play_input');
-  if (pageErrors.length === 0) pass('touch: drag + dash');
-  else fail('touch: drag + dash', pageErrors.at(-1));
+  if (pageErrors.length === 0) pass('touch: point-to-move + second-finger dash');
+  else fail('touch: point-to-move + second-finger dash', pageErrors.at(-1));
 
   await page.close();
 }

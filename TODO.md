@@ -6,10 +6,10 @@ Tracking for **RustyDasher** and the studio brand. Check items off as we go.
 
 - [ ] Polish remaining UX from beta feedback
 - [ ] **Improve mobile playability** (UI is cursed right now)
-  - [ ] Character moves toward where the finger is pressing (point-to-move), not only drag-direction
-  - [ ] Dedicated on-screen **Dash** button (don’t rely on right-edge strip alone)
+  - [x] Character moves toward where the finger is pressing (point-to-move)
+  - [x] **Second-finger dash** (1st finger steers, 2nd finger taps = dash; no on-screen button)
   - [ ] Fix mobile menus / HUD layout (mode select, text scale, safe areas, fat-finger targets)
-  - [ ] Re-test portrait + landscape on real phones after changes
+  - [ ] Re-test on all target surfaces: 4K, 1080p, tablet V/H, phone V/H
 - [ ] Pick a few beta testers (friends / Rust community / small closed group)
 - [ ] Collect feedback, fix blockers
 - [ ] Once solid: **share the game publicly** (repo + Pages link; itch / socials optional)

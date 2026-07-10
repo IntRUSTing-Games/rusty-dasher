@@ -5,7 +5,7 @@ use crate::stats::GameStats;
 use crate::touch_controls::TouchControls;
 use crate::ui_scale::{
     back_just_pressed, confirm_just_pressed, font, menu_down_just_pressed, menu_up_just_pressed,
-    ScaledPanel, ScaledPos, ScaledText, UiScale,
+    ScaledPanel, ScaledPos, ScaledText, UiScale, ViewportClass,
 };
 use crate::game_assets::GameAssets;
 use crate::viewport::PlayBounds;
@@ -27,12 +27,12 @@ fn spawn_menu_with(commands: &mut Commands, save: &SaveData, scale: &UiScale) {
             .max(save.high_scores.survival.max(save.high_scores.timed)),
     );
     let s = scale.panel;
-    let narrow = scale.aspect < 0.85;
+    let compact = scale.class.is_compact() || scale.aspect < 0.85;
     // Fit inside design with margin so body text never kisses the border.
-    let panel = if narrow {
+    let panel = if compact {
         Vec2::new(
-            (scale.design.x * 0.96).clamp(320.0, 420.0),
-            (scale.design.y * 0.90).clamp(360.0, 520.0),
+            (scale.design.x * 0.96).clamp(320.0, 480.0),
+            (scale.design.y * 0.90).clamp(300.0, 560.0),
         )
     } else {
         Vec2::new(
@@ -43,9 +43,16 @@ fn spawn_menu_with(commands: &mut Commands, save: &SaveData, scale: &UiScale) {
 
     spawn_panel_frame(commands, MenuUi, panel, s);
 
-    let title_px = if narrow { 34.0 } else { 46.0 };
-    let body_px = if narrow { 14.0 } else { 18.0 };
-    let body = if narrow {
+    let title_px = if compact { 34.0 } else { 46.0 };
+    let body_px = if compact { 14.0 } else { 18.0 };
+    let body = if scale.class.is_handheld() {
+        format!(
+            "Collect yellow stars. Avoid red hazards.\n\
+             Hold 1 finger to move  -  2nd finger dashes\n\n\
+             Best score: {best}\n\n\
+             Tap  -  choose mode"
+        )
+    } else if compact {
         format!(
             "Collect yellow stars. Avoid red hazards.\n\
              WASD / arrows move  -  SPACE dash\n\n\
@@ -55,9 +62,10 @@ fn spawn_menu_with(commands: &mut Commands, save: &SaveData, scale: &UiScale) {
     } else {
         format!(
             "Collect yellow stars  -  dodge red hazards\n\
-             WASD / arrows move  -  SPACE dash  -  power-ups\n\n\
+             WASD / arrows move  -  SPACE / right-click dash\n\
+             Hold mouse to point-to-move  -  power-ups\n\n\
              Best score: {best}\n\n\
-             ENTER / SPACE / tap  -  choose mode\n\
+             ENTER / SPACE / click  -  choose mode\n\
              ESC  -  quit (desktop)"
         )
     };
@@ -229,8 +237,8 @@ fn spawn_mode_select_with(
     let panel = scale.design;
     spawn_panel_frame(commands, ModeUi, panel, s);
 
-    let narrow = scale.aspect < 0.85 || scale.design.y < 400.0;
-    let title_px = if narrow { 26.0 } else { 34.0 };
+    let compact = scale.class.is_compact() || scale.aspect < 0.85 || scale.design.y < 400.0;
+    let title_px = if compact { 26.0 } else { 34.0 };
     commands.spawn((
         ModeUi,
         ScaledText {
@@ -249,10 +257,12 @@ fn spawn_mode_select_with(
 
     refresh_mode_list(commands, save, selected, difficulty, scale);
 
-    let help = if narrow {
+    let help = if scale.class.is_handheld() {
+        "Tap top/bottom = mode    sides = difficulty\nTap center = start    two-finger = back"
+    } else if compact {
         "Up/Down = mode    Left/Right = difficulty\nENTER / tap = start    ESC = back"
     } else {
-        "Up/Down = mode     Left/Right = difficulty\nENTER / SPACE / tap = start     ESC = back"
+        "Up/Down = mode     Left/Right = difficulty\nENTER / SPACE / click = start     ESC = back"
     };
     commands.spawn((
         ModeUi,
@@ -287,9 +297,16 @@ fn mode_list_body(save: &SaveData, selected: GameMode) -> String {
     body
 }
 
-/// Fixed horizontal slots (design units). Labels never reflow when selection moves.
-const DIFF_SLOT_X: [f32; 4] = [-195.0, -65.0, 65.0, 195.0];
 const DIFF_ROW_Y: f32 = -55.0;
+
+/// Horizontal difficulty slots scaled to the design panel (fits phone → 4K).
+fn diff_slot_layout(scale: &UiScale) -> ([f32; 4], f32) {
+    let half = (scale.design.x * 0.40).clamp(110.0, 210.0);
+    let step = half / 1.5;
+    let xs = [-1.5 * step, -0.5 * step, 0.5 * step, 1.5 * step];
+    let bracket = (step * 0.55).clamp(28.0, 52.0);
+    (xs, bracket)
+}
 
 fn refresh_mode_list(
     commands: &mut Commands,
@@ -298,10 +315,14 @@ fn refresh_mode_list(
     difficulty: Difficulty,
     scale: &UiScale,
 ) {
-    let compact = scale.aspect < 0.85 || scale.design.y < 400.0;
+    let compact = scale.class.is_compact()
+        || scale.aspect < 0.85
+        || scale.design.y < 400.0
+        || matches!(scale.class, ViewportClass::PhoneLandscape);
     let s = scale.panel;
     let px = if compact { 15.0 } else { 17.0 };
     let body = mode_list_body(save, selected);
+    let mode_y = if compact { 42.0 } else { 50.0 };
 
     commands.spawn((
         ModeUi,
@@ -311,7 +332,7 @@ fn refresh_mode_list(
             menu: true,
         },
         ScaledPos {
-            base: Vec2::new(0.0, 50.0),
+            base: Vec2::new(0.0, mode_y),
             menu: true,
         },
         Text2d::new(body),
@@ -319,14 +340,14 @@ fn refresh_mode_list(
         TextColor(Color::srgb(0.9, 0.93, 1.0)),
         TextLayout::justify(Justify::Center),
         Anchor::CENTER,
-        Transform::from_xyz(0.0, 50.0 * s, 20.0),
+        Transform::from_xyz(0.0, mode_y * s, 20.0),
     ));
 
-    // Side-by-side difficulty: each name is its own fixed-position text so
-    // Left/Right only moves the marker, never the words.
-    let diff_px = if compact { 14.0 } else { 16.0 };
+    // Side-by-side difficulty: fixed design slots so Left/Right never reflows labels.
+    let (slots, bracket_ox) = diff_slot_layout(scale);
+    let diff_px = if compact { 13.0 } else { 16.0 };
     for (i, d) in Difficulty::ALL.iter().enumerate() {
-        let x = DIFF_SLOT_X[i];
+        let x = slots[i];
         commands.spawn((
             ModeUi,
             ModeListText,
@@ -349,9 +370,8 @@ fn refresh_mode_list(
             Anchor::CENTER,
             Transform::from_xyz(x * s, DIFF_ROW_Y * s, 20.0),
         ));
-        // Selection brackets as separate fixed-offset glyphs (same width always).
         if *d == difficulty {
-            for (glyph, ox) in [("[", -48.0_f32), ("]", 48.0)] {
+            for (glyph, ox) in [("[", -bracket_ox), ("]", bracket_ox)] {
                 commands.spawn((
                     ModeUi,
                     ModeListText,
@@ -373,7 +393,7 @@ fn refresh_mode_list(
         }
     }
 
-    let stats_y = DIFF_ROW_Y - 36.0;
+    let stats_y = DIFF_ROW_Y - if compact { 30.0 } else { 36.0 };
     let stats = format!(
         "score x{:.1}   speed x{:.1}",
         difficulty.score_mult(),
@@ -383,7 +403,7 @@ fn refresh_mode_list(
         ModeUi,
         ModeListText,
         ScaledText {
-            base_px: if compact { 13.0 } else { 15.0 },
+            base_px: if compact { 12.0 } else { 15.0 },
             menu: true,
         },
         ScaledPos {
@@ -391,7 +411,7 @@ fn refresh_mode_list(
             menu: true,
         },
         Text2d::new(stats),
-        font(if compact { 13.0 } else { 15.0 }, s),
+        font(if compact { 12.0 } else { 15.0 }, s),
         TextColor(Color::srgb(0.7, 0.78, 0.9)),
         TextLayout::justify(Justify::Center),
         Anchor::CENTER,
@@ -648,7 +668,7 @@ pub fn spawn_hud(
             base_px: 15.0,
             menu: false,
         },
-        Text2d::new("WASD/arrows move  -  SPACE dash  -  drag to move"),
+        Text2d::new("WASD move  -  SPACE / 2nd finger dash  -  hold to move"),
         font(15.0, scale),
         TextColor(Color::srgb(0.55, 0.62, 0.78)),
         Transform::from_xyz(0.0, bot, 20.0),
