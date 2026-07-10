@@ -1,0 +1,6 @@
+# Local (non-root) alsa-lib for linking without system packages.
+# Safe if .deps is missing for pure WASM CI (ignored on targets that don't use alsa).
+# For normal Linux installs prefer: dnf/apt install alsa-lib-devel / libasound2-dev
+[env]
+PKG_CONFIG_PATH = { value = ".deps/usr/lib64/pkgconfig", relative = true, force = true }
+LIBRARY_PATH = { value = ".deps/usr/lib64", relative = true, force = true }

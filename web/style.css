@@ -1,0 +1,83 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  width: 100dvw;
+  height: 100dvh;
+  background: #090a12;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: system-ui, -apple-system, sans-serif;
+  /* Prevent iOS rubber-band */
+  position: fixed;
+  inset: 0;
+}
+
+/* Full-bleed canvas. Bevy fit_canvas_to_parent + DPR sync set the bitmap size. */
+canvas {
+  outline: none;
+  display: block;
+  position: fixed;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  touch-action: none;
+  image-rendering: auto;
+}
+
+#boot {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: #e8ecf8;
+  background: radial-gradient(ellipse at center, #14182a 0%, #090a12 70%);
+  cursor: pointer;
+}
+
+#boot .title {
+  font-size: clamp(1.4rem, 4vw, 2.2rem);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #ffd954;
+}
+
+#boot .sub {
+  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+  color: #8a96b8;
+  text-align: center;
+  max-width: 28rem;
+  line-height: 1.45;
+  padding: 0 1rem;
+}
+
+#boot .cta {
+  margin-top: 0.5rem;
+  padding: 0.7rem 1.4rem;
+  border-radius: 999px;
+  border: 1px solid #5a7ad4;
+  background: #1a2440;
+  color: #dce6ff;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+#boot.hidden {
+  display: none;
+}
+
+#boot .err {
+  color: #ff7b86;
+  max-width: 32rem;
+  padding: 0 1rem;
+  text-align: center;
+  white-space: pre-wrap;
+  font-size: 0.85rem;
+}

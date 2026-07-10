@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#090a12" />
+    <title>Star Collector — Deluxe</title>
+    <link data-trunk rel="rust" data-bin="star_collector" data-wasm-opt="s" data-integrity="none" />
+    <link data-trunk rel="copy-dir" href="assets" data-integrity="none" />
+    <link data-trunk rel="css" href="web/style.css" data-integrity="none" />
+    <link data-trunk rel="icon" href="assets/sprites/star.png" data-integrity="none" />
+  </head>
+  <body>
+    <div id="boot">
+      <div class="title">STAR COLLECTOR</div>
+      <div class="sub" id="boot-msg">
+        Loading game… first visit downloads ~45&nbsp;MB of WASM.<br />
+        On phones use Wi-Fi. Keep this tab open.
+      </div>
+      <div class="cta" id="boot-cta" style="display:none">ENTER / click / tap to play</div>
+      <div class="err" id="boot-err"></div>
+    </div>
+    <script>
+      const boot = document.getElementById("boot");
+      const msg = document.getElementById("boot-msg");
+      const cta = document.getElementById("boot-cta");
+      const err = document.getElementById("boot-err");
+      let ready = false;
+      let dismissed = false;
+
+      window.addEventListener("error", (e) => {
+        err.textContent = String(e.message || e.error || e);
+      });
+      window.addEventListener("unhandledrejection", (e) => {
+        err.textContent = String(e.reason || e);
+      });
+
+      const obs = new MutationObserver(() => {
+        if (document.querySelector("canvas")) {
+          ready = true;
+          msg.innerHTML =
+            "Ready.<br/>ENTER / SPACE / click / tap to start<br/>Then use keyboard, mouse, or touch.";
+          cta.style.display = "inline-block";
+          obs.disconnect();
+        }
+      });
+      obs.observe(document.body, { childList: true, subtree: true });
+
+      function dismiss(ev) {
+        if (!ready || dismissed) return;
+        dismissed = true;
+        try {
+          if (ev && typeof ev.preventDefault === "function") ev.preventDefault();
+        } catch (_) {}
+        boot.classList.add("hidden");
+        const canvas = document.querySelector("canvas");
+        if (canvas) {
+          canvas.setAttribute("tabindex", "0");
+          canvas.focus({ preventScroll: true });
+          // Re-focus if something steals it
+          setTimeout(() => canvas.focus({ preventScroll: true }), 50);
+        }
+      }
+
+      boot.addEventListener("pointerdown", (e) => dismiss(e));
+      window.addEventListener(
+        "keydown",
+        (e) => {
+          if (!ready || dismissed) return;
+          // Allow Enter / Space / NumpadEnter to unlock without needing a mouse.
+          if (
+            e.code === "Enter" ||
+            e.code === "NumpadEnter" ||
+            e.code === "Space" ||
+            e.key === "Enter" ||
+            e.key === " "
+          ) {
+            dismiss(e);
+          }
+        },
+        true
+      );
+
+      setTimeout(() => {
+        if (!document.querySelector("canvas")) {
+          err.textContent =
+            "Still loading or WebGL failed. Try Chrome/Firefox and check the browser console.";
+        }
+      }, 90000);
+    </script>
+  </body>
+</html>

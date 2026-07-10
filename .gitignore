@@ -1,0 +1,26 @@
+# Build
+/target
+/dist
+**/*.rs.bk
+
+# Local machine / private
+/.deps
+/.grok
+save_data.json
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+*.iml
+
+# WASM / tooling caches
+.trunk/
+wasm-pack.log
+
+# Large / generated e2e dumps (keep curated screenshots/*.png)
+screenshots/web/
