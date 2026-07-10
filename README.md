@@ -89,14 +89,18 @@ On-screen help adapts to the device: **keyboard on PC**, **touch on phone/tablet
 
 ### Phone / tablet
 
+On-screen **Game Boy** (portrait) / **PSP** (landscape) chrome:
+
 | Input | Action |
 |-------|--------|
-| **1 finger** hold | Point-to-move (walk toward finger) |
-| **2nd finger** tap | Dash (while first finger is steering) |
+| **Virtual stick** | Move (analog) |
+| **DASH button** | Dash |
 | Tap | Confirm / start / retry |
 | Top / bottom thirds | Mode select — mode |
 | Left / right sides | Mode select — difficulty |
 | Two-finger / left edge | Back |
+
+Install the PWA (or use Fullscreen) from the post-boot prompt for true full-screen play without browser chrome.
 
 High scores: `save_data.json` (desktop), **localStorage** (web).
 

@@ -98,8 +98,18 @@ pub fn start_run(
     selected: Res<SelectedMode>,
     chosen: Res<SelectedDifficulty>,
     mut stats: ResMut<GameStats>,
-    bounds: Res<PlayBounds>,
+    mut bounds: ResMut<PlayBounds>,
     ui_scale: Res<UiScale>,
+    windows: Query<&Window>,
+    mut cam_q: Query<&mut Projection, With<crate::components::MainCamera>>,
+    mut pieces: Query<
+        (&crate::viewport::FieldPiece, &mut Sprite, &mut Transform),
+        Without<Mesh2d>,
+    >,
+    mut glow: Query<
+        &mut Transform,
+        (With<crate::viewport::FieldPiece>, With<Mesh2d>),
+    >,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
@@ -135,8 +145,20 @@ pub fn start_run(
     hurt.tick(Duration::from_secs_f32(10.0));
     commands.insert_resource(HurtCooldown(hurt));
 
-    crate::player::spawn_player(&mut commands, &mut meshes, &mut materials);
-    crate::ui::spawn_hud(&mut commands, &stats, &bounds, &ui_scale, &assets);
+    // Apply handheld chrome bounds + field geometry immediately so the player,
+    // HUD, and blue play border land in the Game Boy / PSP screen (not under sticks).
+    let class = ui_scale.class;
+    let chrome = class.is_handheld();
+    let aspect = windows
+        .single()
+        .map(|w| w.width().max(1.0) / w.height().max(1.0))
+        .unwrap_or(16.0 / 9.0);
+    *bounds = PlayBounds::compute(aspect, class, chrome);
+    crate::viewport::apply_bounds_geometry(&bounds, &mut cam_q, &mut pieces, &mut glow);
+    let play_bounds = *bounds;
+
+    crate::player::spawn_player(&mut commands, &mut meshes, &mut materials, &play_bounds);
+    crate::ui::spawn_hud(&mut commands, &stats, &play_bounds, &ui_scale, &assets);
 
     let starter = if selected.0 == GameMode::Zen { 6 } else { 4 };
     for _ in 0..starter {

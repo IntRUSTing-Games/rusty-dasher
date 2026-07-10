@@ -12,6 +12,7 @@ pub fn spawn_player(
     commands: &mut Commands,
     meshes: &mut Assets<Mesh>,
     materials: &mut Assets<ColorMaterial>,
+    bounds: &PlayBounds,
 ) {
     // Flat solid disc (many-sided poly) — no center highlight artifact.
     let (mesh, mat) = mesh_gfx::poly(
@@ -34,7 +35,7 @@ pub fn spawn_player(
         },
         mesh,
         mat,
-        Transform::from_xyz(0.0, 0.0, 2.0),
+        Transform::from_translation(bounds.center.extend(2.0)),
         Pulse {
             base_scale: 1.0,
             phase: 0.0,

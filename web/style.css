@@ -162,3 +162,111 @@ canvas {
     transition: none;
   }
 }
+
+/* ── Install / fullscreen prompt ─────────────────────────────────────────── */
+#install {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 1rem;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  background: rgba(4, 6, 14, 0.55);
+  pointer-events: auto;
+}
+
+#install.hidden {
+  display: none;
+}
+
+#install .install-card {
+  width: min(22rem, 100%);
+  background: linear-gradient(160deg, #1a2240 0%, #0e1220 100%);
+  border: 1px solid #3d5a9e;
+  border-radius: 1rem;
+  padding: 1.1rem 1.15rem 1rem;
+  color: #e8ecf8;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+#install .install-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #ffd954;
+  margin-bottom: 0.45rem;
+}
+
+#install .install-body {
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: #b4c0de;
+  margin-bottom: 0.65rem;
+}
+
+#install .install-ios {
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: #9eb0d8;
+  background: rgba(90, 122, 212, 0.12);
+  border-radius: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  margin-bottom: 0.75rem;
+}
+
+#install .install-ios.hidden {
+  display: none;
+}
+
+#install .install-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+#install button {
+  font: inherit;
+  cursor: pointer;
+  border-radius: 999px;
+  padding: 0.55rem 1rem;
+  border: 1px solid transparent;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+#install .install-primary {
+  background: #ffd954;
+  color: #1a1400;
+  border-color: #e6c040;
+  flex: 1 1 auto;
+}
+
+#install .install-primary.hidden {
+  display: none;
+}
+
+#install .install-secondary {
+  background: #1a2440;
+  color: #dce6ff;
+  border-color: #5a7ad4;
+  flex: 1 1 auto;
+}
+
+#install .install-ghost {
+  background: transparent;
+  color: #8a96b8;
+  border-color: transparent;
+  width: 100%;
+  font-weight: 500;
+  padding-top: 0.35rem;
+}
+
+@media (min-width: 720px) and (pointer: fine) {
+  /* Desktop with mouse: keep prompt available but less dominant */
+  #install {
+    align-items: center;
+  }
+}

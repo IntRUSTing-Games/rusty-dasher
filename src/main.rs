@@ -21,6 +21,7 @@ mod save;
 mod screenshot_tour;
 mod state;
 mod stats;
+mod touch_chrome;
 mod touch_controls;
 mod ui;
 mod ui_scale;
@@ -39,7 +40,7 @@ use events::*;
 use game_assets::GameAssets;
 use state::{GameState, SelectedDifficulty, SelectedMode};
 use stats::GameStats;
-use touch_controls::TouchControls;
+use touch_controls::{TouchChromeLayout, TouchControls};
 use ui_scale::UiScale;
 use viewport::PlayBounds;
 
@@ -78,6 +79,7 @@ fn main() {
     .init_resource::<GameAssets>()
     .init_resource::<save::SaveData>()
     .init_resource::<TouchControls>()
+    .init_resource::<TouchChromeLayout>()
     .init_resource::<PlayBounds>()
     .init_resource::<UiScale>()
     .init_resource::<particles::DashTrailAcc>()
@@ -120,6 +122,9 @@ fn main() {
             viewport::sync_resolution,
             viewport::sync_play_bounds,
             viewport::sync_hud_layout,
+            touch_controls::sync_touch_chrome_layout,
+            touch_chrome::sync_touch_chrome_presence,
+            touch_chrome::update_touch_chrome_visuals,
             // Touch/mouse always first so the same frame can act on it
             touch_controls::update_touch_controls,
             ui::menu_input.run_if(in_state(GameState::Menu)),

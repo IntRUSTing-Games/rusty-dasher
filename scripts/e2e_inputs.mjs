@@ -14,7 +14,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
 const OUT = path.join(ROOT, 'screenshots/web/e2e');
 const MATRIX = JSON.parse(fs.readFileSync(path.join(__dirname, 'qa_matrix.json'), 'utf8'));
-const URL = 'http://127.0.0.1:8080/';
+const URL = 'http://127.0.0.1:8080/?e2e=1';
 
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -77,6 +77,14 @@ async function waitReady(page) {
   );
 }
 
+/** Dismiss install/fullscreen sheet if it appeared after boot (must not block game input). */
+async function dismissInstallIfAny(page) {
+  await page.evaluate(() => {
+    const el = document.getElementById('install');
+    if (el) el.classList.add('hidden');
+  });
+}
+
 function center(format) {
   return { x: Math.floor(format.width / 2), y: Math.floor(format.height / 2) };
 }
@@ -114,6 +122,7 @@ async function runKeyboard(format) {
     if (hidden2) pass(`${tag}: boot dismiss`);
     else fail(`${tag}: boot dismiss`);
 
+    await dismissInstallIfAny(page);
     await focusCanvas(page);
     await shot(page, `${format.id}_kb_02_menu`);
     await page.keyboard.press('Enter');
@@ -161,6 +170,7 @@ async function runMouse(format) {
     );
     if (hidden) pass(`${tag}: boot click`);
     else fail(`${tag}: boot click`);
+    await dismissInstallIfAny(page);
     await shot(page, `${format.id}_mouse_01_menu`);
 
     await page.mouse.click(cx, cy);
@@ -214,6 +224,7 @@ async function runTouch(format) {
     );
     if (hidden) pass(`${tag}: boot tap`);
     else fail(`${tag}: boot tap`);
+    await dismissInstallIfAny(page);
     await shot(page, `${format.id}_touch_01_menu`);
 
     await page.touchscreen.tap(cx, cy);
@@ -228,38 +239,53 @@ async function runTouch(format) {
     if (page.__errors.length === 0) pass(`${tag}: play`);
     else fail(`${tag}: play`, page.__errors.join('; '));
 
-    const x0 = Math.floor(format.width * 0.35);
-    const y0 = Math.floor(format.height * 0.55);
-    const x1 = Math.floor(format.width * 0.55);
-    const y1 = Math.floor(format.height * 0.4);
-    const x2 = Math.floor(format.width * 0.75);
-    const y2 = Math.floor(format.height * 0.65);
+    // Virtual stick + dash button (Game Boy portrait / PSP landscape).
+    const portrait = format.height >= format.width;
+    let stickX, stickY, stickX2, stickY2, dashX, dashY;
+    if (portrait) {
+      // Bottom deck: stick ~28% width, dash ~75% width, mid-deck Y
+      stickX = Math.floor(format.width * 0.28);
+      stickY = Math.floor(format.height * 0.83);
+      stickX2 = Math.floor(format.width * 0.38);
+      stickY2 = Math.floor(format.height * 0.78);
+      dashX = Math.floor(format.width * 0.75);
+      dashY = Math.floor(format.height * 0.83);
+    } else {
+      // Side grips: stick left, dash right
+      stickX = Math.floor(format.width * 0.10);
+      stickY = Math.floor(format.height * 0.52);
+      stickX2 = Math.floor(format.width * 0.14);
+      stickY2 = Math.floor(format.height * 0.40);
+      dashX = Math.floor(format.width * 0.90);
+      dashY = Math.floor(format.height * 0.52);
+    }
     await client.send('Input.dispatchTouchEvent', {
       type: 'touchStart',
-      touchPoints: [{ x: x0, y: y0, id: 1 }],
+      touchPoints: [{ x: stickX, y: stickY, id: 1 }],
     });
     await sleep(120);
     await client.send('Input.dispatchTouchEvent', {
       type: 'touchMove',
-      touchPoints: [{ x: x1, y: y1, id: 1 }],
+      touchPoints: [{ x: stickX2, y: stickY2, id: 1 }],
     });
     await sleep(150);
+    // Keep stick held, tap dash with second finger
     await client.send('Input.dispatchTouchEvent', {
       type: 'touchStart',
       touchPoints: [
-        { x: x1, y: y1, id: 1 },
-        { x: x2, y: y2, id: 2 },
+        { x: stickX2, y: stickY2, id: 1 },
+        { x: dashX, y: dashY, id: 2 },
       ],
     });
     await sleep(200);
     await client.send('Input.dispatchTouchEvent', {
       type: 'touchEnd',
-      touchPoints: [{ x: x1, y: y1, id: 1 }],
+      touchPoints: [{ x: stickX2, y: stickY2, id: 1 }],
     });
     await sleep(400);
     await shot(page, `${format.id}_touch_04_input`);
-    if (page.__errors.length === 0) pass(`${tag}: move+2nd-finger dash`);
-    else fail(`${tag}: move+2nd-finger dash`, page.__errors.at(-1));
+    if (page.__errors.length === 0) pass(`${tag}: stick+dash button`);
+    else fail(`${tag}: stick+dash button`, page.__errors.at(-1));
   } finally {
     await page.close();
   }

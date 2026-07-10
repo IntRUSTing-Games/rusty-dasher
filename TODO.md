@@ -6,8 +6,9 @@ Tracking for **RustyDasher** and the studio brand. Check items off as we go.
 
 - [ ] Polish remaining UX from beta feedback
 - [ ] **Improve mobile playability** (UI is cursed right now)
-  - [x] Character moves toward where the finger is pressing (point-to-move)
-  - [x] **Second-finger dash** (1st finger steers, 2nd finger taps = dash; no on-screen button)
+  - [x] PWA install / fullscreen prompt (home screen + fullscreen)
+  - [x] Game Boy (portrait) / PSP (landscape) virtual stick + DASH button
+  - [x] Phone landscape zoom so playfield is not microscopically tiny
   - [ ] Fix mobile menus / HUD layout (mode select, text scale, safe areas, fat-finger targets)
   - [ ] Re-test on all target surfaces: 4K, 1080p, tablet V/H, phone V/H
 - [ ] Pick a few beta testers (friends / Rust community / small closed group)

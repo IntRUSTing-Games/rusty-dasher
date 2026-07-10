@@ -1,7 +1,12 @@
-//! Full-viewport canvas + playfield with equal margins (preview strip for approaching hazards).
+//! Full-viewport canvas + playfield with equal (or handheld-chrome) margins.
 //! Scales cleanly across: 4K, 1080p, tablet V/H, phone V/H.
+//!
+//! On handheld while playing, reserves a Game Boy / PSP-style control deck so
+//! the virtual stick + dash button never cover the playfield.
 
 use crate::components::MainCamera;
+use crate::state::GameState;
+use crate::ui_scale::{classify_viewport, ViewportClass};
 use bevy::camera::ScalingMode;
 use bevy::prelude::*;
 use bevy::window::WindowResized;
@@ -11,60 +16,109 @@ use bevy::window::WindowResized;
 pub struct PlayBounds {
     /// Half-extents of the playable rectangle.
     pub half: Vec2,
-    /// Center of the play rectangle (kept at origin for equal margins).
+    /// Center of the play rectangle (may shift when chrome is asymmetric).
     pub center: Vec2,
     /// Half-extents of the full camera view.
     pub view_half: Vec2,
-    /// Equal world-space inset from every view edge to the play rectangle.
+    /// World units spanning full window height (camera FixedVertical).
+    pub view_height: f32,
+    /// Equal-ish average margin (legacy helpers / HUD).
     pub margin: f32,
+    pub inset_left: f32,
+    pub inset_right: f32,
+    pub inset_top: f32,
+    pub inset_bottom: f32,
     pub hud_top_y: f32,
     pub hud_bottom_y: f32,
+    /// True when Game Boy / PSP chrome is active (playing on handheld).
+    pub chrome: bool,
+    pub class: ViewportClass,
 }
 
 impl Default for PlayBounds {
     fn default() -> Self {
-        Self::from_aspect(16.0 / 9.0)
+        Self::compute(16.0 / 9.0, ViewportClass::Desktop1080, false)
     }
 }
 
 impl PlayBounds {
-    /// World units spanning the full window height.
-    /// ~1080 keeps UI/sprites feeling natural from 720p through 4K.
+    /// Desktop reference world height.
     pub const VIEW_HEIGHT: f32 = 1080.0;
 
-    /// Equal margin as a fraction of the shorter view half-axis.
-    /// Large enough to see hazards approach before they cross the blue border.
+    /// Equal margin as a fraction of the shorter view half-axis (no chrome).
     const MARGIN_FRAC: f32 = 0.11;
     const MARGIN_MIN: f32 = 64.0;
     const MARGIN_MAX: f32 = 140.0;
 
+    /// Choose orthographic height so short phone screens don't look microscopic.
+    /// Lower world height → larger physical sprites on the same CSS pixels.
+    pub fn view_height_for(class: ViewportClass) -> f32 {
+        match class {
+            // Landscape phones were ~2× tinier than portrait under FixedVertical 1080.
+            ViewportClass::PhoneLandscape => 560.0,
+            ViewportClass::PhonePortrait => 820.0,
+            ViewportClass::TabletLandscape => 900.0,
+            ViewportClass::TabletPortrait => 980.0,
+            ViewportClass::Desktop1080 | ViewportClass::Desktop4k => Self::VIEW_HEIGHT,
+        }
+    }
+
     pub fn from_aspect(aspect: f32) -> Self {
+        Self::compute(aspect, ViewportClass::Desktop1080, false)
+    }
+
+    pub fn compute(aspect: f32, class: ViewportClass, chrome: bool) -> Self {
         let aspect = aspect.clamp(0.45, 3.5);
-        let view_h = Self::VIEW_HEIGHT;
+        let view_h = Self::view_height_for(class);
         let view_w = view_h * aspect;
         let view_half = Vec2::new(view_w * 0.5, view_h * 0.5);
 
-        // Same distance on left, right, top, and bottom.
-        let margin = (view_half.x.min(view_half.y) * Self::MARGIN_FRAC)
-            .clamp(Self::MARGIN_MIN, Self::MARGIN_MAX);
+        let (inset_l, inset_r, inset_t, inset_b) = if chrome {
+            chrome_insets(class, view_w, view_h)
+        } else {
+            let m = (view_half.x.min(view_half.y) * Self::MARGIN_FRAC)
+                .clamp(Self::MARGIN_MIN, Self::MARGIN_MAX);
+            (m, m, m, m)
+        };
 
+        let left = -view_half.x + inset_l;
+        let right = view_half.x - inset_r;
+        let bottom = -view_half.y + inset_b;
+        let top = view_half.y - inset_t;
+        let center = Vec2::new((left + right) * 0.5, (bottom + top) * 0.5);
         let half = Vec2::new(
-            (view_half.x - margin).max(140.0),
-            (view_half.y - margin).max(120.0),
+            ((right - left) * 0.5).max(120.0),
+            ((top - bottom) * 0.5).max(100.0),
         );
-        let center = Vec2::ZERO;
 
-        // HUD sits in the equal margin bands (mid-line of each band).
-        let hud_top_y = view_half.y - margin * 0.5;
-        let hud_bottom_y = -view_half.y + margin * 0.5;
+        let margin = (inset_l + inset_r + inset_t + inset_b) * 0.25;
+
+        // HUD sits in the top/bottom margin bands of the *play screen* (not the stick deck).
+        let hud_top_y = top + (inset_t * 0.45).min(inset_t * 0.9);
+        let hud_bottom_y = if chrome {
+            // Keep status above the control deck, just under the play border.
+            bottom - (inset_t.max(18.0) * 0.35).clamp(10.0, 28.0)
+        } else {
+            bottom - (inset_b * 0.45).min(inset_b * 0.9)
+        };
+        // Clamp HUD into view
+        let hud_top_y = hud_top_y.min(view_half.y - 8.0);
+        let hud_bottom_y = hud_bottom_y.max(-view_half.y + 8.0);
 
         Self {
             half,
             center,
             view_half,
+            view_height: view_h,
             margin,
+            inset_left: inset_l,
+            inset_right: inset_r,
+            inset_top: inset_t,
+            inset_bottom: inset_b,
             hud_top_y,
             hud_bottom_y,
+            chrome,
+            class,
         }
     }
 
@@ -95,6 +149,29 @@ impl PlayBounds {
             self.center.x + (rand_f32() * 2.0 - 1.0) * (self.half.x - margin).max(1.0),
             self.center.y + (rand_f32() * 2.0 - 1.0) * (self.half.y - margin).max(1.0),
         )
+    }
+}
+
+/// Game Boy (portrait) / PSP (landscape) chrome insets in world units.
+fn chrome_insets(class: ViewportClass, view_w: f32, view_h: f32) -> (f32, f32, f32, f32) {
+    match class {
+        // Game Boy: big bottom control deck, modest bezel elsewhere.
+        ViewportClass::PhonePortrait | ViewportClass::TabletPortrait => {
+            let deck = (view_h * 0.34).clamp(200.0, 340.0);
+            let side = (view_w * 0.055).clamp(18.0, 48.0);
+            let top = (view_h * 0.055).clamp(22.0, 52.0);
+            (side, side, top, deck)
+        }
+        // PSP: grips left (stick) + right (dash), thin top/bottom bezel.
+        ViewportClass::PhoneLandscape | ViewportClass::TabletLandscape => {
+            let grip = (view_w * 0.20).clamp(110.0, 220.0);
+            let vert = (view_h * 0.09).clamp(22.0, 48.0);
+            (grip, grip, vert, vert)
+        }
+        _ => {
+            let m = 64.0;
+            (m, m, m, m)
+        }
     }
 }
 
@@ -161,47 +238,22 @@ pub fn sync_resolution(
     }
 }
 
-/// Recompute playfield size with equal margins; resize field geometry.
-pub fn sync_play_bounds(
-    windows: Query<&Window>,
-    mut bounds: ResMut<PlayBounds>,
-    mut cam_q: Query<&mut Projection, With<MainCamera>>,
-    mut pieces: Query<(&FieldPiece, &mut Sprite, &mut Transform), Without<Mesh2d>>,
-    mut glow: Query<&mut Transform, (With<FieldPiece>, With<Mesh2d>)>,
-    mut resize: MessageReader<WindowResized>,
-    mut frames: Local<u32>,
+/// Apply orthographic height + field piece geometry for the current [`PlayBounds`].
+pub fn apply_bounds_geometry(
+    bounds: &PlayBounds,
+    cam_q: &mut Query<&mut Projection, With<MainCamera>>,
+    pieces: &mut Query<(&FieldPiece, &mut Sprite, &mut Transform), Without<Mesh2d>>,
+    glow: &mut Query<&mut Transform, (With<FieldPiece>, With<Mesh2d>)>,
 ) {
-    *frames = frames.saturating_add(1);
-    let resized = resize.read().count() > 0;
-    if !resized && *frames != 1 && *frames % 15 != 0 {
-        return;
-    }
-
-    let Ok(window) = windows.single() else {
-        return;
-    };
-    let w = window.width().max(32.0);
-    let h = window.height().max(32.0);
-    let next = PlayBounds::from_aspect(w / h);
-
-    if (next.half - bounds.half).length_squared() < 0.25
-        && (next.view_half - bounds.view_half).length_squared() < 0.25
-        && (next.margin - bounds.margin).abs() < 0.5
-        && *frames > 2
-    {
-        return;
-    }
-    *bounds = next;
-
     if let Ok(mut proj) = cam_q.single_mut() {
         if let Projection::Orthographic(ortho) = proj.as_mut() {
             ortho.scaling_mode = ScalingMode::FixedVertical {
-                viewport_height: PlayBounds::VIEW_HEIGHT,
+                viewport_height: bounds.view_height,
             };
         }
     }
 
-    for (piece, mut sprite, mut tf) in &mut pieces {
+    for (piece, mut sprite, mut tf) in pieces.iter_mut() {
         match *piece {
             FieldPiece::Backdrop => {
                 sprite.custom_size = Some(bounds.view_half * 2.05);
@@ -222,17 +274,65 @@ pub fn sync_play_bounds(
         }
     }
 
-    // Mesh glow: reposition (radius is approximate via scale from unit)
-    for mut tf in &mut glow {
-        // Only FieldPiece::Glow has Mesh2d among field pieces we care about
+    for mut tf in glow.iter_mut() {
         tf.translation = bounds.center.extend(-5.0);
         let s = bounds.half.length().max(200.0) * 0.55;
         tf.scale = Vec3::splat(s.clamp(80.0, 900.0));
     }
 }
 
+/// Recompute playfield size with equal margins or handheld chrome; resize field geometry.
+pub fn sync_play_bounds(
+    windows: Query<&Window>,
+    mut bounds: ResMut<PlayBounds>,
+    mut cam_q: Query<&mut Projection, With<MainCamera>>,
+    mut pieces: Query<(&FieldPiece, &mut Sprite, &mut Transform), Without<Mesh2d>>,
+    mut glow: Query<&mut Transform, (With<FieldPiece>, With<Mesh2d>)>,
+    mut resize: MessageReader<WindowResized>,
+    mut frames: Local<u32>,
+    mut last_playing: Local<bool>,
+    state: Res<State<GameState>>,
+    ui: Res<crate::ui_scale::UiScale>,
+) {
+    *frames = frames.saturating_add(1);
+    let resized = resize.read().count() > 0;
+    let playing = *state.get() == GameState::Playing;
+    let playing_flipped = playing != *last_playing;
+    *last_playing = playing;
 
-/// Reposition HUD into the equal margin bands (outside the play rectangle).
+    if !resized && !playing_flipped && *frames != 1 && *frames % 15 != 0 {
+        let want_chrome = playing && ui.class.is_handheld();
+        if want_chrome == bounds.chrome && ui.class == bounds.class {
+            return;
+        }
+    }
+
+    let Ok(window) = windows.single() else {
+        return;
+    };
+    let w = window.width().max(32.0);
+    let h = window.height().max(32.0);
+    let class = classify_viewport(w, h);
+    let chrome = playing && class.is_handheld();
+    let next = PlayBounds::compute(w / h, class, chrome);
+
+    if (next.half - bounds.half).length_squared() < 0.25
+        && (next.view_half - bounds.view_half).length_squared() < 0.25
+        && (next.center - bounds.center).length_squared() < 0.25
+        && (next.margin - bounds.margin).abs() < 0.5
+        && (next.view_height - bounds.view_height).abs() < 0.5
+        && next.chrome == bounds.chrome
+        && next.class == bounds.class
+        && *frames > 2
+        && !playing_flipped
+    {
+        return;
+    }
+    *bounds = next;
+    apply_bounds_geometry(&bounds, &mut cam_q, &mut pieces, &mut glow);
+}
+
+/// Reposition HUD into the margin bands (outside the play rectangle).
 pub fn sync_hud_layout(
     bounds: Res<PlayBounds>,
     mut score: Query<
@@ -289,36 +389,31 @@ pub fn sync_hud_layout(
 ) {
     let top = bounds.hud_top_y;
     let bot = bounds.hud_bottom_y;
-    // Keep HUD clear of the play border, inset slightly from the view edge
-    let left = -bounds.view_half.x + bounds.margin * 0.55;
-    let right = bounds.view_half.x - bounds.margin * 0.55;
+    // Keep HUD clear of the play border, inset slightly from the play screen edges
+    let left = bounds.left() + 8.0;
+    let right = bounds.right() - 8.0;
 
     let phone = scale.class.is_phone();
-    // Keep score fully on-screen (left-anchored entity).
-    let score_x = left + if phone { 8.0 } else { 16.0 };
+    let score_x = left + if phone { 4.0 } else { 12.0 };
     if let Ok(mut tf) = score.single_mut() {
         tf.translation = Vec3::new(score_x, top, 20.0);
     }
     let heart_size = (if phone { 22.0 } else { 28.0 }) * scale.text.clamp(0.75, 1.8);
     let spacing = heart_size + 6.0;
     for (heart, mut tf, mut sprite) in &mut hearts {
-        let x = right - 8.0 - (2 - heart.index) as f32 * spacing;
+        let x = right - (2 - heart.index) as f32 * spacing;
         tf.translation = Vec3::new(x, top, 20.0);
         sprite.custom_size = Some(Vec2::splat(heart_size));
     }
     if let Ok(mut tf) = combo.single_mut() {
-        tf.translation = Vec3::new(0.0, top, 20.0);
+        tf.translation = Vec3::new(bounds.center.x, top, 20.0);
     }
     if let Ok(mut tf) = level.single_mut() {
-        let level_y = if phone {
-            top - (bounds.margin * 0.42).clamp(22.0, 40.0)
-        } else {
-            top - (bounds.margin * 0.28).clamp(18.0, 32.0)
-        };
-        tf.translation = Vec3::new(0.0, level_y, 20.0);
+        let level_y = top - if phone { 22.0 } else { 26.0 };
+        tf.translation = Vec3::new(bounds.center.x, level_y, 20.0);
     }
     if let Ok(mut tf) = status.single_mut() {
-        tf.translation = Vec3::new(0.0, bot, 20.0);
+        tf.translation = Vec3::new(bounds.center.x, bot, 20.0);
     }
 }
 

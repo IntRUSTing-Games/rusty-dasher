@@ -35,7 +35,7 @@ impl ViewportClass {
         }
     }
 
-    /// Phone or tablet — touch-first layout (point-to-move, second-finger dash).
+    /// Phone or tablet — touch-first layout (virtual stick + dash chrome).
     pub fn is_handheld(self) -> bool {
         matches!(
             self,
@@ -46,7 +46,6 @@ impl ViewportClass {
         )
     }
 
-    #[allow(dead_code)]
     pub fn is_portrait(self) -> bool {
         matches!(self, Self::PhonePortrait | Self::TabletPortrait)
     }

@@ -67,7 +67,7 @@ fn spawn_menu_with(commands: &mut Commands, save: &SaveData, scale: &UiScale) {
     let body = if scale.class.is_handheld() {
         format!(
             "Collect stars · dodge hazards\n\
-             1 finger moves · 2nd finger dashes\n\
+             Stick moves · DASH button dashes\n\
              Best {best}\n\
              Tap to choose mode"
         )
@@ -709,13 +709,13 @@ pub fn spawn_hud(
     let scale = ui.text;
     let top = bounds.hud_top_y;
     let bot = bounds.hud_bottom_y;
-    let left = -bounds.view_half.x + bounds.margin * 0.55;
-    let right = bounds.view_half.x - bounds.margin * 0.55;
+    let left = bounds.left() + 8.0;
+    let right = bounds.right() - 8.0;
 
     let phone = ui.class.is_phone();
     let score_px = if phone { 18.0 } else { 26.0 };
     // Left-anchored so "Score" never clips off the left edge on short/narrow views.
-    let score_x = left + if phone { 8.0 } else { 16.0 };
+    let score_x = left + if phone { 4.0 } else { 12.0 };
     commands.spawn((
         PlayEntity,
         HudScore,
@@ -735,7 +735,7 @@ pub fn spawn_hud(
     let max_hearts = 3u32;
     for i in 0..max_hearts {
         let filled = stats.mode == GameMode::Zen || i < stats.lives;
-        let x = right - 8.0 - (max_hearts - 1 - i) as f32 * spacing;
+        let x = right - (max_hearts - 1 - i) as f32 * spacing;
         commands.spawn((
             PlayEntity,
             HudLives,
@@ -764,15 +764,11 @@ pub fn spawn_hud(
         Text2d::new(""),
         font(combo_px, scale),
         TextColor(Color::srgb(1.0, 0.85, 0.3)),
-        Transform::from_xyz(0.0, top, 20.0),
+        Transform::from_xyz(bounds.center.x, top, 20.0),
     ));
     // Phone: short label under the top margin so it doesn't collide with score/hearts.
     let level_px = if phone { 13.0 } else { 17.0 };
-    let level_y = if phone {
-        top - (bounds.margin * 0.42).clamp(22.0, 40.0)
-    } else {
-        top - (bounds.margin * 0.28).clamp(16.0, 30.0)
-    };
+    let level_y = top - if phone { 22.0 } else { 26.0 };
     commands.spawn((
         PlayEntity,
         HudLevel,
@@ -787,11 +783,11 @@ pub fn spawn_hud(
         )),
         font(level_px, scale),
         TextColor(Color::srgb(0.65, 0.75, 0.95)),
-        Transform::from_xyz(0.0, level_y, 20.0),
+        Transform::from_xyz(bounds.center.x, level_y, 20.0),
     ));
     // Format-specific control hint until power-ups / dash cooldown take over.
     let hint = if ui.class.is_handheld() {
-        "1 finger move - 2nd finger dash"
+        "Stick move · DASH button"
     } else {
         "WASD / arrows move - SPACE dash"
     };
@@ -806,7 +802,7 @@ pub fn spawn_hud(
         Text2d::new(hint),
         font(status_px, scale),
         TextColor(Color::srgb(0.55, 0.62, 0.78)),
-        Transform::from_xyz(0.0, bot, 20.0),
+        Transform::from_xyz(bounds.center.x, bot, 20.0),
     ));
 }
 

@@ -7,12 +7,20 @@
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#090a12" />
+    <meta name="application-name" content="RustyDasher" />
+    <meta name="apple-mobile-web-app-title" content="RustyDasher" />
     <title>RustyDasher</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
     <!-- wasm-opt "s" can break wasm-bindgen externref tables → RangeError: Table.grow() -->
     <link data-trunk rel="rust" data-bin="rusty_dasher" data-wasm-opt="0" data-integrity="none" />
     <link data-trunk rel="copy-dir" href="assets" data-integrity="none" />
+    <link data-trunk rel="copy-dir" href="web/icons" data-integrity="none" />
+    <link data-trunk rel="copy-file" href="web/manifest.webmanifest" data-integrity="none" />
+    <link data-trunk rel="copy-file" href="web/sw.js" data-integrity="none" />
     <link data-trunk rel="css" href="web/style.css" data-integrity="none" />
     <link data-trunk rel="icon" href="assets/sprites/star.png" data-integrity="none" />
   </head>
@@ -47,6 +55,26 @@
       <div class="cta" id="boot-cta" style="display:none">ENTER / click / tap to play</div>
       <div class="err" id="boot-err"></div>
     </div>
+
+    <!-- Install / fullscreen prompt (mobile browsers) -->
+    <div id="install" class="hidden" role="dialog" aria-labelledby="install-title" aria-modal="true">
+      <div class="install-card">
+        <div class="install-title" id="install-title">Play fullscreen</div>
+        <div class="install-body" id="install-body">
+          Install RustyDasher on your home screen for a real full-screen game
+          (no browser bars in the way).
+        </div>
+        <div class="install-ios hidden" id="install-ios">
+          On iPhone / iPad: tap <strong>Share</strong> → <strong>Add to Home Screen</strong>.
+        </div>
+        <div class="install-actions">
+          <button type="button" class="install-primary" id="install-btn">Install</button>
+          <button type="button" class="install-secondary" id="install-fs">Fullscreen</button>
+          <button type="button" class="install-ghost" id="install-dismiss">Not now</button>
+        </div>
+      </div>
+    </div>
+
     <script>
       const boot = document.getElementById("boot");
       const msg = document.getElementById("boot-msg");
@@ -176,6 +204,8 @@
           canvas.focus({ preventScroll: true });
           setTimeout(() => canvas.focus({ preventScroll: true }), 50);
         }
+        // After boot, offer install / fullscreen on phones (not when already installed).
+        setTimeout(maybeShowInstall, 450);
       }
 
       boot.addEventListener("pointerdown", (e) => dismiss(e));
@@ -206,6 +236,136 @@
       }, 90000);
 
       setProgress(2);
+
+      // ── PWA install / fullscreen ──────────────────────────────────────────
+      const installEl = document.getElementById("install");
+      const installBtn = document.getElementById("install-btn");
+      const installFs = document.getElementById("install-fs");
+      const installDismiss = document.getElementById("install-dismiss");
+      const installIos = document.getElementById("install-ios");
+      const DISMISS_KEY = "rd_install_dismiss_v1";
+      let deferredPrompt = null;
+
+      function isStandalone() {
+        try {
+          if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches)
+            return true;
+          if (window.matchMedia && window.matchMedia("(display-mode: fullscreen)").matches)
+            return true;
+          if (navigator.standalone === true) return true;
+        } catch (_) {}
+        return false;
+      }
+
+      function isTouchy() {
+        try {
+          if (navigator.maxTouchPoints > 0) return true;
+          if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) return true;
+        } catch (_) {}
+        return "ontouchstart" in window;
+      }
+
+      function isIos() {
+        const ua = navigator.userAgent || "";
+        return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      }
+
+      function wasDismissedRecently() {
+        try {
+          const raw = localStorage.getItem(DISMISS_KEY);
+          if (!raw) return false;
+          const t = parseInt(raw, 10);
+          if (!Number.isFinite(t)) return false;
+          // Hide for 7 days after "Not now"
+          return Date.now() - t < 7 * 24 * 60 * 60 * 1000;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      function maybeShowInstall() {
+        if (!installEl) return;
+        if (isStandalone()) return;
+        if (!isTouchy()) return;
+        if (wasDismissedRecently()) return;
+        // Automated QA / matrix screenshots: never block input with the install sheet.
+        try {
+          const q = new URLSearchParams(location.search);
+          if (q.has("qa_matrix") || q.has("qa") || q.has("e2e")) return;
+        } catch (_) {}
+
+        if (isIos()) {
+          if (installIos) installIos.classList.remove("hidden");
+          if (installBtn) installBtn.classList.add("hidden");
+        } else if (!deferredPrompt) {
+          // Chromium without a deferred prompt: still offer fullscreen.
+          if (installBtn) {
+            installBtn.textContent = "Got it";
+            installBtn.onclick = hideInstall;
+          }
+        }
+        installEl.classList.remove("hidden");
+      }
+
+      function hideInstall() {
+        if (installEl) installEl.classList.add("hidden");
+        const canvas = document.querySelector("canvas");
+        if (canvas) canvas.focus({ preventScroll: true });
+      }
+
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (installBtn) {
+          installBtn.classList.remove("hidden");
+          installBtn.textContent = "Install";
+        }
+      });
+
+      window.addEventListener("appinstalled", () => {
+        deferredPrompt = null;
+        hideInstall();
+      });
+
+      if (installBtn) {
+        installBtn.addEventListener("click", async () => {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            try {
+              await deferredPrompt.userChoice;
+            } catch (_) {}
+            deferredPrompt = null;
+          }
+          hideInstall();
+        });
+      }
+
+      if (installFs) {
+        installFs.addEventListener("click", async () => {
+          try {
+            const el = document.documentElement;
+            if (el.requestFullscreen) await el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+          } catch (_) {}
+          hideInstall();
+        });
+      }
+
+      if (installDismiss) {
+        installDismiss.addEventListener("click", () => {
+          try {
+            localStorage.setItem(DISMISS_KEY, String(Date.now()));
+          } catch (_) {}
+          hideInstall();
+        });
+      }
+
+      // Register SW for installability (HTTPS / localhost only).
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./sw.js").catch(() => {});
+        });
+      }
     </script>
   </body>
 </html>
