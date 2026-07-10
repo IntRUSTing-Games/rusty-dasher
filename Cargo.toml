@@ -1,16 +1,16 @@
 [package]
-name = "star_collector"
+name = "rusty_dasher"
 version = "0.3.0"
 edition = "2024"
-description = "Star Collector — a polished Bevy 2D arcade game (native + WASM)"
+description = "RustyDasher — a polished Bevy 2D arcade game (native + WASM)"
 license = "MIT"
-repository = "https://github.com/IntRUSTing-Games/cyan-star-collector"
+repository = "https://github.com/IntRUSTing-Games/rusty-dasher"
 readme = "README.md"
-keywords = ["bevy", "game", "wasm", "arcade", "2d"]
+keywords = ["bevy", "game", "wasm", "arcade", "2d", "rust"]
 categories = ["games"]
 
 [[bin]]
-name = "star_collector"
+name = "rusty_dasher"
 path = "src/main.rs"
 
 [dependencies]
@@ -40,7 +40,6 @@ opt-level = 3
 codegen-units = 1
 lto = "thin"
 
-# Smaller / faster WASM builds
 [profile.wasm-release]
 inherits = "release"
 opt-level = "s"

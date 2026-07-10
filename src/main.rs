@@ -1,4 +1,4 @@
-//! Star Collector — Deluxe Edition
+//! RustyDasher
 //!
 //! ```text
 //! cargo run                         # native desktop
@@ -51,7 +51,7 @@ fn main() {
         DefaultPlugins
             .set(WindowPlugin {
                 primary_window: Some(Window {
-                    title: "Star Collector — Deluxe".into(),
+                    title: "RustyDasher".into(),
                     resolution: WindowResolution::new(WINDOW_W, WINDOW_H),
                     resizable: true,
                     // CSS 100% fill of the page (resolution is fixed by viewport::sync_resolution)

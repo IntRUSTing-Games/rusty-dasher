@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../dist"
 PORT="${1:-8080}"
-echo "Serving Star Collector at http://127.0.0.1:${PORT}/"
+echo "Serving RustyDasher at http://127.0.0.1:${PORT}/"
 exec python3 - "$PORT" <<'PY'
 import sys
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer

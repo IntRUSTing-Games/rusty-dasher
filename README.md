@@ -1,4 +1,4 @@
-# Star Collector
+# RustyDasher
 
 <p align="center">
   <strong>A polished 2D arcade game in Rust + Bevy 0.19</strong><br/>
@@ -11,8 +11,8 @@
 
 ---
 
-Collect yellow stars, dodge red hazards, chain combos, and grab power-ups.
-Play in the browser or natively — same game, crisp vector meshes that scale from phone to 4K.
+Dash through the field, collect yellow stars, dodge red hazards, and chain combos.
+Same game on desktop and in the browser — crisp meshes from phone to 4K.
 
 ## Screenshots
 
@@ -20,14 +20,14 @@ Play in the browser or natively — same game, crisp vector meshes that scale fr
 |------|-------------|---------|
 | ![Menu](screenshots/01_menu.png) | ![Mode](screenshots/02_mode_select.png) | ![Play](screenshots/03_playing_classic.png) |
 
-More captures under [`screenshots/`](screenshots/).
+More under [`screenshots/`](screenshots/).
 
 ## Play
 
 ### Desktop
 
 ```bash
-cargo run                 # play
+cargo run                   # play
 cargo run -- --screenshots  # refresh screenshots/
 cargo build --release
 ```
@@ -38,15 +38,14 @@ cargo build --release
 rustup target add wasm32-unknown-unknown
 # install trunk: https://trunkrs.dev /
 
-./scripts/web-build.sh          # → ./dist  (~46MB WASM)
+./scripts/web-build.sh          # → ./dist
 ./scripts/web-serve-dist.sh     # http://127.0.0.1:8080/
-# live reload:
-./scripts/web-serve.sh
+./scripts/web-serve.sh          # live reload
 ```
 
-Ship the `dist/` folder to any static host (itch.io, GitHub Pages, Cloudflare Pages, nginx).
+Ship `dist/` to any static host (itch.io, GitHub Pages, Cloudflare Pages, nginx).
 
-> After rebuilds, `web-build.sh` clears Firefox’s disk cache so you don’t get stale-WASM `TypeError`s.
+> `web-build.sh` clears Firefox’s disk cache after each build to avoid stale-WASM errors.
 
 ## Controls
 
@@ -60,7 +59,7 @@ Ship the `dist/` folder to any static host (itch.io, GitHub Pages, Cloudflare Pa
 | **Left / Right** (or **A / D**) | Mode select — difficulty |
 | Drag | Move (mouse / touch) |
 
-High scores: `save_data.json` on desktop, **localStorage** on web.
+High scores: `save_data.json` (desktop), **localStorage** (web).
 
 ## Modes & difficulty
 
@@ -80,10 +79,10 @@ High scores: `save_data.json` on desktop, **localStorage** on web.
 
 ## Features
 
-- Bevy 0.19 ECS, modular sources (`player`, `world`, `ui`, …)
-- Resolution-independent mesh graphics (phone → 4K)
+- Bevy 0.19 ECS, modular sources
+- Resolution-independent mesh graphics
 - Combos, magnet / shield / speed power-ups
-- Dash trails, shockwaves, floating score pops, screen shake
+- Dash trails, shockwaves, screen shake
 - Touch + keyboard + mouse
 - Screenshot tour: `cargo run -- --screenshots`
 
@@ -92,11 +91,15 @@ High scores: `save_data.json` on desktop, **localStorage** on web.
 ```
 src/           game code
 assets/        sprites + OGG SFX
-scripts/       web build / serve / Firefox cache clear
+scripts/       web build / serve / cache clear
 screenshots/   visual QA
 web/           browser CSS
-index.html     Trunk entry (WASM boot UI)
+TODO.md        launch checklist (org + product)
 ```
+
+## Roadmap / todos
+
+See **[TODO.md](TODO.md)** for the IntRUSTing Games launch checklist (domain, hosting, logos, site, beta, public release).
 
 ## System deps (Linux)
 
