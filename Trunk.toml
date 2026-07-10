@@ -2,6 +2,7 @@
 target = "index.html"
 dist = "dist"
 public_url = "./"
+# Prefer data-wasm-opt="0" in index.html — binaryen can break Table.grow
 
 [watch]
 ignore = ["dist", "screenshots", "target", "save_data.json"]

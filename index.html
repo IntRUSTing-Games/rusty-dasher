@@ -10,7 +10,8 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#090a12" />
     <title>RustyDasher</title>
-    <link data-trunk rel="rust" data-bin="rusty_dasher" data-wasm-opt="s" data-integrity="none" />
+    <!-- wasm-opt "s" can break wasm-bindgen externref tables → RangeError: Table.grow() -->
+    <link data-trunk rel="rust" data-bin="rusty_dasher" data-wasm-opt="0" data-integrity="none" />
     <link data-trunk rel="copy-dir" href="assets" data-integrity="none" />
     <link data-trunk rel="css" href="web/style.css" data-integrity="none" />
     <link data-trunk rel="icon" href="assets/sprites/star.png" data-integrity="none" />
