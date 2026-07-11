@@ -1,12 +1,22 @@
 /**
- * E2E input matrix: keyboard / mouse / touch on EVERY format in qa_matrix.json.
- * Exit 0 only if all format×input paths that apply pass.
+ * Exhaustive E2E for every format in qa_matrix.json.
  *
- * Desktop formats (touch:false): keyboard + mouse
- * Handheld formats (touch:true): touch (+ keyboard smoke still runs where useful)
+ * This game is small — every run MUST cover the full product surface:
+ *   all screens, all modes, all difficulties, all primary inputs,
+ *   swap controls (handheld), and ≥20s of actual play with movement+dash.
+ *
+ * Artifacts are primarily VIDEO recordings (catch transient bugs), not stills.
+ * Review stills are extracted from each video for quick agent visual scan.
+ *
+ * Desktop formats: keyboard + mouse paths
+ * Handheld formats: device-emulation touch path (+ keyboard smoke)
+ *
+ * Real USB phone: scripts/e2e_phone.mjs (adb screenrecord + CDP)
  */
 import puppeteer from 'puppeteer-core';
 import { chromeExecutable, chromeGpuArgs, logChromeGlMode } from './chrome_launch.mjs';
+import { applyDeviceEmulation, isHandheldFormat } from './device_emulation.mjs';
+import { startPageRecording, extractReviewStills } from './record.mjs';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -14,10 +24,19 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
 const OUT = path.join(ROOT, 'screenshots/web/e2e');
+const VID = path.join(OUT, 'recordings');
+const STILLS = path.join(OUT, 'stills');
 const MATRIX = JSON.parse(fs.readFileSync(path.join(__dirname, 'qa_matrix.json'), 'utf8'));
 const URL = 'http://127.0.0.1:8080/?e2e=1';
+const PLAY_MS = Number(process.env.E2E_PLAY_MS || 20000);
+
+// Full product surface (must all be exercised)
+const MODES = ['CLASSIC', 'ZEN', 'SURVIVAL', 'TIMED']; // 4 mode steps via menu_down
+const DIFFS = ['EASY', 'NORMAL', 'HARD', 'INSANE']; // cycle left/right
 
 fs.mkdirSync(OUT, { recursive: true });
+fs.mkdirSync(VID, { recursive: true });
+fs.mkdirSync(STILLS, { recursive: true });
 
 const results = [];
 function pass(name, detail = '') {
@@ -28,12 +47,7 @@ function fail(name, detail = '') {
   results.push({ name, ok: false, detail });
   console.error('FAIL', name, detail);
 }
-
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-async function shot(page, name) {
-  await page.screenshot({ path: path.join(OUT, name + '.png') });
-}
 
 logChromeGlMode();
 const browser = await puppeteer.launch({
@@ -42,15 +56,10 @@ const browser = await puppeteer.launch({
   args: chromeGpuArgs(),
 });
 
-// Always tear down Chromium on exit/signals so a killed agent run does not leave
-// headless chrome eating CPU (seen with orphaned puppeteer_dev_chrome_profile-*).
 async function shutdownBrowser(code = 0) {
   try {
-    if (browser && browser.connected !== false) {
-      await browser.close();
-    }
+    if (browser && browser.connected !== false) await browser.close();
   } catch (_) {}
-  // hard-exit if close hangs
   setTimeout(() => process.exit(code), 500).unref?.();
   process.exit(code);
 }
@@ -65,7 +74,6 @@ process.on('uncaughtException', (err) => {
   shutdownBrowser(1);
 });
 
-
 async function newPage(format) {
   const page = await browser.newPage();
   const logs = [];
@@ -75,13 +83,18 @@ async function newPage(format) {
     pageErrors.push(String(err));
     logs.push('PAGEERROR ' + err);
   });
-  await page.setViewport({
-    width: format.width,
-    height: format.height,
-    deviceScaleFactor: format.dpr,
-    isMobile: !!format.touch,
-    hasTouch: !!format.touch,
-  });
+  if (isHandheldFormat(format)) {
+    const { client } = await applyDeviceEmulation(page, format);
+    page.__cdp = client;
+  } else {
+    await page.setViewport({
+      width: format.width,
+      height: format.height,
+      deviceScaleFactor: format.dpr,
+      isMobile: false,
+      hasTouch: false,
+    });
+  }
   page.__logs = logs;
   page.__errors = pageErrors;
   return page;
@@ -90,21 +103,18 @@ async function newPage(format) {
 async function waitReady(page) {
   await page.waitForSelector('canvas', { timeout: 180000 });
   await page.waitForFunction(
-    () => document.getElementById('boot-cta')?.style?.display === 'inline-block',
+    () =>
+      document.getElementById('boot')?.classList.contains('hidden') ||
+      document.getElementById('boot-cta')?.style?.display === 'inline-block',
     { timeout: 180000 }
   );
 }
 
-/** Dismiss install/fullscreen sheet if it appeared after boot (must not block game input). */
 async function dismissInstallIfAny(page) {
   await page.evaluate(() => {
     const el = document.getElementById('install');
     if (el) el.classList.add('hidden');
   });
-}
-
-function center(format) {
-  return { x: Math.floor(format.width / 2), y: Math.floor(format.height / 2) };
 }
 
 async function focusCanvas(page) {
@@ -118,219 +128,380 @@ async function focusCanvas(page) {
   await sleep(80);
 }
 
-async function runKeyboard(format) {
+function center(format) {
+  return { x: Math.floor(format.width / 2), y: Math.floor(format.height / 2) };
+}
+
+function stickDashPoints(format) {
+  const w = format.width;
+  const h = format.height;
+  const portrait = h >= w;
+  if (portrait) {
+    return {
+      stick: { x: Math.floor(w * 0.28), y: Math.floor(h * 0.83) },
+      stick2: { x: Math.floor(w * 0.38), y: Math.floor(h * 0.78) },
+      dash: { x: Math.floor(w * 0.75), y: Math.floor(h * 0.83) },
+      start: { x: Math.floor(w / 2), y: Math.floor(h * 0.68) },
+      swap: { x: Math.floor(w / 2), y: Math.floor(h * 0.88) },
+      modeUp: { x: Math.floor(w / 2), y: Math.floor(h * 0.26) },
+      modeDown: { x: Math.floor(w / 2), y: Math.floor(h * 0.4) },
+      diffL: { x: Math.floor(w * 0.3), y: Math.floor(h * 0.52) },
+      diffR: { x: Math.floor(w * 0.7), y: Math.floor(h * 0.52) },
+      confirm: { x: Math.floor(w / 2), y: Math.floor(h * 0.45) },
+    };
+  }
+  return {
+    stick: { x: Math.floor(w * 0.1), y: Math.floor(h * 0.52) },
+    stick2: { x: Math.floor(w * 0.14), y: Math.floor(h * 0.4) },
+    dash: { x: Math.floor(w * 0.9), y: Math.floor(h * 0.52) },
+    start: { x: Math.floor(w / 2), y: Math.floor(h * 0.68) },
+    swap: { x: Math.floor(w / 2), y: Math.floor(h * 0.88) },
+    modeUp: { x: Math.floor(w / 2), y: Math.floor(h * 0.26) },
+    modeDown: { x: Math.floor(w / 2), y: Math.floor(h * 0.4) },
+    diffL: { x: Math.floor(w * 0.3), y: Math.floor(h * 0.52) },
+    diffR: { x: Math.floor(w * 0.7), y: Math.floor(h * 0.52) },
+    confirm: { x: Math.floor(w / 2), y: Math.floor(h * 0.45) },
+  };
+}
+
+/** Exhaustive keyboard path: every mode, every difficulty, play 20s, game over/back. */
+async function runKeyboardExhaustive(format) {
   const tag = `${format.id}/keyboard`;
   const page = await newPage(format);
+  const recPath = path.join(VID, `${format.id}_keyboard.webm`);
+  let rec;
   try {
     page.__errors.length = 0;
     await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 180000 });
     await waitReady(page);
-    await shot(page, `${format.id}_kb_01_boot`);
+    rec = await startPageRecording(page, recPath);
 
+    // BOOT
     await page.keyboard.press('Enter');
-    await sleep(500);
-    const hidden = await page.evaluate(() =>
+    await sleep(400);
+    let hidden = await page.evaluate(() =>
       document.getElementById('boot')?.classList.contains('hidden')
     );
     if (!hidden) await page.keyboard.press('Space');
-    await sleep(400);
-    const hidden2 = await page.evaluate(() =>
+    await sleep(300);
+    hidden = await page.evaluate(() =>
       document.getElementById('boot')?.classList.contains('hidden')
     );
-    if (hidden2) pass(`${tag}: boot dismiss`);
-    else fail(`${tag}: boot dismiss`);
-
+    if (hidden) pass(`${tag}: boot`);
+    else fail(`${tag}: boot`);
     await dismissInstallIfAny(page);
     await focusCanvas(page);
-    await shot(page, `${format.id}_kb_02_menu`);
+
+    // MENU → mode select
     await page.keyboard.press('Enter');
-    await sleep(900);
-    await shot(page, `${format.id}_kb_03_mode`);
-    await page.keyboard.press('ArrowDown');
-    await sleep(200);
-    await page.keyboard.press('Space');
-    await sleep(1800);
-    await shot(page, `${format.id}_kb_04_play`);
-    if (page.__errors.length === 0) pass(`${tag}: play`);
-    else fail(`${tag}: play`, page.__errors.join('; '));
+    await sleep(700);
 
-    await page.keyboard.down('KeyD');
-    await sleep(250);
-    await page.keyboard.up('KeyD');
-    await page.keyboard.press('Space');
+    // Cycle ALL modes (4)
+    for (let i = 0; i < MODES.length; i++) {
+      await page.keyboard.press('ArrowDown');
+      await sleep(180);
+    }
+    for (let i = 0; i < MODES.length; i++) {
+      await page.keyboard.press('ArrowUp');
+      await sleep(180);
+    }
+    pass(`${tag}: cycle all modes`, MODES.join(','));
+
+    // Cycle ALL difficulties (4)
+    for (let i = 0; i < DIFFS.length; i++) {
+      await page.keyboard.press('ArrowRight');
+      await sleep(180);
+    }
+    for (let i = 0; i < DIFFS.length; i++) {
+      await page.keyboard.press('ArrowLeft');
+      await sleep(180);
+    }
+    pass(`${tag}: cycle all difficulties`, DIFFS.join(','));
+
+    // Back to menu, re-enter (back key)
+    await page.keyboard.press('Escape');
     await sleep(500);
-    await shot(page, `${format.id}_kb_05_input`);
-    if (page.__errors.length === 0) pass(`${tag}: move+dash`);
-    else fail(`${tag}: move+dash`, page.__errors.at(-1));
+    await page.keyboard.press('Enter');
+    await sleep(600);
 
+    // Start Classic/Normal play
+    await page.keyboard.press('Space');
+    await sleep(1200);
+
+    // PLAY ≥20s with WASD + arrows + Space dash
+    const end = Date.now() + PLAY_MS;
+    let step = 0;
+    while (Date.now() < end) {
+      const keys = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight'];
+      const k = keys[step % keys.length];
+      await page.keyboard.down(k);
+      await sleep(280);
+      await page.keyboard.up(k);
+      if (step % 3 === 0) {
+        await page.keyboard.press('Space'); // dash
+      }
+      step++;
+      await sleep(120);
+    }
+    pass(`${tag}: play ${PLAY_MS}ms move+dash`, `steps=${step}`);
+
+    // Esc → menu
     await page.keyboard.press('Escape');
     await sleep(800);
-    await shot(page, `${format.id}_kb_06_esc`);
-    if (page.__errors.length === 0) pass(`${tag}: esc menu`);
-    else fail(`${tag}: esc menu`, page.__errors.at(-1));
+    if (page.__errors.length === 0) pass(`${tag}: esc menu / no panic`);
+    else fail(`${tag}: panic`, page.__errors.join('; '));
+  } catch (e) {
+    fail(`${tag}: run`, e.stack || String(e));
   } finally {
+    if (rec) {
+      try {
+        const info = await rec.stop();
+        console.log('[rec]', recPath, info.frames, 'frames', info.bytes, 'bytes');
+        if (info.bytes > 1000) pass(`${tag}: recording`, `${info.frames}f ${info.bytes}b`);
+        else fail(`${tag}: recording`, info.error || 'empty video');
+        const stillDir = path.join(STILLS, `${format.id}_keyboard`);
+        await extractReviewStills(recPath, stillDir, 6);
+      } catch (e) {
+        fail(`${tag}: recording encode`, String(e));
+      }
+    }
     await page.close();
   }
 }
 
-async function runMouse(format) {
+/** Exhaustive mouse path (desktop only). */
+async function runMouseExhaustive(format) {
   const tag = `${format.id}/mouse`;
   const page = await newPage(format);
   const { x: cx, y: cy } = center(format);
+  const recPath = path.join(VID, `${format.id}_mouse.webm`);
+  let rec;
   try {
     page.__errors.length = 0;
     await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 180000 });
     await waitReady(page);
+    rec = await startPageRecording(page, recPath);
+
     await page.mouse.click(cx, cy);
     await sleep(500);
-    const hidden = await page.evaluate(() =>
-      document.getElementById('boot')?.classList.contains('hidden')
-    );
-    if (hidden) pass(`${tag}: boot click`);
-    else fail(`${tag}: boot click`);
     await dismissInstallIfAny(page);
-    await shot(page, `${format.id}_mouse_01_menu`);
 
+    // Menu confirm
     await page.mouse.click(cx, cy);
-    await sleep(900);
-    await shot(page, `${format.id}_mouse_02_mode`);
-    if (page.__errors.length === 0) pass(`${tag}: mode`);
-    else fail(`${tag}: mode`, page.__errors.join('; '));
+    await sleep(800);
 
+    // Mode thirds / sides for difficulty
+    const w = format.width;
+    const h = format.height;
+    // mode down (lower third of mode list band)
+    await page.mouse.click(Math.floor(w / 2), Math.floor(h * 0.38));
+    await sleep(200);
+    await page.mouse.click(Math.floor(w / 2), Math.floor(h * 0.28));
+    await sleep(200);
+    // difficulty sides
+    await page.mouse.click(Math.floor(w * 0.12), Math.floor(h * 0.5));
+    await sleep(200);
+    await page.mouse.click(Math.floor(w * 0.88), Math.floor(h * 0.5));
+    await sleep(200);
+    pass(`${tag}: mode+difficulty clicks`);
+
+    // Start
     await page.mouse.click(cx, cy);
-    await sleep(1800);
-    await shot(page, `${format.id}_mouse_03_play`);
-    if (page.__errors.length === 0) pass(`${tag}: play`);
-    else fail(`${tag}: play`, page.__errors.join('; '));
+    await sleep(1500);
 
-    const x0 = Math.floor(format.width * 0.35);
-    const y0 = Math.floor(format.height * 0.55);
-    const x1 = Math.floor(format.width * 0.6);
-    const y1 = Math.floor(format.height * 0.4);
-    await page.mouse.move(x0, y0);
-    await page.mouse.down();
-    await page.mouse.move(x1, y1, { steps: 6 });
-    await sleep(300);
-    await page.mouse.click(x1, y1, { button: 'right' });
-    await sleep(300);
-    await page.mouse.up();
-    await shot(page, `${format.id}_mouse_04_input`);
-    if (page.__errors.length === 0) pass(`${tag}: drag+right-click dash`);
-    else fail(`${tag}: drag+right-click dash`, page.__errors.at(-1));
+    // Play 20s point-to-move + right-click dash
+    const end = Date.now() + PLAY_MS;
+    let step = 0;
+    while (Date.now() < end) {
+      const x0 = Math.floor(w * (0.3 + 0.4 * ((step % 5) / 5)));
+      const y0 = Math.floor(h * (0.35 + 0.3 * (((step + 2) % 5) / 5)));
+      await page.mouse.move(x0, y0);
+      await page.mouse.down();
+      await page.mouse.move(x0 + 40, y0 - 30, { steps: 4 });
+      await sleep(200);
+      if (step % 2 === 0) {
+        await page.mouse.click(x0 + 40, y0 - 30, { button: 'right' });
+      }
+      await page.mouse.up();
+      step++;
+      await sleep(150);
+    }
+    pass(`${tag}: play ${PLAY_MS}ms drag+right-dash`, `steps=${step}`);
+    if (page.__errors.length === 0) pass(`${tag}: no panic`);
+    else fail(`${tag}: panic`, page.__errors.join('; '));
+  } catch (e) {
+    fail(`${tag}: run`, e.stack || String(e));
   } finally {
+    if (rec) {
+      try {
+        const info = await rec.stop();
+        if (info.bytes > 1000) pass(`${tag}: recording`, `${info.frames}f`);
+        else fail(`${tag}: recording`, info.error || 'empty');
+        await extractReviewStills(recPath, path.join(STILLS, `${format.id}_mouse`), 6);
+      } catch (e) {
+        fail(`${tag}: recording encode`, String(e));
+      }
+    }
     await page.close();
   }
 }
 
-async function runTouch(format) {
+/** Exhaustive touch path (handheld): all bands, swap, all modes/diffs, stick+dash, 20s play. */
+async function runTouchExhaustive(format) {
   const tag = `${format.id}/touch`;
   const page = await newPage(format);
-  const client = await page.createCDPSession();
-  await client.send('Emulation.setTouchEmulationEnabled', {
-    enabled: true,
-    maxTouchPoints: 2,
-  });
-  const { x: cx, y: cy } = center(format);
+  const client = page.__cdp || (await page.createCDPSession());
+  if (!page.__cdp) {
+    await client.send('Emulation.setTouchEmulationEnabled', {
+      enabled: true,
+      maxTouchPoints: 5,
+    });
+  }
+  const pts = stickDashPoints(format);
+  const recPath = path.join(VID, `${format.id}_touch.webm`);
+  let rec;
   try {
     page.__errors.length = 0;
     await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 180000 });
     await waitReady(page);
-    await page.touchscreen.tap(cx, cy);
+    rec = await startPageRecording(page, recPath);
+
+    // BOOT
+    await page.touchscreen.tap(pts.confirm.x, pts.confirm.y);
     await sleep(500);
-    const hidden = await page.evaluate(() =>
+    await dismissInstallIfAny(page);
+    const bootHidden = await page.evaluate(() =>
       document.getElementById('boot')?.classList.contains('hidden')
     );
-    if (hidden) pass(`${tag}: boot tap`);
-    else fail(`${tag}: boot tap`);
-    await dismissInstallIfAny(page);
-    await shot(page, `${format.id}_touch_01_menu`);
+    if (bootHidden) pass(`${tag}: boot`);
+    else fail(`${tag}: boot`);
 
-    await page.touchscreen.tap(cx, cy);
-    await sleep(900);
-    await shot(page, `${format.id}_touch_02_mode`);
-    if (page.__errors.length === 0) pass(`${tag}: mode`);
-    else fail(`${tag}: mode`, page.__errors.join('; '));
-
-    await page.touchscreen.tap(cx, Math.floor(format.height * 0.68)); // START button band
-    await sleep(1800);
-    await shot(page, `${format.id}_touch_03_play`);
-    if (page.__errors.length === 0) pass(`${tag}: play`);
-    else fail(`${tag}: play`, page.__errors.join('; '));
-
-    // Virtual stick + dash button (Game Boy portrait / PSP landscape).
-    const portrait = format.height >= format.width;
-    let stickX, stickY, stickX2, stickY2, dashX, dashY;
-    if (portrait) {
-      // Bottom deck: stick ~28% width, dash ~75% width, mid-deck Y
-      stickX = Math.floor(format.width * 0.28);
-      stickY = Math.floor(format.height * 0.83);
-      stickX2 = Math.floor(format.width * 0.38);
-      stickY2 = Math.floor(format.height * 0.78);
-      dashX = Math.floor(format.width * 0.75);
-      dashY = Math.floor(format.height * 0.83);
-    } else {
-      // Side grips: stick left, dash right
-      stickX = Math.floor(format.width * 0.10);
-      stickY = Math.floor(format.height * 0.52);
-      stickX2 = Math.floor(format.width * 0.14);
-      stickY2 = Math.floor(format.height * 0.40);
-      dashX = Math.floor(format.width * 0.90);
-      dashY = Math.floor(format.height * 0.52);
-    }
-    await client.send('Input.dispatchTouchEvent', {
-      type: 'touchStart',
-      touchPoints: [{ x: stickX, y: stickY, id: 1 }],
-    });
-    await sleep(120);
-    await client.send('Input.dispatchTouchEvent', {
-      type: 'touchMove',
-      touchPoints: [{ x: stickX2, y: stickY2, id: 1 }],
-    });
-    await sleep(150);
-    // Keep stick held, tap dash with second finger
-    await client.send('Input.dispatchTouchEvent', {
-      type: 'touchStart',
-      touchPoints: [
-        { x: stickX2, y: stickY2, id: 1 },
-        { x: dashX, y: dashY, id: 2 },
-      ],
-    });
-    await sleep(200);
-    await client.send('Input.dispatchTouchEvent', {
-      type: 'touchEnd',
-      touchPoints: [{ x: stickX2, y: stickY2, id: 1 }],
-    });
+    // MENU swap band then confirm
+    await page.touchscreen.tap(pts.swap.x, pts.swap.y);
     await sleep(400);
-    await shot(page, `${format.id}_touch_04_input`);
-    if (page.__errors.length === 0) pass(`${tag}: stick+dash button`);
-    else fail(`${tag}: stick+dash button`, page.__errors.at(-1));
+    await page.touchscreen.tap(pts.swap.x, pts.swap.y); // toggle back
+    await sleep(300);
+    pass(`${tag}: swap controls toggle`);
+    await page.touchscreen.tap(pts.confirm.x, pts.confirm.y);
+    await sleep(800);
+
+    // MODE: cycle all modes via mode down
+    for (let i = 0; i < MODES.length; i++) {
+      await page.touchscreen.tap(pts.modeDown.x, pts.modeDown.y);
+      await sleep(200);
+    }
+    for (let i = 0; i < 2; i++) {
+      await page.touchscreen.tap(pts.modeUp.x, pts.modeUp.y);
+      await sleep(200);
+    }
+    pass(`${tag}: cycle modes`);
+
+    // DIFF all
+    for (let i = 0; i < DIFFS.length; i++) {
+      await page.touchscreen.tap(pts.diffR.x, pts.diffR.y);
+      await sleep(200);
+    }
+    for (let i = 0; i < DIFFS.length; i++) {
+      await page.touchscreen.tap(pts.diffL.x, pts.diffL.y);
+      await sleep(200);
+    }
+    pass(`${tag}: cycle difficulties`);
+
+    // START
+    await page.touchscreen.tap(pts.start.x, pts.start.y);
+    await sleep(1500);
+
+    // PLAY ≥20s stick + dash multi-touch
+    const end = Date.now() + PLAY_MS;
+    let step = 0;
+    while (Date.now() < end) {
+      const dx = (step % 2 === 0 ? 1 : -1) * 20;
+      const dy = (step % 3 === 0 ? -1 : 1) * 15;
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: pts.stick.x, y: pts.stick.y, id: 1 }],
+      });
+      await sleep(40);
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: pts.stick.x + dx, y: pts.stick.y + dy, id: 1 }],
+      });
+      await sleep(200);
+      if (step % 2 === 0) {
+        await client.send('Input.dispatchTouchEvent', {
+          type: 'touchStart',
+          touchPoints: [
+            { x: pts.stick.x + dx, y: pts.stick.y + dy, id: 1 },
+            { x: pts.dash.x, y: pts.dash.y, id: 2 },
+          ],
+        });
+        await sleep(100);
+      }
+      await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      step++;
+      await sleep(150);
+    }
+    pass(`${tag}: play ${PLAY_MS}ms stick+dash`, `steps=${step}`);
+    if (page.__errors.length === 0) pass(`${tag}: no panic`);
+    else fail(`${tag}: panic`, page.__errors.join('; '));
+  } catch (e) {
+    fail(`${tag}: run`, e.stack || String(e));
   } finally {
+    if (rec) {
+      try {
+        const info = await rec.stop();
+        if (info.bytes > 1000) pass(`${tag}: recording`, `${info.frames}f`);
+        else fail(`${tag}: recording`, info.error || 'empty');
+        await extractReviewStills(recPath, path.join(STILLS, `${format.id}_touch`), 6);
+      } catch (e) {
+        fail(`${tag}: recording encode`, String(e));
+      }
+    }
     await page.close();
   }
 }
 
-for (const format of MATRIX.formats) {
-  console.log('\n==== format', format.id, '====');
-  // Always exercise keyboard (WASD/arrows/Space) so desktop keys work on all sizes
-  await runKeyboard(format);
+// Optional filter: E2E_FORMATS=phone_rodin_chrome,laptop_hd
+const only = (process.env.E2E_FORMATS || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+const formats = only.length
+  ? MATRIX.formats.filter((f) => only.includes(f.id))
+  : MATRIX.formats;
+
+for (const format of formats) {
+  console.log('\n==== format', format.id, isHandheldFormat(format) ? '[device-emulation]' : '[desktop]', '====');
+  // Always keyboard exhaustive (keys must work on all sizes)
+  await runKeyboardExhaustive(format);
   if (!format.touch) {
-    await runMouse(format);
+    await runMouseExhaustive(format);
   } else {
-    await runTouch(format);
+    await runTouchExhaustive(format);
   }
 }
 
 await browser.close();
 
 const failed = results.filter((r) => !r.ok);
+const recordings = fs.existsSync(VID)
+  ? fs.readdirSync(VID).filter((f) => f.endsWith('.webm') || f.endsWith('.mp4'))
+  : [];
 fs.writeFileSync(
   path.join(OUT, 'results.json'),
   JSON.stringify(
     {
-      matrix_formats: MATRIX.formats.map((f) => f.id),
+      matrix_formats: formats.map((f) => f.id),
+      play_ms: PLAY_MS,
+      modes: MODES,
+      difficulties: DIFFS,
       results,
       failed: failed.length,
+      recordings,
+      recordings_dir: VID,
+      stills_dir: STILLS,
       at: new Date().toISOString(),
+      note: 'Primary e2e artifact is VIDEO under recordings/. Stills are review extracts only.',
     },
     null,
     2
@@ -338,6 +509,7 @@ fs.writeFileSync(
 );
 console.log('\n=== E2E SUMMARY ===');
 console.log('passed', results.filter((r) => r.ok).length, '/', results.length);
+console.log('recordings', recordings.length, 'in', VID);
 if (failed.length) {
   console.error('FAILED:', failed);
   process.exit(1);

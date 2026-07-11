@@ -1,0 +1,15 @@
+{
+  "name": "rusty-dasher-qa",
+  "private": true,
+  "type": "module",
+  "description": "QA: exhaustive e2e VIDEO + viewport matrix + real-device phone",
+  "scripts": {
+    "e2e": "node scripts/e2e_inputs.mjs",
+    "e2e:phone": "node scripts/e2e_phone.mjs",
+    "viewport": "node scripts/viewport_shots.mjs"
+  },
+  "dependencies": {
+    "puppeteer-core": "^24.0.0",
+    "ws": "^8.18.0"
+  }
+}

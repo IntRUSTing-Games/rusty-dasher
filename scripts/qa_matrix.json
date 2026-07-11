@@ -18,7 +18,10 @@
     "phone_iphone_promax": "440\u00d7956 \u2014 iPhone 16 Pro Max CSS points (physical 1320\u00d72868 @3x is not the layout size)",
     "phone_iphone_promax_landscape": "956\u00d7440 \u2014 Pro Max landscape CSS",
     "phone_samsung_ultra": "412\u00d7915 \u2014 Galaxy Ultra-class CSS (physical ~1440\u00d73120 is not the layout size)",
-    "phone_samsung_ultra_landscape": "915\u00d7412 \u2014 Ultra landscape CSS"
+    "phone_samsung_ultra_landscape": "915\u00d7412 \u2014 Ultra landscape CSS",
+    "phone_rodin": "375x834 @3.25 \u2014 lab USB device 2412DPC0AG (rodin) full-screen CSS from physical 1220x2712 / 3.25",
+    "phone_rodin_chrome": "375x691 @3.25 \u2014 measured Chrome tab viewport on same device (browser chrome shrinks height); primary repro for touch mapping",
+    "phone_rodin_landscape": "834x375 @3.25 \u2014 rodin landscape full CSS"
   },
   "screens": [
     {
@@ -151,6 +154,39 @@
       "notes": "Landscape Ultra CSS"
     },
     {
+      "id": "phone_rodin",
+      "label": "Poco/Xiaomi rodin (2412DPC0AG) full CSS",
+      "width": 375,
+      "height": 834,
+      "dpr": 3.25,
+      "touch": true,
+      "input_primary": "touch",
+      "expected_class": "PhonePortrait",
+      "notes": "Physical 1220x2712 @ density 520 (3.25). Full-screen CSS 375x834. Lab device for PC repro without CI wait."
+    },
+    {
+      "id": "phone_rodin_chrome",
+      "label": "Poco/Xiaomi rodin Chrome tab (browser chrome)",
+      "width": 375,
+      "height": 691,
+      "dpr": 3.25,
+      "touch": true,
+      "input_primary": "touch",
+      "expected_class": "PhonePortrait",
+      "notes": "Measured live Chrome tab CSS 375x691 @3.25 (address bar + Android nav). Reproduces real phone-with-Chrome layout/touch mapping issues."
+    },
+    {
+      "id": "phone_rodin_landscape",
+      "label": "Poco/Xiaomi rodin landscape full CSS",
+      "width": 834,
+      "height": 375,
+      "dpr": 3.25,
+      "touch": true,
+      "input_primary": "touch",
+      "expected_class": "PhoneLandscape",
+      "notes": "Landscape of phone_rodin full CSS"
+    },
+    {
       "id": "tablet_portrait",
       "label": "Tablet vertical",
       "width": 768,
@@ -241,8 +277,9 @@
       "expected_class": "Desktop4k"
     }
   ],
-  "expected_cells": 90,
+  "expected_cells": 105,
   "artifact_pattern": "screenshots/viewports/{format}_{shot_suffix}.png",
   "critique_file": "screenshots/viewports/matrix_critique.md",
-  "e2e_note": "e2e_inputs.mjs must exercise keyboard (desktop formats), mouse (desktop), and touch (handheld) on every format in formats[]"
+  "e2e_note": "Exhaustive e2e_inputs.mjs: every mode, difficulty, screen, primary input, and >=20s play. PRIMARY artifact is VIDEO (recordings/), not still screenshots. Handheld uses Chrome device emulation. Phone: e2e_phone.mjs 2x2 video via adb screenrecord.",
+  "phone_device_note": "Phone formats: device emulation on PC. USB phone: e2e_phone.mjs after live deploy \u2014 2x2 portrait|landscape x browsing|fullscreen, adb screenrecord video, adb calibrated taps, exhaustive control surface + 20s play."
 }

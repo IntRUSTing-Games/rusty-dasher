@@ -432,25 +432,17 @@ fn sync_web_resolution(windows: &mut Query<&mut Window>) {
         return;
     };
 
-    let mut phys_w = (css_w * dpr).round().max(320.0) as u32;
-    let mut phys_h = (css_h * dpr).round().max(240.0) as u32;
+    // scale_factor MUST equal browser devicePixelRatio (what winit uses in
+    // LogicalPosition::to_physical). Never invent a lower factor (e.g. old 2.5
+    // clamp) — that multiplies every touch by real_dpr/our_sf and breaks hit tests.
+    let scale_factor = dpr.clamp(1.0, 4.0);
 
-    // Soft-cap beyond UHD — then *recompute* scale factor so logical size stays
-    // equal to CSS. Using raw dpr after a cap desyncs touch coordinates.
-    const MAX_W: u32 = 3840;
-    const MAX_H: u32 = 2160;
-    if phys_w > MAX_W || phys_h > MAX_H {
-        let s = (MAX_W as f32 / phys_w as f32)
-            .min(MAX_H as f32 / phys_h as f32)
-            .min(1.0);
-        phys_w = ((phys_w as f32) * s).round().max(320.0) as u32;
-        phys_h = ((phys_h as f32) * s).round().max(240.0) as u32;
-    }
-
-    // logical = physical / scale_factor  →  force logical ≈ CSS
-    let sf_x = phys_w as f32 / css_w.max(1.0);
-    let sf_y = phys_h as f32 / css_h.max(1.0);
-    let scale_factor = ((sf_x + sf_y) * 0.5).clamp(1.0, 2.5);
+    // physical = css × real DPR so logical = physical/sf = css (matches offsetX/Y).
+    // Do NOT soft-cap the framebuffer in a way that changes physical without
+    // changing sf — that shrinks logical size vs the painted CSS canvas and
+    // misplaces chrome (stick/DASH). Cap only absurd multi-monitor extremes.
+    let phys_w = (css_w * scale_factor).round().max(320.0).min(8192.0) as u32;
+    let phys_h = (css_h * scale_factor).round().max(240.0).min(8192.0) as u32;
 
     for mut window in windows.iter_mut() {
         let cur_w = window.resolution.physical_width();

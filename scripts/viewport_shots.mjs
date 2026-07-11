@@ -2,11 +2,16 @@
  * Full visual matrix: every SCREEN × every FORMAT (see scripts/qa_matrix.json).
  * Produces screenshots/viewports/{format}_{shot_suffix}.png for every cell in qa_matrix.json.
  *
+ * Phone/tablet formats use Chrome **device emulation** and a whole-chain run
+ * (navigate to site → boot → menu → mode → play → game over), not an isolated
+ * canvas crop in a desktop window.
+ *
  * Uses ?qa_matrix=1 so Game Over can be forced after a brief play (reliable).
  * Requires dist served at http://127.0.0.1:8080/
  */
 import puppeteer from 'puppeteer-core';
 import { chromeExecutable, chromeGpuArgs, logChromeGlMode } from './chrome_launch.mjs';
+import { applyDeviceEmulation, isHandheldFormat } from './device_emulation.mjs';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -59,22 +64,26 @@ async function dismissBoot(page, vp) {
 
 async function captureFormat(browser, format) {
   const page = await browser.newPage();
-  await page.setViewport({
-    width: format.width,
-    height: format.height,
-    deviceScaleFactor: format.dpr,
-    isMobile: format.touch,
-    hasTouch: format.touch,
-  });
-  if (format.touch) {
-    const client = await page.createCDPSession();
-    await client.send('Emulation.setTouchEmulationEnabled', {
-      enabled: true,
-      maxTouchPoints: 2,
+  if (isHandheldFormat(format)) {
+    // Full mobile device chain (UA + metrics + touch), not a resized desktop tab.
+    await applyDeviceEmulation(page, format);
+  } else {
+    await page.setViewport({
+      width: format.width,
+      height: format.height,
+      deviceScaleFactor: format.dpr,
+      isMobile: false,
+      hasTouch: false,
     });
   }
 
-  console.log('=== format', format.id, `${format.width}x${format.height}`);
+  console.log(
+    '=== format',
+    format.id,
+    `${format.width}x${format.height}`,
+    isHandheldFormat(format) ? '[device-emulation whole-chain]' : '[desktop]'
+  );
+  // Whole chain: open the website as a mobile/desktop browser would.
   await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 180000 });
 
   // 01 boot (ready state — CTA visible)
