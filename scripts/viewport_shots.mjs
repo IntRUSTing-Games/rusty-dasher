@@ -98,9 +98,9 @@ async function captureFormat(browser, format) {
   await sleep(1200);
   await shot(page, `${format.id}_03_mode_select`);
 
-  // 04 playing
+  // 04 playing — handheld uses explicit START band (~y 0.58–0.78)
   if (format.touch) {
-    await page.touchscreen.tap(cx, cy);
+    await page.touchscreen.tap(cx, Math.floor(format.height * 0.68));
   } else {
     await page.keyboard.press('Space');
   }

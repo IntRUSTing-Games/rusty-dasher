@@ -20,6 +20,14 @@ pub fn spawn_menu(mut commands: Commands, save: Res<SaveData>, scale: Res<UiScal
     spawn_menu_with(&mut commands, &save, &scale);
 }
 
+fn controls_swap_label(swapped: bool) -> String {
+    if swapped {
+        "Controls: Stick RIGHT · DASH LEFT\n(tap here to swap)".into()
+    } else {
+        "Controls: Stick LEFT · DASH RIGHT\n(tap here to swap)".into()
+    }
+}
+
 fn spawn_menu_with(commands: &mut Commands, save: &SaveData, scale: &UiScale) {
     let best = save.high_scores.classic.max(
         save.high_scores
@@ -28,12 +36,13 @@ fn spawn_menu_with(commands: &mut Commands, save: &SaveData, scale: &UiScale) {
     );
     let s = scale.panel;
     let phone = scale.class.is_phone();
+    let handheld = scale.class.is_handheld();
     let compact = scale.class.is_compact() || scale.aspect < 0.85;
     // Content-tight panel: phones use almost full design (already compact).
     let panel = if phone {
         Vec2::new(
             (scale.design.x * 0.98).clamp(300.0, 360.0),
-            (scale.design.y * 0.96).clamp(280.0, 440.0),
+            (scale.design.y * 0.96).clamp(300.0, 460.0),
         )
     } else if compact {
         Vec2::new(
@@ -64,12 +73,12 @@ fn spawn_menu_with(commands: &mut Commands, save: &SaveData, scale: &UiScale) {
         18.0
     };
     // Copy is format-specific: touch on phone/tablet, keyboard on PC.
-    let body = if scale.class.is_handheld() {
+    let body = if handheld {
         format!(
             "Collect stars · dodge hazards\n\
-             Stick moves · DASH button dashes\n\
+             Stick moves · DASH dashes\n\
              Best {best}\n\
-             Tap to choose mode"
+             Tap panel to choose mode"
         )
     } else {
         format!(
@@ -84,7 +93,7 @@ fn spawn_menu_with(commands: &mut Commands, save: &SaveData, scale: &UiScale) {
 
     // Dense vertical packing for phone (fractions of panel height).
     let (title_y, sub_y, body_y) = if phone {
-        (0.28, 0.12, -0.12)
+        (0.32, 0.16, -0.02)
     } else {
         (0.30, 0.18, -0.08)
     };
@@ -135,7 +144,45 @@ fn spawn_menu_with(commands: &mut Commands, save: &SaveData, scale: &UiScale) {
         TextLayout::justify(Justify::Center),
         Transform::from_xyz(0.0, panel.y * body_y * s, 20.0),
     ));
+
+    if handheld {
+        let swap_y = -panel.y * 0.34;
+        let swap_px = if phone { 12.0 } else { 13.0 };
+        // Pill background for the swap control
+        let pill = Vec2::new(panel.x * 0.88, 52.0);
+        commands.spawn((
+            MenuUi,
+            MenuSwapControls,
+            ScaledPanel { base: pill },
+            ScaledPos {
+                base: Vec2::new(0.0, swap_y),
+                menu: true,
+            },
+            Sprite::from_color(Color::srgba(0.16, 0.22, 0.38, 0.95), pill * s),
+            Transform::from_xyz(0.0, swap_y * s, 16.0),
+        ));
+        commands.spawn((
+            MenuUi,
+            MenuSwapControls,
+            ScaledText {
+                base_px: swap_px,
+                menu: true,
+            },
+            ScaledPos {
+                base: Vec2::new(0.0, swap_y),
+                menu: true,
+            },
+            Text2d::new(controls_swap_label(save.swap_touch_controls)),
+            font(swap_px, s),
+            TextColor(Color::srgb(0.85, 0.92, 1.0)),
+            TextLayout::justify(Justify::Center),
+            Transform::from_xyz(0.0, swap_y * s, 17.0),
+        ));
+    }
 }
+
+#[derive(Component)]
+pub struct MenuSwapControls;
 
 fn spawn_panel_frame<M: Component + Copy>(
     commands: &mut Commands,
@@ -218,8 +265,22 @@ pub fn menu_input(
     keyboard: Res<ButtonInput<KeyCode>>,
     touch: Res<TouchControls>,
     mut next: ResMut<NextState<GameState>>,
+    mut save: ResMut<SaveData>,
+    mut commands: Commands,
+    scale: Res<UiScale>,
+    menu_q: Query<Entity, With<MenuUi>>,
     exit: MessageWriter<AppExit>,
 ) {
+    if touch.swap_controls_just {
+        save.swap_touch_controls = !save.swap_touch_controls;
+        save.persist();
+        // Refresh label on the swap button.
+        for e in &menu_q {
+            commands.entity(e).despawn();
+        }
+        spawn_menu_with(&mut commands, &save, &scale);
+        return;
+    }
     if confirm_just_pressed(&keyboard) || touch.confirm_just {
         next.set(GameState::ModeSelect);
     }
@@ -293,30 +354,81 @@ fn spawn_mode_select_with(
 
     refresh_mode_list(commands, save, selected, difficulty, scale, panel);
 
-    let help = if scale.class.is_handheld() {
-        "Top/bottom: mode · sides: difficulty\nCenter: start · two fingers: back"
+    if scale.class.is_handheld() {
+        // Explicit START button (hit band y≈0.58–0.78 of window)
+        let start_y = -panel.y * 0.30;
+        let start_pill = Vec2::new(panel.x * 0.72, 48.0);
+        commands.spawn((
+            ModeUi,
+            ModeStartButton,
+            ScaledPanel { base: start_pill },
+            ScaledPos {
+                base: Vec2::new(0.0, start_y),
+                menu: true,
+            },
+            Sprite::from_color(Color::srgb(0.22, 0.72, 0.42), start_pill * s),
+            Transform::from_xyz(0.0, start_y * s, 16.0),
+        ));
+        commands.spawn((
+            ModeUi,
+            ModeStartButton,
+            ScaledText {
+                base_px: if phone { 18.0 } else { 20.0 },
+                menu: true,
+            },
+            ScaledPos {
+                base: Vec2::new(0.0, start_y),
+                menu: true,
+            },
+            Text2d::new("START"),
+            font(if phone { 18.0 } else { 20.0 }, s),
+            TextColor(Color::srgb(0.95, 1.0, 0.95)),
+            TextLayout::justify(Justify::Center),
+            Transform::from_xyz(0.0, start_y * s, 17.0),
+        ));
+        let help_px = if phone { 10.0 } else { 11.0 };
+        let help_y = -panel.y * 0.40;
+        commands.spawn((
+            ModeUi,
+            ScaledText {
+                base_px: help_px,
+                menu: true,
+            },
+            ScaledPos {
+                base: Vec2::new(0.0, help_y),
+                menu: true,
+            },
+            Text2d::new("Modes up top · < > difficulty · two fingers back"),
+            font(help_px, s),
+            TextColor(Color::srgb(0.6, 0.68, 0.85)),
+            TextLayout::justify(Justify::Center),
+            Transform::from_xyz(0.0, help_y * s, 20.0),
+        ));
     } else {
-        "Up/Down or W/S: mode · Left/Right or A/D: difficulty\nENTER / SPACE: start · ESC: back"
-    };
-    let help_px = if phone { 11.0 } else { 13.0 };
-    let help_y = if phone { -0.36 } else { -0.38 };
-    commands.spawn((
-        ModeUi,
-        ScaledText {
-            base_px: help_px,
-            menu: true,
-        },
-        ScaledPos {
-            base: Vec2::new(0.0, panel.y * help_y),
-            menu: true,
-        },
-        Text2d::new(help),
-        font(help_px, s),
-        TextColor(Color::srgb(0.6, 0.68, 0.85)),
-        TextLayout::justify(Justify::Center),
-        Transform::from_xyz(0.0, panel.y * help_y * s, 20.0),
-    ));
+        let help = "Up/Down or W/S: mode · Left/Right or A/D: difficulty\nENTER / SPACE: start · ESC: back";
+        let help_px = 13.0;
+        let help_y = -0.38;
+        commands.spawn((
+            ModeUi,
+            ScaledText {
+                base_px: help_px,
+                menu: true,
+            },
+            ScaledPos {
+                base: Vec2::new(0.0, panel.y * help_y),
+                menu: true,
+            },
+            Text2d::new(help),
+            font(help_px, s),
+            TextColor(Color::srgb(0.6, 0.68, 0.85)),
+            TextLayout::justify(Justify::Center),
+            Transform::from_xyz(0.0, panel.y * help_y * s, 20.0),
+        ));
+    }
 }
+
+#[derive(Component)]
+pub struct ModeStartButton;
 
 #[derive(Component)]
 pub struct ModeListText;
@@ -362,9 +474,9 @@ fn refresh_mode_list(
         17.0
     };
     let body = mode_list_body(save, selected);
-    // Pack mode list higher so difficulty + help aren't cramped.
+    // Pack mode list higher so difficulty + START aren't cramped.
     let mode_y = if phone {
-        panel.y * 0.08
+        panel.y * 0.14
     } else if compact {
         36.0
     } else {
@@ -390,16 +502,20 @@ fn refresh_mode_list(
         Transform::from_xyz(0.0, mode_y * s, 20.0),
     ));
 
+    // Handheld: leave room for START button below; desktop keeps old packing.
     let diff_row_y = if phone {
-        -panel.y * 0.12
+        panel.y * 0.02
+    } else if scale.class.is_handheld() {
+        -panel.y * 0.06
     } else {
         -55.0
     };
 
-    if phone {
-        // Single selected difficulty with chevrons — fat-finger friendly, no edge overflow.
-        let diff_px = 15.0;
-        let line = format!("<  {}  >", difficulty.label());
+    if phone || scale.class.is_handheld() {
+        // Single selected difficulty with chevrons — fat-finger friendly.
+        // Full-width left/right halves of this row swap difficulty (see touch_controls).
+        let diff_px = if phone { 16.0 } else { 17.0 };
+        let line = format!("<   {}   >", difficulty.label());
         commands.spawn((
             ModeUi,
             ModeListText,

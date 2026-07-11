@@ -77,7 +77,7 @@ fn main() {
     .init_resource::<SelectedDifficulty>()
     .init_resource::<ScreenShake>()
     .init_resource::<GameAssets>()
-    .init_resource::<save::SaveData>()
+    .insert_resource(save::SaveData::load())
     .init_resource::<TouchControls>()
     .init_resource::<TouchChromeLayout>()
     .init_resource::<PlayBounds>()

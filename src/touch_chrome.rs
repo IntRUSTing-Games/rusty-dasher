@@ -1,9 +1,9 @@
 //! On-screen Game Boy / PSP control chrome: shell, virtual stick, dash button.
 
-use crate::components::PlayEntity;
+use crate::components::{MainCamera, PlayEntity};
 use crate::mesh_gfx;
 use crate::state::GameState;
-use crate::touch_controls::{window_to_world_approx, TouchChromeLayout, TouchControls};
+use crate::touch_controls::{window_to_world, window_to_world_approx, TouchChromeLayout, TouchControls};
 use crate::viewport::PlayBounds;
 use bevy::prelude::*;
 
@@ -46,7 +46,6 @@ fn spawn_chrome(
     meshes: &mut Assets<Mesh>,
     materials: &mut Assets<ColorMaterial>,
 ) {
-    // Primary shell (portrait deck / landscape left grip)
     commands.spawn((
         PlayEntity,
         TouchChromeRoot,
@@ -54,7 +53,6 @@ fn spawn_chrome(
         Sprite::from_color(Color::srgba(0.07, 0.09, 0.14, 0.94), Vec2::new(100.0, 100.0)),
         Transform::from_xyz(0.0, 0.0, 14.5),
     ));
-    // Secondary shell (landscape right grip; hidden in portrait)
     commands.spawn((
         PlayEntity,
         TouchChromeRoot,
@@ -122,12 +120,28 @@ fn spawn_chrome(
     ));
 }
 
+/// Map a window point to world using the live camera when possible.
+fn to_world(
+    p: Vec2,
+    window: &Window,
+    bounds: &PlayBounds,
+    cam: Option<(&Camera, &GlobalTransform)>,
+) -> Vec2 {
+    if let Some((camera, tf)) = cam {
+        if let Some(w) = window_to_world(p, camera, tf) {
+            return w;
+        }
+    }
+    window_to_world_approx(p, window, bounds)
+}
+
 /// Reposition chrome sprites from the screen-space layout each frame.
 pub fn update_touch_chrome_visuals(
     windows: Query<&Window>,
     layout: Res<TouchChromeLayout>,
     bounds: Res<PlayBounds>,
     controls: Res<TouchControls>,
+    camera_q: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     mut q: Query<(&ChromePart, &mut Transform, Option<&mut Sprite>), With<TouchChromeRoot>>,
 ) {
     if !layout.active {
@@ -138,14 +152,21 @@ pub fn update_touch_chrome_visuals(
     };
     let wh = window.height().max(1.0);
     let ww = window.width().max(1.0);
+    let cam = camera_q.single().ok();
 
-    let stick_world = window_to_world_approx(layout.stick_center, window, &bounds);
-    let stick_r_world = (layout.stick_radius / wh) * bounds.view_half.y * 2.0;
+    let stick_world = to_world(layout.stick_center, window, &bounds, cam);
+    // World radius from screen radius via same mapping (horizontal axis).
+    let edge = layout.stick_center + Vec2::new(layout.stick_radius, 0.0);
+    let edge_world = to_world(edge, window, &bounds, cam);
+    let stick_r_world = (edge_world - stick_world).length().max(8.0);
     let knob_r_world = stick_r_world * 0.48;
     let knob_win = layout.stick_center + controls.stick_knob_offset;
-    let knob_world = window_to_world_approx(knob_win, window, &bounds);
-    let dash_world = window_to_world_approx(layout.dash_center, window, &bounds);
-    let dash_r_world = (layout.dash_radius / wh) * bounds.view_half.y * 2.0;
+    let knob_world = to_world(knob_win, window, &bounds, cam);
+    let dash_world = to_world(layout.dash_center, window, &bounds, cam);
+    let dash_edge = layout.dash_center + Vec2::new(layout.dash_radius, 0.0);
+    let dash_r_world = (to_world(dash_edge, window, &bounds, cam) - dash_world)
+        .length()
+        .max(6.0);
     let press = if controls.dash_held { 0.86 } else { 1.0 };
 
     for (part, mut tf, sprite) in &mut q {
@@ -157,7 +178,7 @@ pub fn update_touch_chrome_visuals(
                             (layout.deck_min.x + layout.deck_max.x) * 0.5,
                             (layout.deck_min.y + layout.deck_max.y) * 0.5,
                         );
-                        let world = window_to_world_approx(mid, window, &bounds);
+                        let world = to_world(mid, window, &bounds, cam);
                         let w_size = layout.deck_max - layout.deck_min;
                         let world_size = Vec2::new(
                             (w_size.x / ww) * bounds.view_half.x * 2.0,
@@ -167,9 +188,9 @@ pub fn update_touch_chrome_visuals(
                         sprite.custom_size = Some(world_size + Vec2::splat(4.0));
                         sprite.color = Color::srgba(0.07, 0.09, 0.14, 0.94);
                     } else {
-                        // Left grip
+                        // Grip under the stick side
                         let left_mid = Vec2::new(layout.stick_center.x, wh * 0.5);
-                        let world = window_to_world_approx(left_mid, window, &bounds);
+                        let world = to_world(left_mid, window, &bounds, cam);
                         let grip_w = layout.stick_hit_radius * 2.5;
                         let world_w = (grip_w / ww) * bounds.view_half.x * 2.0;
                         tf.translation = world.extend(14.5);
@@ -181,13 +202,12 @@ pub fn update_touch_chrome_visuals(
             ChromePart::ShellSecondary => {
                 if let Some(mut sprite) = sprite {
                     if layout.portrait {
-                        // Hide secondary in portrait (park off-screen tiny)
                         tf.translation = Vec3::new(0.0, -bounds.view_half.y * 3.0, 14.5);
                         sprite.custom_size = Some(Vec2::splat(1.0));
                         sprite.color = Color::srgba(0.0, 0.0, 0.0, 0.0);
                     } else {
                         let right_mid = Vec2::new(layout.dash_center.x, wh * 0.5);
-                        let world = window_to_world_approx(right_mid, window, &bounds);
+                        let world = to_world(right_mid, window, &bounds, cam);
                         let grip_w = layout.dash_hit_radius * 2.5;
                         let world_w = (grip_w / ww) * bounds.view_half.x * 2.0;
                         tf.translation = world.extend(14.5);

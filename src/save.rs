@@ -6,6 +6,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Resource, Debug, Clone, Serialize, Deserialize)]
 pub struct SaveData {
     pub high_scores: HighScores,
+    /// When true, virtual stick is on the right and DASH on the left (swapped).
+    #[serde(default)]
+    pub swap_touch_controls: bool,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -42,6 +45,15 @@ impl HighScores {
     }
 }
 
+impl Default for SaveData {
+    fn default() -> Self {
+        Self {
+            high_scores: HighScores::default(),
+            swap_touch_controls: false,
+        }
+    }
+}
+
 impl SaveData {
     pub fn load() -> Self {
         #[cfg(target_arch = "wasm32")]
@@ -66,12 +78,6 @@ impl SaveData {
     }
 }
 
-impl FromWorld for SaveData {
-    fn from_world(_world: &mut World) -> Self {
-        Self::load()
-    }
-}
-
 #[cfg(not(target_arch = "wasm32"))]
 fn load_native() -> SaveData {
     use std::fs;
@@ -79,17 +85,11 @@ fn load_native() -> SaveData {
     let path = Path::new(SAVE_PATH);
     if path.exists() {
         match fs::read_to_string(path) {
-            Ok(text) => serde_json::from_str(&text).unwrap_or_else(|_| SaveData {
-                high_scores: HighScores::default(),
-            }),
-            Err(_) => SaveData {
-                high_scores: HighScores::default(),
-            },
+            Ok(text) => serde_json::from_str(&text).unwrap_or_default(),
+            Err(_) => SaveData::default(),
         }
     } else {
-        SaveData {
-            high_scores: HighScores::default(),
-        }
+        SaveData::default()
     }
 }
 
@@ -104,22 +104,14 @@ fn persist_native(data: &SaveData) {
 #[cfg(target_arch = "wasm32")]
 fn load_web() -> SaveData {
     let Some(window) = web_sys::window() else {
-        return SaveData {
-            high_scores: HighScores::default(),
-        };
+        return SaveData::default();
     };
     let Ok(Some(storage)) = window.local_storage() else {
-        return SaveData {
-            high_scores: HighScores::default(),
-        };
+        return SaveData::default();
     };
     match storage.get_item(SAVE_PATH) {
-        Ok(Some(text)) => serde_json::from_str(&text).unwrap_or_else(|_| SaveData {
-            high_scores: HighScores::default(),
-        }),
-        _ => SaveData {
-            high_scores: HighScores::default(),
-        },
+        Ok(Some(text)) => serde_json::from_str(&text).unwrap_or_default(),
+        _ => SaveData::default(),
     }
 }
 

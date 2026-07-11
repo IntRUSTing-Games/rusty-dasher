@@ -3,16 +3,20 @@
 //! Playing (handheld — Game Boy / PSP chrome):
 //!   - **Virtual joystick** in the control deck → movement
 //!   - **Dash button** on the opposite side → dash
+//!   - Sides can be swapped via main-menu toggle (`SaveData.swap_touch_controls`)
 //! Playing (desktop mouse):
 //!   - **Left drag** → point-to-move toward cursor
 //!   - **Right-click** → dash
-//! Menus:
-//!   - Tap center → confirm
-//!   - Tap top / bottom thirds → previous / next mode
-//!   - Side strips → difficulty
-//!   - Two-finger tap or far-left edge → back (menus only)
+//! Mode select (handheld):
+//!   - Mode list band: top half = previous mode, bottom half = next mode
+//!   - Difficulty row: left half = easier, right half = harder
+//!   - **START** button band → confirm
+//!   - Two-finger tap → back
+//! Menus (main / game over):
+//!   - Tap → confirm (except swap-controls band on main menu)
 
 use crate::components::{MainCamera, Player};
+use crate::save::SaveData;
 use crate::state::GameState;
 use crate::ui_scale::UiScale;
 use crate::viewport::PlayBounds;
@@ -43,6 +47,8 @@ pub struct TouchChromeLayout {
     /// Deck / grip rects for visual shell (min..max in window space).
     pub deck_min: Vec2,
     pub deck_max: Vec2,
+    /// True when stick is on the right (user preference).
+    pub swapped: bool,
 }
 
 impl Default for TouchChromeLayout {
@@ -58,6 +64,7 @@ impl Default for TouchChromeLayout {
             dash_hit_radius: 52.0,
             deck_min: Vec2::ZERO,
             deck_max: Vec2::ZERO,
+            swapped: false,
         }
     }
 }
@@ -78,6 +85,8 @@ pub struct TouchControls {
     pub menu_down_just: bool,
     pub menu_diff_left: bool,
     pub menu_diff_right: bool,
+    /// Main menu: toggle stick/DASH side preference.
+    pub swap_controls_just: bool,
     /// Which touch/mouse is owning the stick (for multi-touch).
     stick_pointer: Option<u64>,
     /// Live stick knob offset in window space (for rendering).
@@ -91,6 +100,7 @@ pub fn sync_touch_chrome_layout(
     windows: Query<&Window>,
     ui: Res<UiScale>,
     state: Res<State<GameState>>,
+    save: Res<SaveData>,
     mut layout: ResMut<TouchChromeLayout>,
 ) {
     let Ok(window) = windows.single() else {
@@ -103,6 +113,7 @@ pub fn sync_touch_chrome_layout(
     let playing = *state.get() == GameState::Playing;
     let active = handheld && playing;
     layout.active = active;
+    layout.swapped = save.swap_touch_controls;
     if !active {
         return;
     }
@@ -110,34 +121,41 @@ pub fn sync_touch_chrome_layout(
     let portrait = ui.class.is_portrait() || h >= w;
     layout.portrait = portrait;
 
-    if portrait {
+    let (mut stick_c, mut dash_c, stick_r, dash_r, deck_min, deck_max) = if portrait {
         // Game Boy: control deck is the bottom ~34% of the screen.
         let deck_top = h * 0.66;
-        layout.deck_min = Vec2::new(0.0, deck_top);
-        layout.deck_max = Vec2::new(w, h);
+        let deck_min = Vec2::new(0.0, deck_top);
+        let deck_max = Vec2::new(w, h);
         let deck_cy = (deck_top + h) * 0.5;
         let stick_r = (w.min(h) * 0.11).clamp(40.0, 64.0);
         let dash_r = (w.min(h) * 0.08).clamp(30.0, 48.0);
-        layout.stick_center = Vec2::new(w * 0.28, deck_cy);
-        layout.stick_radius = stick_r;
-        layout.stick_hit_radius = stick_r * 1.55;
-        layout.dash_center = Vec2::new(w * 0.75, deck_cy);
-        layout.dash_radius = dash_r;
-        layout.dash_hit_radius = dash_r * 1.45;
+        let stick_c = Vec2::new(w * 0.28, deck_cy);
+        let dash_c = Vec2::new(w * 0.75, deck_cy);
+        (stick_c, dash_c, stick_r, dash_r, deck_min, deck_max)
     } else {
         // PSP: left grip stick, right grip dash, screen in the middle.
         let grip_w = (w * 0.20).clamp(90.0, 180.0);
-        layout.deck_min = Vec2::new(0.0, 0.0);
-        layout.deck_max = Vec2::new(w, h);
+        let deck_min = Vec2::new(0.0, 0.0);
+        let deck_max = Vec2::new(w, h);
         let stick_r = (h * 0.16).clamp(36.0, 58.0);
         let dash_r = (h * 0.13).clamp(28.0, 44.0);
-        layout.stick_center = Vec2::new(grip_w * 0.5, h * 0.52);
-        layout.stick_radius = stick_r;
-        layout.stick_hit_radius = stick_r * 1.55;
-        layout.dash_center = Vec2::new(w - grip_w * 0.5, h * 0.52);
-        layout.dash_radius = dash_r;
-        layout.dash_hit_radius = dash_r * 1.45;
+        let stick_c = Vec2::new(grip_w * 0.5, h * 0.52);
+        let dash_c = Vec2::new(w - grip_w * 0.5, h * 0.52);
+        (stick_c, dash_c, stick_r, dash_r, deck_min, deck_max)
+    };
+
+    if save.swap_touch_controls {
+        std::mem::swap(&mut stick_c, &mut dash_c);
     }
+
+    layout.deck_min = deck_min;
+    layout.deck_max = deck_max;
+    layout.stick_center = stick_c;
+    layout.stick_radius = stick_r;
+    layout.stick_hit_radius = stick_r * 1.55;
+    layout.dash_center = dash_c;
+    layout.dash_radius = dash_r;
+    layout.dash_hit_radius = dash_r * 1.45;
 }
 
 pub fn update_touch_controls(
@@ -148,6 +166,7 @@ pub fn update_touch_controls(
     player_q: Query<&Transform, With<Player>>,
     state: Res<State<GameState>>,
     layout: Res<TouchChromeLayout>,
+    ui: Res<UiScale>,
     mut controls: ResMut<TouchControls>,
 ) {
     controls.dash_just = false;
@@ -157,12 +176,12 @@ pub fn update_touch_controls(
     controls.menu_down_just = false;
     controls.menu_diff_left = false;
     controls.menu_diff_right = false;
+    controls.swap_controls_just = false;
     controls.move_dir = Vec2::ZERO;
     controls.move_strength = 0.0;
     controls.move_target = None;
     controls.dash = false;
     controls.dash_held = false;
-    // stick_knob_offset cleared only when stick released (below)
 
     let Ok(window) = windows.single() else {
         return;
@@ -181,7 +200,6 @@ pub fn update_touch_controls(
             if layout.active {
                 update_playing_chrome(
                     &touches,
-                    &mouse,
                     window,
                     &layout,
                     &mut controls,
@@ -226,26 +244,67 @@ pub fn update_touch_controls(
 
             let y_ratio = (pos.y / size.y).clamp(0.0, 1.0);
             let x_ratio = (pos.x / size.x).clamp(0.0, 1.0);
+            let handheld = ui.class.is_handheld();
 
-            if x_ratio < 0.08 && !matches!(*state.get(), GameState::ModeSelect) {
-                controls.back_just = true;
-                return;
-            }
-
-            if matches!(*state.get(), GameState::ModeSelect) {
-                if x_ratio < 0.20 {
-                    controls.menu_diff_left = true;
-                } else if x_ratio > 0.80 {
-                    controls.menu_diff_right = true;
-                } else if y_ratio < 0.28 {
-                    controls.menu_up_just = true;
-                } else if y_ratio > 0.72 {
-                    controls.menu_down_just = true;
-                } else {
-                    controls.confirm_just = true;
+            match *state.get() {
+                GameState::ModeSelect if handheld => {
+                    // Ordered hit bands matching the on-screen layout (Y down).
+                    // START first so it never fights mode/difficulty.
+                    if y_ratio >= 0.58 && y_ratio <= 0.78 && x_ratio >= 0.18 && x_ratio <= 0.82 {
+                        controls.confirm_just = true;
+                    } else if y_ratio >= 0.46 && y_ratio < 0.58 {
+                        // Difficulty row: whole left half = easier, right = harder
+                        if x_ratio < 0.50 {
+                            controls.menu_diff_left = true;
+                        } else {
+                            controls.menu_diff_right = true;
+                        }
+                    } else if y_ratio >= 0.20 && y_ratio < 0.46 {
+                        // Mode list: upper half previous, lower half next
+                        let mid = 0.33;
+                        if y_ratio < mid {
+                            controls.menu_up_just = true;
+                        } else {
+                            controls.menu_down_just = true;
+                        }
+                    } else if y_ratio > 0.82 || (x_ratio < 0.08 && y_ratio > 0.5) {
+                        // Bottom strip / far-left: treat as back on handheld
+                        controls.back_just = true;
+                    }
+                    // Two-finger still works via the empty-tap path above
                 }
-            } else {
-                controls.confirm_just = true;
+                GameState::ModeSelect => {
+                    // Desktop/tablet-wide: keep side strips + thirds
+                    if x_ratio < 0.20 {
+                        controls.menu_diff_left = true;
+                    } else if x_ratio > 0.80 {
+                        controls.menu_diff_right = true;
+                    } else if y_ratio < 0.28 {
+                        controls.menu_up_just = true;
+                    } else if y_ratio > 0.72 {
+                        controls.menu_down_just = true;
+                    } else {
+                        controls.confirm_just = true;
+                    }
+                }
+                GameState::Menu if handheld => {
+                    // Bottom band: swap stick/DASH preference
+                    if y_ratio >= 0.72 && y_ratio <= 0.92 && x_ratio >= 0.12 && x_ratio <= 0.88 {
+                        controls.swap_controls_just = true;
+                    } else if x_ratio < 0.08 {
+                        controls.back_just = true;
+                    } else {
+                        controls.confirm_just = true;
+                    }
+                }
+                GameState::Menu | GameState::GameOver => {
+                    if x_ratio < 0.08 && matches!(*state.get(), GameState::GameOver) {
+                        controls.back_just = true;
+                    } else {
+                        controls.confirm_just = true;
+                    }
+                }
+                _ => {}
             }
         }
     }
@@ -253,7 +312,6 @@ pub fn update_touch_controls(
 
 fn update_playing_chrome(
     touches: &Touches,
-    mouse: &ButtonInput<MouseButton>,
     window: &Window,
     layout: &TouchChromeLayout,
     controls: &mut TouchControls,
@@ -261,16 +319,13 @@ fn update_playing_chrome(
     mouse_down: bool,
     mouse_right_just: bool,
 ) {
-    let _ = mouse;
     let mut stick_pos: Option<Vec2> = None;
     let mut dash_just = false;
     let mut dash_held = false;
 
-    // --- Touches ---
     let active: Vec<_> = touches.iter().collect();
     let just: Vec<_> = touches.iter_just_pressed().collect();
 
-    // Release stick ownership if the finger lifted.
     if let Some(id) = controls.stick_pointer {
         if !active.iter().any(|t| t.id() as u64 == id) {
             controls.stick_pointer = None;
@@ -303,13 +358,11 @@ fn update_playing_chrome(
             && (in_circle(p, layout.stick_center, layout.stick_hit_radius)
                 || in_deck_stick_half(p, layout))
         {
-            // Grab stick if finger slid into zone without a just_pressed (or resumed).
             controls.stick_pointer = Some(id);
             stick_pos = Some(p);
         }
     }
 
-    // --- Mouse (emulator / desktop testing of chrome) ---
     if mouse_down {
         if let Some(raw) = window.cursor_position() {
             let p = web_pointer::remap_to_window(raw, window);
@@ -340,7 +393,6 @@ fn update_playing_chrome(
         dash_just = true;
     }
 
-    // Apply stick
     if let Some(p) = stick_pos {
         let delta = p - layout.stick_center;
         // Window Y is down; world / movement Y is up → flip Y.
@@ -349,7 +401,6 @@ fn update_playing_chrome(
         let max_r = layout.stick_radius;
         if len > 1.0 {
             let strength = (len / max_r).clamp(0.0, 1.0);
-            // Dead zone
             let strength = if strength < 0.12 {
                 0.0
             } else {
@@ -359,7 +410,6 @@ fn update_playing_chrome(
                 controls.move_dir = move_delta / len;
                 controls.move_strength = strength.max(0.2);
             }
-            // Clamp knob visual
             let visual = if len > max_r {
                 delta * (max_r / len)
             } else {
@@ -379,13 +429,18 @@ fn update_playing_chrome(
 }
 
 fn in_deck_stick_half(p: Vec2, layout: &TouchChromeLayout) -> bool {
-    // Generous grab zone: left half of the deck (portrait) or left grip (landscape).
+    // Grab zone around the stick side of the deck (respects swap).
     if layout.portrait {
-        p.y >= layout.deck_min.y
-            && p.y <= layout.deck_max.y
-            && p.x < (layout.deck_min.x + layout.deck_max.x) * 0.5
+        let mid_x = (layout.deck_min.x + layout.deck_max.x) * 0.5;
+        let on_stick_side = if layout.swapped {
+            p.x >= mid_x
+        } else {
+            p.x < mid_x
+        };
+        p.y >= layout.deck_min.y && p.y <= layout.deck_max.y && on_stick_side
     } else {
         p.x < layout.stick_center.x + layout.stick_hit_radius * 1.2
+            && p.x > layout.stick_center.x - layout.stick_hit_radius * 1.6
             && (p.y - layout.stick_center.y).abs() < layout.stick_hit_radius * 1.8
     }
 }
@@ -406,7 +461,6 @@ fn update_playing_desktop(
     controls.stick_pointer = None;
     controls.stick_knob_offset = Vec2::ZERO;
 
-    // Desktop: optional multi-touch if someone plugs a touchscreen (point-to-move + 2nd finger dash)
     let active: Vec<_> = touches.iter().collect();
     let just_pressed: Vec<_> = touches.iter_just_pressed().collect();
     let touch_count = active.len();
@@ -472,7 +526,16 @@ fn pick_move_pointer(
     Some(active[0].position())
 }
 
-/// Convert window logical position → approximate world position for chrome visuals.
+/// Convert window logical position → world using the live camera (matches playfield).
+pub fn window_to_world(
+    window_pos: Vec2,
+    camera: &Camera,
+    cam_tf: &GlobalTransform,
+) -> Option<Vec2> {
+    camera.viewport_to_world_2d(cam_tf, window_pos).ok()
+}
+
+/// Fallback when camera is unavailable (should be rare).
 pub fn window_to_world_approx(
     window_pos: Vec2,
     window: &Window,
@@ -480,7 +543,6 @@ pub fn window_to_world_approx(
 ) -> Vec2 {
     let w = window.width().max(1.0);
     let h = window.height().max(1.0);
-    // Window: origin top-left, Y down. World: origin center, Y up.
     let nx = (window_pos.x / w) * 2.0 - 1.0;
     let ny = 1.0 - (window_pos.y / h) * 2.0;
     Vec2::new(nx * bounds.view_half.x, ny * bounds.view_half.y)

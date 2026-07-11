@@ -251,7 +251,7 @@ async function runTouch(format) {
     if (page.__errors.length === 0) pass(`${tag}: mode`);
     else fail(`${tag}: mode`, page.__errors.join('; '));
 
-    await page.touchscreen.tap(cx, Math.floor(format.height * 0.55));
+    await page.touchscreen.tap(cx, Math.floor(format.height * 0.68)); // START button band
     await sleep(1800);
     await shot(page, `${format.id}_touch_03_play`);
     if (page.__errors.length === 0) pass(`${tag}: play`);
