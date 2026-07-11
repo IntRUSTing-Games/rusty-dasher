@@ -19,10 +19,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * @returns {{ stop: () => Promise<{ path: string, frames: number, bytes: number }> }}
  */
 export async function startPageRecording(page, outPath, opts = {}) {
+  // everyNthFrame=2: denser timeline under parallel WASM (was 3 → sparse/truncated
+  // keyboard primaries when frames were also dropped under IO pressure).
   const quality = opts.quality ?? 55;
-  const everyNthFrame = opts.everyNthFrame ?? 1;
+  const everyNthFrame = opts.everyNthFrame ?? 2;
   const format = opts.format ?? 'jpeg';
-  const fps = opts.fps ?? 15;
+  const fps = opts.fps ?? 12;
 
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   const framesDir = outPath + '.frames';
@@ -32,17 +34,46 @@ export async function startPageRecording(page, outPath, opts = {}) {
   const client = await page.createCDPSession();
   let frameIdx = 0;
   let stopped = false;
+  let dropped = 0;
 
-  const onFrame = async (event) => {
+  // Sequential write queue: never block the screencast hot path on disk, but
+  // prefer buffering over dropping so long keyboard journeys stay ≥20s in video.
+  // Previous MAX_WRITES_IN_FLIGHT=24 dropped most mid/late frames under CONCURRENCY≥2.
+  const queue = [];
+  let writing = false;
+  let writesDone = Promise.resolve();
+  const MAX_QUEUE = Number(process.env.E2E_REC_MAX_QUEUE || 400);
+
+  const pumpWrites = () => {
+    if (writing) return;
+    writing = true;
+    writesDone = (async () => {
+      while (queue.length) {
+        const job = queue.shift();
+        try {
+          await fs.promises.writeFile(job.file, job.buf);
+        } catch (_) {}
+      }
+      writing = false;
+      // Another frame may have enqueued while we drained.
+      if (queue.length) pumpWrites();
+    })();
+  };
+
+  const onFrame = (event) => {
     if (stopped) return;
+    // Always ack immediately so Chrome keeps sending frames.
+    client
+      .send('Page.screencastFrameAck', { sessionId: event.sessionId })
+      .catch(() => {});
+    if (queue.length >= MAX_QUEUE) {
+      dropped++;
+      return;
+    }
     const i = frameIdx++;
     const file = path.join(framesDir, `f${String(i).padStart(6, '0')}.jpg`);
-    try {
-      fs.writeFileSync(file, Buffer.from(event.data, 'base64'));
-    } catch (_) {}
-    try {
-      await client.send('Page.screencastFrameAck', { sessionId: event.sessionId });
-    } catch (_) {}
+    queue.push({ file, buf: Buffer.from(event.data, 'base64') });
+    pumpWrites();
   };
 
   client.on('Page.screencastFrame', onFrame);
@@ -63,9 +94,19 @@ export async function startPageRecording(page, outPath, opts = {}) {
         client.off('Page.screencastFrame', onFrame);
       } catch (_) {}
 
+      // Drain pending JPEG writes before ffmpeg sees the frame dir.
+      for (let i = 0; i < 50; i++) {
+        if (!queue.length && !writing) break;
+        await writesDone.catch(() => {});
+        await new Promise((r) => setTimeout(r, 40));
+      }
+      await writesDone.catch(() => {});
+
       const frames = frameIdx;
+      if (dropped > 0) {
+        console.warn(`[rec] dropped ${dropped} frames (queue cap ${MAX_QUEUE}) → ${outPath}`);
+      }
       if (frames < 2) {
-        // Write a stub note so callers see the failure
         fs.writeFileSync(outPath + '.error.txt', `too few frames: ${frames}`);
         return { path: outPath, frames, bytes: 0, error: 'too few frames' };
       }
@@ -103,17 +144,23 @@ export async function startPageRecording(page, outPath, opts = {}) {
               outPath,
             ];
 
-      await new Promise((resolve, reject) => {
-        const ff = spawn('ffmpeg', args, { stdio: ['ignore', 'pipe', 'pipe'] });
-        let err = '';
-        ff.stderr.on('data', (d) => {
-          err += d.toString();
+      try {
+        await new Promise((resolve, reject) => {
+          const ff = spawn('ffmpeg', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+          let err = '';
+          ff.stderr.on('data', (d) => {
+            err += d.toString();
+          });
+          ff.on('close', (code) => {
+            if (code === 0) resolve();
+            else reject(new Error(`ffmpeg exit ${code}: ${err.slice(-800)}`));
+          });
         });
-        ff.on('close', (code) => {
-          if (code === 0) resolve();
-          else reject(new Error(`ffmpeg exit ${code}: ${err.slice(-800)}`));
-        });
-      });
+      } catch (e) {
+        fs.writeFileSync(outPath + '.error.txt', String(e));
+        // Keep frames dir for debug when encode fails
+        return { path: outPath, frames, bytes: 0, error: String(e) };
+      }
 
       // Keep frames only if KEEP_E2E_FRAMES=1 (disk heavy)
       if (process.env.KEEP_E2E_FRAMES !== '1') {
@@ -121,7 +168,7 @@ export async function startPageRecording(page, outPath, opts = {}) {
       }
 
       const bytes = fs.existsSync(outPath) ? fs.statSync(outPath).size : 0;
-      return { path: outPath, frames, bytes };
+      return { path: outPath, frames, bytes, dropped };
     },
   };
 }

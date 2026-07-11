@@ -83,6 +83,7 @@ fn main() {
     .init_resource::<PlayBounds>()
     .init_resource::<UiScale>()
     .init_resource::<particles::DashTrailAcc>()
+    .init_resource::<world::QaMatrixForceTimer>()
     .add_message::<StarCollected>()
     .add_message::<PlayerHit>()
     .add_message::<PlayerDashed>()
@@ -103,7 +104,10 @@ fn main() {
     .add_systems(OnEnter(GameState::ModeSelect), ui::spawn_mode_select)
     .add_systems(OnExit(GameState::ModeSelect), util::despawn_with::<ModeUi>)
     // Playing
-    .add_systems(OnEnter(GameState::Playing), world::start_run)
+    .add_systems(
+        OnEnter(GameState::Playing),
+        (world::start_run, world::qa_matrix_reset_on_play),
+    )
     .add_systems(OnExit(GameState::Playing), world::cleanup_play)
     // Game over
     .add_systems(
@@ -125,6 +129,8 @@ fn main() {
             touch_controls::sync_touch_chrome_layout,
             touch_chrome::sync_touch_chrome_presence,
             touch_chrome::update_touch_chrome_visuals,
+            // QA: expose GameState on <html data-rd-state> for capture scripts
+            world::publish_qa_state,
             // Touch/mouse always first so the same frame can act on it
             touch_controls::update_touch_controls,
             ui::menu_input.run_if(in_state(GameState::Menu)),

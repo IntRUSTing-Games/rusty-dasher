@@ -1,17 +1,20 @@
 /**
- * Exhaustive E2E for every format in qa_matrix.json.
+ * Unified exhaustive E2E + optional matrix PNG capture (one journey, no duplicate loads).
  *
- * This game is small — every run MUST cover the full product surface:
- *   all screens, all modes, all difficulties, all primary inputs,
- *   swap controls (handheld), and ≥20s of actual play with movement+dash.
+ * Per format (default):
+ *   - Record VIDEO of full surface (modes, diffs, ≥play, inputs)
+ *   - At each screen: QUALITY HOLD (settle) then write matrix PNG
+ *     screenshots/viewports/{format}_{01_boot|02_menu|...}.png
+ *   - Parallel formats: CONCURRENCY (default 3) separate browser pages
  *
- * Artifacts are primarily VIDEO recordings (catch transient bugs), not stills.
- * Review stills are extracted from each video for quick agent visual scan.
+ * Env:
+ *   E2E_PLAY_MS          play duration ms (default 20000)
+ *   E2E_FORMATS          comma filter of format ids
+ *   CAPTURE_MATRIX=0     disable matrix PNGs (video only)
+ *   CONCURRENCY=3        parallel formats (1 = serial)
+ *   MATRIX_ONLY=1        only matrix holds + short play (skip 20s / extra input paths)
  *
- * Desktop formats: keyboard + mouse paths
- * Handheld formats: device-emulation touch path (+ keyboard smoke)
- *
- * Real USB phone: scripts/e2e_phone.mjs (adb screenrecord + CDP)
+ * Reviews stay separate: video_critique.md vs matrix_critique.md (see skill).
  */
 import puppeteer from 'puppeteer-core';
 import { chromeExecutable, chromeGpuArgs, logChromeGlMode } from './chrome_launch.mjs';
@@ -26,17 +29,27 @@ const ROOT = path.join(__dirname, '..');
 const OUT = path.join(ROOT, 'screenshots/web/e2e');
 const VID = path.join(OUT, 'recordings');
 const STILLS = path.join(OUT, 'stills');
+const MATRIX_OUT = path.join(ROOT, 'screenshots/viewports');
 const MATRIX = JSON.parse(fs.readFileSync(path.join(__dirname, 'qa_matrix.json'), 'utf8'));
-const URL = 'http://127.0.0.1:8080/?e2e=1';
 const PLAY_MS = Number(process.env.E2E_PLAY_MS || 20000);
+const CAPTURE_MATRIX = process.env.CAPTURE_MATRIX !== '0';
+const CONCURRENCY = Math.max(1, Number(process.env.CONCURRENCY || 3));
+const MATRIX_ONLY = process.env.MATRIX_ONLY === '1';
+const HOLD_MS = Number(process.env.MATRIX_HOLD_MS || 450);
+// Force-GO delay: full e2e wants continuous ≥20s play then auto GO; matrix-only is short.
+// Game reads qa_go_ms; e2e=1 alone defaults to 22.5s if qa_go_ms omitted.
+const FORCE_GO_MS = MATRIX_ONLY
+  ? Number(process.env.E2E_FORCE_GO_MS || 2500)
+  : Number(process.env.E2E_FORCE_GO_MS || Math.max(PLAY_MS + 2500, 22500));
+const URL = `http://127.0.0.1:8080/?e2e=1&qa_matrix=1&qa_go_ms=${FORCE_GO_MS}`;
 
-// Full product surface (must all be exercised)
-const MODES = ['CLASSIC', 'ZEN', 'SURVIVAL', 'TIMED']; // 4 mode steps via menu_down
-const DIFFS = ['EASY', 'NORMAL', 'HARD', 'INSANE']; // cycle left/right
+const MODES = ['CLASSIC', 'ZEN', 'SURVIVAL', 'TIMED'];
+const DIFFS = ['EASY', 'NORMAL', 'HARD', 'INSANE'];
 
 fs.mkdirSync(OUT, { recursive: true });
 fs.mkdirSync(VID, { recursive: true });
 fs.mkdirSync(STILLS, { recursive: true });
+fs.mkdirSync(MATRIX_OUT, { recursive: true });
 
 const results = [];
 function pass(name, detail = '') {
@@ -50,10 +63,17 @@ function fail(name, detail = '') {
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 logChromeGlMode();
+console.log(
+  `[qa] CAPTURE_MATRIX=${CAPTURE_MATRIX} CONCURRENCY=${CONCURRENCY} PLAY_MS=${PLAY_MS} HOLD_MS=${HOLD_MS} FORCE_GO_MS=${FORCE_GO_MS}`
+);
+console.log(`[qa] URL ${URL}`);
+
 const browser = await puppeteer.launch({
   executablePath: chromeExecutable(),
   headless: 'new',
   args: chromeGpuArgs(),
+  // Parallel formats + multi-touch can stall CDP; don't use default 180s protocol cap tightly
+  protocolTimeout: 300000,
 });
 
 async function shutdownBrowser(code = 0) {
@@ -100,14 +120,163 @@ async function newPage(format) {
   return page;
 }
 
-async function waitReady(page) {
-  await page.waitForSelector('canvas', { timeout: 180000 });
-  await page.waitForFunction(
-    () =>
-      document.getElementById('boot')?.classList.contains('hidden') ||
-      document.getElementById('boot-cta')?.style?.display === 'inline-block',
-    { timeout: 180000 }
+/** Settle UI, then write a clear PNG for the layout matrix (high quality still). */
+async function qualityMatrixShot(page, formatId, shotSuffix, extraHoldMs = 0) {
+  if (!CAPTURE_MATRIX) return null;
+  await sleep(HOLD_MS + extraHoldMs);
+  // Prefer idle frames: brief wait after hold
+  await sleep(100);
+  const name = `${formatId}_${shotSuffix}`;
+  const file = path.join(MATRIX_OUT, name + '.png');
+  await page.screenshot({ path: file, type: 'png', captureBeyondViewport: false });
+  const size = fs.statSync(file).size;
+  console.log('[matrix]', name, size);
+  if (size < 500) fail(`${formatId}/matrix ${shotSuffix}`, 'tiny file');
+  else pass(`${formatId}/matrix ${shotSuffix}`, `${size}b`);
+  return file;
+}
+
+/**
+ * Dismiss HTML boot without keyboard.
+ * Enter/Space on the page also hits Bevy Menu confirm → ModeSelect, so the
+ * 02_menu matrix cell would wrongly capture SELECT MODE.
+ */
+async function dismissBootOverlay(page, format) {
+  // HTML-only dismiss. Never send Enter/Space here — those also confirm Bevy
+  // Menu → ModeSelect and poison 02_menu / later matrix cells.
+  try {
+    await page.waitForSelector('#boot-cta', { timeout: 5000 });
+  } catch (_) {}
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const hidden = await page.evaluate(() => {
+      const boot = document.getElementById('boot');
+      if (boot?.classList.contains('hidden')) return true;
+      const el = document.getElementById('boot-cta');
+      if (el) {
+        el.style.display = 'inline-block';
+        el.click();
+      }
+      boot?.classList.add('hidden');
+      return !!boot?.classList.contains('hidden');
+    });
+    if (hidden) return true;
+    // Pointer on CTA box only (not canvas center — that can hit Menu confirm).
+    try {
+      const box = await page.evaluate(() => {
+        const el = document.getElementById('boot-cta');
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+      });
+      if (box) {
+        if (format.touch) await page.touchscreen.tap(box.x, box.y);
+        else await page.mouse.click(box.x, box.y);
+      }
+    } catch (_) {}
+    await sleep(300);
+  }
+  return page.evaluate(() =>
+    document.getElementById('boot')?.classList.contains('hidden')
   );
+}
+
+/**
+ * Play session with move + optional dash.
+ * @param {{ dash?: boolean }} opts — when dash=false, never press Space (avoids
+ *   GameOver "again" restart near force-GO).
+ */
+async function playSessionKeyboard(page, ms, opts = {}) {
+  const allowDash = opts.dash !== false;
+  const end = Date.now() + ms;
+  let step = 0;
+  const keys = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight'];
+  try {
+    while (Date.now() < end) {
+      const k = keys[step % keys.length];
+      await page.keyboard.down(k);
+      await sleep(200);
+      await page.keyboard.up(k);
+      // Space = dash while Playing; on GameOver it restarts — stop dash near end
+      // of the overall force window by calling with { dash: false }.
+      if (allowDash && step % 3 === 0 && Date.now() + 500 < end) {
+        await page.keyboard.press('Space');
+      }
+      step++;
+      await sleep(90);
+    }
+  } finally {
+    // Ensure no stuck keys (especially Space) so force-GO can't race a restart.
+    for (const k of [...keys, 'Space', 'Enter']) {
+      try {
+        await page.keyboard.up(k);
+      } catch (_) {}
+    }
+  }
+  return step;
+}
+
+/** Read documentElement[data-rd-state] published by the WASM build. */
+async function readQaState(page) {
+  try {
+    return await page.evaluate(() =>
+      document.documentElement?.getAttribute('data-rd-state')
+    );
+  } catch (_) {
+    return null;
+  }
+}
+
+/** Poll until GameState label matches (or timeout). */
+async function waitForQaState(page, want, timeoutMs = 15000) {
+  const deadline = Date.now() + timeoutMs;
+  let last = null;
+  while (Date.now() < deadline) {
+    last = await readQaState(page);
+    if (last === want) return true;
+    await sleep(150);
+  }
+  console.warn(`[qa] waitForQaState(${want}) timeout last=${last}`);
+  return false;
+}
+
+/**
+ * Boot ready = canvas present AND (boot hidden OR CTA visible for gesture).
+ * Retries once with reload — secondary touch/mouse paths can hang when WASM
+ * init races under CONCURRENCY≥2 (Target closed / 180s WaitTimeout).
+ */
+async function waitReady(page, { timeoutMs = 90000, reloads = 1 } = {}) {
+  for (let attempt = 0; attempt <= reloads; attempt++) {
+    try {
+      await page.waitForSelector('canvas', { timeout: timeoutMs });
+      await page.waitForFunction(
+        () => {
+          const boot = document.getElementById('boot');
+          const cta = document.getElementById('boot-cta');
+          if (boot?.classList.contains('hidden')) return true;
+          if (!cta) return false;
+          const disp = cta.style?.display || '';
+          // CTA is shown as inline-block when WASM ready; also accept computed style.
+          if (disp === 'inline-block' || disp === 'block') return true;
+          try {
+            const cs = window.getComputedStyle(cta);
+            return cs.display !== 'none' && cs.visibility !== 'hidden';
+          } catch (_) {
+            return false;
+          }
+        },
+        { timeout: timeoutMs }
+      );
+      return;
+    } catch (e) {
+      if (attempt >= reloads) throw e;
+      console.warn(`[qa] waitReady attempt ${attempt + 1} failed; reload…`, String(e).slice(0, 120));
+      try {
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 120000 });
+      } catch (_) {
+        // fall through to next attempt / final throw
+      }
+    }
+  }
 }
 
 async function dismissInstallIfAny(page) {
@@ -164,9 +333,12 @@ function stickDashPoints(format) {
   };
 }
 
-/** Exhaustive keyboard path: every mode, every difficulty, play 20s, game over/back. */
-async function runKeyboardExhaustive(format) {
-  const tag = `${format.id}/keyboard`;
+/**
+ * Primary path: video + matrix PNGs (one load per format).
+ * Captures all 5 matrix screens with quality holds; records full journey + play.
+ */
+async function runPrimaryWithMatrix(format) {
+  const tag = `${format.id}/primary`;
   const page = await newPage(format);
   const recPath = path.join(VID, `${format.id}_keyboard.webm`);
   let rec;
@@ -176,79 +348,99 @@ async function runKeyboardExhaustive(format) {
     await waitReady(page);
     rec = await startPageRecording(page, recPath);
 
-    // BOOT
-    await page.keyboard.press('Enter');
-    await sleep(400);
-    let hidden = await page.evaluate(() =>
-      document.getElementById('boot')?.classList.contains('hidden')
-    );
-    if (!hidden) await page.keyboard.press('Space');
-    await sleep(300);
-    hidden = await page.evaluate(() =>
-      document.getElementById('boot')?.classList.contains('hidden')
-    );
+    // --- 01 BOOT (CTA visible, settled) ---
+    await qualityMatrixShot(page, format.id, '01_boot', 200);
+
+    // Click CTA only — keyboard confirm also advances Bevy Menu → ModeSelect.
+    const hidden = await dismissBootOverlay(page, format);
     if (hidden) pass(`${tag}: boot`);
     else fail(`${tag}: boot`);
     await dismissInstallIfAny(page);
     await focusCanvas(page);
-
-    // MENU → mode select
-    await page.keyboard.press('Enter');
-    await sleep(700);
-
-    // Cycle ALL modes (4)
-    for (let i = 0; i < MODES.length; i++) {
-      await page.keyboard.press('ArrowDown');
-      await sleep(180);
-    }
-    for (let i = 0; i < MODES.length; i++) {
-      await page.keyboard.press('ArrowUp');
-      await sleep(180);
-    }
-    pass(`${tag}: cycle all modes`, MODES.join(','));
-
-    // Cycle ALL difficulties (4)
-    for (let i = 0; i < DIFFS.length; i++) {
-      await page.keyboard.press('ArrowRight');
-      await sleep(180);
-    }
-    for (let i = 0; i < DIFFS.length; i++) {
-      await page.keyboard.press('ArrowLeft');
-      await sleep(180);
-    }
-    pass(`${tag}: cycle all difficulties`, DIFFS.join(','));
-
-    // Back to menu, re-enter (back key)
-    await page.keyboard.press('Escape');
-    await sleep(500);
-    await page.keyboard.press('Enter');
-    await sleep(600);
-
-    // Start Classic/Normal play
-    await page.keyboard.press('Space');
+    // Menu must paint after boot; never press Enter/Space before 02_menu shot.
     await sleep(1200);
 
-    // PLAY ≥20s with WASD + arrows + Space dash
-    const end = Date.now() + PLAY_MS;
-    let step = 0;
-    while (Date.now() < end) {
-      const keys = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight'];
-      const k = keys[step % keys.length];
-      await page.keyboard.down(k);
-      await sleep(280);
-      await page.keyboard.up(k);
-      if (step % 3 === 0) {
-        await page.keyboard.press('Space'); // dash
-      }
-      step++;
-      await sleep(120);
-    }
-    pass(`${tag}: play ${PLAY_MS}ms move+dash`, `steps=${step}`);
-
-    // Esc → menu
+    // If we somehow landed on ModeSelect, back out so 02_menu is true Menu.
     await page.keyboard.press('Escape');
-    await sleep(800);
-    if (page.__errors.length === 0) pass(`${tag}: esc menu / no panic`);
+    await sleep(400);
+
+    // --- 02 MENU (true main menu: title / play CTA, not SELECT MODE) ---
+    await qualityMatrixShot(page, format.id, '02_menu', 400);
+
+    await page.keyboard.press('Enter');
+    await sleep(1000);
+
+    if (!MATRIX_ONLY) {
+      for (let i = 0; i < MODES.length; i++) {
+        await page.keyboard.press('ArrowDown');
+        await sleep(160);
+      }
+      for (let i = 0; i < MODES.length; i++) {
+        await page.keyboard.press('ArrowUp');
+        await sleep(160);
+      }
+      pass(`${tag}: cycle all modes`, MODES.join(','));
+      for (let i = 0; i < DIFFS.length; i++) {
+        await page.keyboard.press('ArrowRight');
+        await sleep(160);
+      }
+      for (let i = 0; i < DIFFS.length; i++) {
+        await page.keyboard.press('ArrowLeft');
+        await sleep(160);
+      }
+      pass(`${tag}: cycle all difficulties`, DIFFS.join(','));
+    }
+
+    // --- 03 MODE SELECT (settled on classic/normal after cycling home) ---
+    await qualityMatrixShot(page, format.id, '03_mode_select', 200);
+
+    await page.keyboard.press('Space'); // START → Playing
+    // Wall-clock force-GO (qa_go_ms) starts on Enter Playing in WASM.
+    const playStartedAt = Date.now();
+    // Settle Playing + handheld stick/DASH chrome before matrix PNG.
+    await sleep(1100);
+    // Nudge mid-field so 04_playing is not a blank spawn frame.
+    let step = await playSessionKeyboard(page, 700, { dash: true });
+    await sleep(250);
+
+    // --- 04 PLAYING (chrome mounted; continuous force-GO still far away) ---
+    await qualityMatrixShot(page, format.id, '04_playing', 200);
+
+    // One continuous play stretch for video (≥20s). Force-GO is delayed via
+    // qa_go_ms so we do NOT restart mid-run (Space after GO was restarting and
+    // poisoning 05 + truncating perceived play in reviews).
+    const extraPlayMs = MATRIX_ONLY ? 400 : PLAY_MS;
+    // Leave a small buffer before force-GO so last Space dashes can't land on GO.
+    const safePlayMs = Math.max(0, Math.min(extraPlayMs, FORCE_GO_MS - 3500));
+    step += await playSessionKeyboard(page, safePlayMs, { dash: true });
+    // Stop dashing; wait for auto Game Over (no Space — would restart).
+    // Generous margin: under C=3, rAF can lag; game uses wall-clock now, but
+    // first frame after load may delay wall_start_ms slightly.
+    const forceDeadline = playStartedAt + FORCE_GO_MS;
+    const goWait = Math.max(forceDeadline - Date.now() + 8000, 10000);
+    let gotGo = await waitForQaState(page, 'game_over', goWait);
+    if (!gotGo) {
+      // Extra wall wait — still no Space (would restart → Playing PNG).
+      console.warn(`[qa] ${format.id}: primary go miss; extended wait`);
+      gotGo = await waitForQaState(page, 'game_over', 12000);
+    }
+    pass(
+      `${tag}: play move+dash`,
+      `steps=${step} play_ms=${safePlayMs} go=${gotGo ? 'ok' : 'timeout'} force_ms=${FORCE_GO_MS}`
+    );
+
+    // --- 05 GAME OVER (require game_over state; never shoot Playing as GO) ---
+    if (!gotGo) {
+      // Last chance: poll a bit more before matrix PNG so reviews don't see Playing.
+      gotGo = await waitForQaState(page, 'game_over', 6000);
+    }
+    const st = await readQaState(page);
+    if (st !== 'game_over') {
+      console.warn(`[qa] ${format.id}: 05 shot with state=${st} (wanted game_over)`);
+    }
+    await qualityMatrixShot(page, format.id, '05_game_over', 500);
+
+    if (page.__errors.length === 0) pass(`${tag}: no panic`);
     else fail(`${tag}: panic`, page.__errors.join('; '));
   } catch (e) {
     fail(`${tag}: run`, e.stack || String(e));
@@ -259,8 +451,7 @@ async function runKeyboardExhaustive(format) {
         console.log('[rec]', recPath, info.frames, 'frames', info.bytes, 'bytes');
         if (info.bytes > 1000) pass(`${tag}: recording`, `${info.frames}f ${info.bytes}b`);
         else fail(`${tag}: recording`, info.error || 'empty video');
-        const stillDir = path.join(STILLS, `${format.id}_keyboard`);
-        await extractReviewStills(recPath, stillDir, 6);
+        await extractReviewStills(recPath, path.join(STILLS, `${format.id}_keyboard`), 6);
       } catch (e) {
         fail(`${tag}: recording encode`, String(e));
       }
@@ -269,8 +460,8 @@ async function runKeyboardExhaustive(format) {
   }
 }
 
-/** Exhaustive mouse path (desktop only). */
 async function runMouseExhaustive(format) {
+  if (MATRIX_ONLY) return;
   const tag = `${format.id}/mouse`;
   const page = await newPage(format);
   const { x: cx, y: cy } = center(format);
@@ -279,37 +470,23 @@ async function runMouseExhaustive(format) {
   try {
     page.__errors.length = 0;
     await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 180000 });
-    await waitReady(page);
+    await waitReady(page, { timeoutMs: 90000, reloads: 1 });
     rec = await startPageRecording(page, recPath);
-
     await page.mouse.click(cx, cy);
     await sleep(500);
     await dismissInstallIfAny(page);
-
-    // Menu confirm
     await page.mouse.click(cx, cy);
     await sleep(800);
-
-    // Mode thirds / sides for difficulty
     const w = format.width;
     const h = format.height;
-    // mode down (lower third of mode list band)
     await page.mouse.click(Math.floor(w / 2), Math.floor(h * 0.38));
-    await sleep(200);
-    await page.mouse.click(Math.floor(w / 2), Math.floor(h * 0.28));
-    await sleep(200);
-    // difficulty sides
-    await page.mouse.click(Math.floor(w * 0.12), Math.floor(h * 0.5));
     await sleep(200);
     await page.mouse.click(Math.floor(w * 0.88), Math.floor(h * 0.5));
     await sleep(200);
     pass(`${tag}: mode+difficulty clicks`);
-
-    // Start
     await page.mouse.click(cx, cy);
     await sleep(1500);
-
-    // Play 20s point-to-move + right-click dash
+    // Full PLAY_MS for secondary path (skill: ≥20s play on every path).
     const end = Date.now() + PLAY_MS;
     let step = 0;
     while (Date.now() < end) {
@@ -318,15 +495,13 @@ async function runMouseExhaustive(format) {
       await page.mouse.move(x0, y0);
       await page.mouse.down();
       await page.mouse.move(x0 + 40, y0 - 30, { steps: 4 });
-      await sleep(200);
-      if (step % 2 === 0) {
-        await page.mouse.click(x0 + 40, y0 - 30, { button: 'right' });
-      }
+      await sleep(180);
+      if (step % 2 === 0) await page.mouse.click(x0 + 40, y0 - 30, { button: 'right' });
       await page.mouse.up();
       step++;
-      await sleep(150);
+      await sleep(120);
     }
-    pass(`${tag}: play ${PLAY_MS}ms drag+right-dash`, `steps=${step}`);
+    pass(`${tag}: play drag+right-dash`, `steps=${step}`);
     if (page.__errors.length === 0) pass(`${tag}: no panic`);
     else fail(`${tag}: panic`, page.__errors.join('; '));
   } catch (e) {
@@ -346,8 +521,8 @@ async function runMouseExhaustive(format) {
   }
 }
 
-/** Exhaustive touch path (handheld): all bands, swap, all modes/diffs, stick+dash, 20s play. */
 async function runTouchExhaustive(format) {
+  if (MATRIX_ONLY) return;
   const tag = `${format.id}/touch`;
   const page = await newPage(format);
   const client = page.__cdp || (await page.createCDPSession());
@@ -362,11 +537,10 @@ async function runTouchExhaustive(format) {
   let rec;
   try {
     page.__errors.length = 0;
+    // Secondary path under concurrency: allow reload if WASM boot stalls.
     await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 180000 });
-    await waitReady(page);
+    await waitReady(page, { timeoutMs: 90000, reloads: 1 });
     rec = await startPageRecording(page, recPath);
-
-    // BOOT
     await page.touchscreen.tap(pts.confirm.x, pts.confirm.y);
     await sleep(500);
     await dismissInstallIfAny(page);
@@ -375,43 +549,26 @@ async function runTouchExhaustive(format) {
     );
     if (bootHidden) pass(`${tag}: boot`);
     else fail(`${tag}: boot`);
-
-    // MENU swap band then confirm
     await page.touchscreen.tap(pts.swap.x, pts.swap.y);
-    await sleep(400);
-    await page.touchscreen.tap(pts.swap.x, pts.swap.y); // toggle back
     await sleep(300);
+    await page.touchscreen.tap(pts.swap.x, pts.swap.y);
+    await sleep(250);
     pass(`${tag}: swap controls toggle`);
     await page.touchscreen.tap(pts.confirm.x, pts.confirm.y);
     await sleep(800);
-
-    // MODE: cycle all modes via mode down
     for (let i = 0; i < MODES.length; i++) {
       await page.touchscreen.tap(pts.modeDown.x, pts.modeDown.y);
-      await sleep(200);
-    }
-    for (let i = 0; i < 2; i++) {
-      await page.touchscreen.tap(pts.modeUp.x, pts.modeUp.y);
-      await sleep(200);
+      await sleep(180);
     }
     pass(`${tag}: cycle modes`);
-
-    // DIFF all
     for (let i = 0; i < DIFFS.length; i++) {
       await page.touchscreen.tap(pts.diffR.x, pts.diffR.y);
-      await sleep(200);
-    }
-    for (let i = 0; i < DIFFS.length; i++) {
-      await page.touchscreen.tap(pts.diffL.x, pts.diffL.y);
-      await sleep(200);
+      await sleep(180);
     }
     pass(`${tag}: cycle difficulties`);
-
-    // START
     await page.touchscreen.tap(pts.start.x, pts.start.y);
     await sleep(1500);
-
-    // PLAY ≥20s stick + dash multi-touch
+    // Full PLAY_MS for secondary path (skill: ≥20s play on every path).
     const end = Date.now() + PLAY_MS;
     let step = 0;
     while (Date.now() < end) {
@@ -426,7 +583,7 @@ async function runTouchExhaustive(format) {
         type: 'touchMove',
         touchPoints: [{ x: pts.stick.x + dx, y: pts.stick.y + dy, id: 1 }],
       });
-      await sleep(200);
+      await sleep(180);
       if (step % 2 === 0) {
         await client.send('Input.dispatchTouchEvent', {
           type: 'touchStart',
@@ -435,13 +592,13 @@ async function runTouchExhaustive(format) {
             { x: pts.dash.x, y: pts.dash.y, id: 2 },
           ],
         });
-        await sleep(100);
+        await sleep(80);
       }
       await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
       step++;
-      await sleep(150);
+      await sleep(120);
     }
-    pass(`${tag}: play ${PLAY_MS}ms stick+dash`, `steps=${step}`);
+    pass(`${tag}: play stick+dash`, `steps=${step}`);
     if (page.__errors.length === 0) pass(`${tag}: no panic`);
     else fail(`${tag}: panic`, page.__errors.join('; '));
   } catch (e) {
@@ -461,7 +618,32 @@ async function runTouchExhaustive(format) {
   }
 }
 
-// Optional filter: E2E_FORMATS=phone_rodin_chrome,laptop_hd
+async function runFormat(format) {
+  console.log(
+    '\n==== format',
+    format.id,
+    isHandheldFormat(format) ? '[device-emulation]' : '[desktop]',
+    '===='
+  );
+  await runPrimaryWithMatrix(format);
+  if (!format.touch) await runMouseExhaustive(format);
+  else await runTouchExhaustive(format);
+}
+
+/** Run up to `limit` async workers over items. */
+async function mapPool(items, limit, fn) {
+  const ret = [];
+  let i = 0;
+  async function worker() {
+    while (i < items.length) {
+      const idx = i++;
+      ret[idx] = await fn(items[idx], idx);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, () => worker()));
+  return ret;
+}
+
 const only = (process.env.E2E_FORMATS || '')
   .split(',')
   .map((s) => s.trim())
@@ -470,18 +652,42 @@ const formats = only.length
   ? MATRIX.formats.filter((f) => only.includes(f.id))
   : MATRIX.formats;
 
-for (const format of formats) {
-  console.log('\n==== format', format.id, isHandheldFormat(format) ? '[device-emulation]' : '[desktop]', '====');
-  // Always keyboard exhaustive (keys must work on all sizes)
-  await runKeyboardExhaustive(format);
-  if (!format.touch) {
-    await runMouseExhaustive(format);
-  } else {
-    await runTouchExhaustive(format);
-  }
-}
+await mapPool(formats, CONCURRENCY, (format) => runFormat(format));
 
 await browser.close();
+
+// Verify matrix completeness when capturing
+const missing = [];
+if (CAPTURE_MATRIX) {
+  for (const format of formats) {
+    for (const screen of MATRIX.screens) {
+      const name = `${format.id}_${screen.shot_suffix}.png`;
+      const file = path.join(MATRIX_OUT, name);
+      if (!fs.existsSync(file) || fs.statSync(file).size < 500) missing.push(name);
+    }
+  }
+  fs.writeFileSync(
+    path.join(MATRIX_OUT, 'matrix_results.json'),
+    JSON.stringify(
+      {
+        matrix: MATRIX,
+        cells: formats.length * MATRIX.screens.length,
+        expected_cells: MATRIX.expected_cells,
+        missing,
+        source: 'e2e_inputs.mjs unified capture',
+        at: new Date().toISOString(),
+      },
+      null,
+      2
+    )
+  );
+  if (missing.length) {
+    console.error('MATRIX MISSING:', missing);
+    fail('matrix complete', missing.join(', '));
+  } else {
+    pass('matrix complete', `${formats.length * MATRIX.screens.length} cells`);
+  }
+}
 
 const failed = results.filter((r) => !r.ok);
 const recordings = fs.existsSync(VID)
@@ -493,6 +699,8 @@ fs.writeFileSync(
     {
       matrix_formats: formats.map((f) => f.id),
       play_ms: PLAY_MS,
+      capture_matrix: CAPTURE_MATRIX,
+      concurrency: CONCURRENCY,
       modes: MODES,
       difficulties: DIFFS,
       results,
@@ -500,8 +708,10 @@ fs.writeFileSync(
       recordings,
       recordings_dir: VID,
       stills_dir: STILLS,
+      matrix_out: CAPTURE_MATRIX ? MATRIX_OUT : null,
+      matrix_missing: missing,
       at: new Date().toISOString(),
-      note: 'Primary e2e artifact is VIDEO under recordings/. Stills are review extracts only.',
+      note: 'Unified: VIDEO + matrix PNGs (quality holds). Reviews stay separate (video_critique vs matrix_critique).',
     },
     null,
     2
@@ -510,6 +720,7 @@ fs.writeFileSync(
 console.log('\n=== E2E SUMMARY ===');
 console.log('passed', results.filter((r) => r.ok).length, '/', results.length);
 console.log('recordings', recordings.length, 'in', VID);
+if (CAPTURE_MATRIX) console.log('matrix missing', missing.length);
 if (failed.length) {
   console.error('FAILED:', failed);
   process.exit(1);

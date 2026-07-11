@@ -620,36 +620,155 @@ pub fn check_timed_end(stats: Res<GameStats>, mut next: ResMut<NextState<GameSta
     }
 }
 
-/// When the page URL contains `?qa_matrix=1` (or `&qa_matrix=1`), force Game Over
-/// shortly after play starts so the visual QA matrix can capture that screen
-/// reliably. No effect in normal play.
-pub fn qa_matrix_force_gameover(
-    time: Res<Time>,
-    mut elapsed: Local<f32>,
-    mut done: Local<bool>,
-    mut next: ResMut<NextState<GameState>>,
-) {
-    if *done || !qa_matrix_query_enabled() {
+/// Per-play timer for `?qa_matrix=1` forced Game Over (reset each enter Playing).
+///
+/// Uses **wall-clock** time (not Bevy virtual `Time`) so force-GO still fires when
+/// parallel WASM tabs are rAF-throttled / delta-clamped under e2e concurrency.
+#[derive(Resource, Default)]
+pub struct QaMatrixForceTimer {
+    /// Accumulated virtual time (debug / fallback when wall clock unavailable).
+    pub elapsed: f32,
+    pub done: bool,
+    /// `performance.now()` at enter Playing (ms); `None` until first tick.
+    /// WASM-only reads; kept on all targets so the resource shape is stable.
+    #[allow(dead_code)]
+    pub wall_start_ms: Option<f64>,
+}
+
+/// Reset force timer when a run starts.
+///
+/// Sticky wall-clock: if the player dies mid-run and Space restarts *before*
+/// force-GO fired, keep the original `wall_start_ms` so force still lands at
+/// the intended wall deadline (e2e was seeing go=timeout after accidental
+/// restart reset the clock to zero). Only fully clear after a completed force
+/// (`done`) so a deliberate post-GO "play again" gets a fresh window.
+pub fn qa_matrix_reset_on_play(mut timer: ResMut<QaMatrixForceTimer>) {
+    if timer.done || timer.wall_start_ms.is_none() {
+        *timer = QaMatrixForceTimer::default();
+        // Stamp wall start at Enter Playing (not first Update tick) so load lag
+        // before the first Playing frame doesn't push force past e2e waits.
+        #[cfg(target_arch = "wasm32")]
+        {
+            timer.wall_start_ms = web_sys::window()
+                .and_then(|w| w.performance())
+                .map(|p| p.now());
+        }
         return;
     }
-    *elapsed += time.delta_secs();
-    // Long enough for HUD/playfield to paint; short enough for CI.
-    if *elapsed >= 2.2 {
-        *done = true;
+    // Accidental restart before force: keep wall_start, clear virtual elapsed only.
+    timer.elapsed = 0.0;
+    timer.done = false;
+}
+
+/// When the page URL contains `?qa_matrix=1` (or `&qa_matrix=1`), force Game Over
+/// after a short play so the visual QA matrix can capture that screen reliably.
+///
+/// Delay (seconds of *wall* time after entering Playing):
+/// - `qa_go_ms=N` query override if present
+/// - else `e2e=1` → **22.5s** (one continuous ≥20s play for e2e video)
+/// - else **2.2s** (fast matrix-only / viewport_shots path)
+///
+/// No effect in normal play without `qa_matrix=1`.
+pub fn qa_matrix_force_gameover(
+    time: Res<Time>,
+    mut timer: ResMut<QaMatrixForceTimer>,
+    mut next: ResMut<NextState<GameState>>,
+) {
+    let Some(force_secs) = qa_matrix_force_secs() else {
+        return;
+    };
+    if timer.done {
+        return;
+    }
+    // Virtual delta as a floor (native + wasm fallback).
+    timer.elapsed += time.delta_secs();
+
+    let force_due = {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let now_ms = web_sys::window()
+                .and_then(|w| w.performance())
+                .map(|p| p.now());
+            if let Some(now) = now_ms {
+                if timer.wall_start_ms.is_none() {
+                    timer.wall_start_ms = Some(now);
+                }
+                let start = timer.wall_start_ms.unwrap_or(now);
+                (now - start) >= f64::from(force_secs) * 1000.0
+            } else {
+                timer.elapsed >= force_secs
+            }
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            timer.elapsed >= force_secs
+        }
+    };
+
+    if force_due {
+        timer.done = true;
         next.set(GameState::GameOver);
     }
 }
 
-fn qa_matrix_query_enabled() -> bool {
+/// Publish `document.documentElement[data-rd-state]` for QA scripts
+/// (`menu` | `mode_select` | `playing` | `game_over`). No-op on native.
+pub fn publish_qa_state(state: Res<State<GameState>>) {
     #[cfg(target_arch = "wasm32")]
     {
-        web_sys::window()
-            .and_then(|w| w.location().search().ok())
-            .map(|s| s.contains("qa_matrix=1"))
-            .unwrap_or(false)
+        let label = match state.get() {
+            GameState::Menu => "menu",
+            GameState::ModeSelect => "mode_select",
+            GameState::Playing => "playing",
+            GameState::GameOver => "game_over",
+        };
+        if let Some(el) = web_sys::window()
+            .and_then(|w| w.document())
+            .and_then(|d| d.document_element())
+        {
+            let _ = el.set_attribute("data-rd-state", label);
+        }
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
-        false
+        let _ = state;
     }
+}
+
+/// Force delay in seconds when `qa_matrix=1` is present; `None` if disabled.
+fn qa_matrix_force_secs() -> Option<f32> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        let search = web_sys::window()
+            .and_then(|w| w.location().search().ok())
+            .unwrap_or_default();
+        if !search.contains("qa_matrix=1") {
+            return None;
+        }
+        if let Some(ms) = query_param_u32(&search, "qa_go_ms") {
+            // Clamp to a sane range (0.5s … 120s).
+            return Some((ms as f32 / 1000.0).clamp(0.5, 120.0));
+        }
+        if search.contains("e2e=1") {
+            // Continuous play long enough for ≥20s e2e video, then auto GO.
+            return Some(22.5);
+        }
+        // Fast matrix PNG path (viewport_shots / short holds).
+        Some(2.2)
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        None
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn query_param_u32(search: &str, key: &str) -> Option<u32> {
+    let needle = format!("{key}=");
+    let rest = search.split(&needle).nth(1)?;
+    let raw = rest.split('&').next()?.trim();
+    if raw.is_empty() {
+        return None;
+    }
+    raw.parse().ok()
 }

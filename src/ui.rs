@@ -723,8 +723,16 @@ pub fn spawn_game_over(
     scale: Res<UiScale>,
 ) {
     let hs = save.high_scores.get(stats.mode);
+    let phone = scale.class.is_phone();
+    let compact = scale.class.is_compact() || scale.aspect < 0.85;
+    // Narrow portrait panels clip a single-line "NEW HIGH SCORE!" at 44px —
+    // wrap + smaller base so full text stays inside the card.
     let headline = if stats.is_new_record {
-        "NEW HIGH SCORE!"
+        if phone || (compact && scale.design.x < 480.0) {
+            "NEW HIGH\nSCORE!"
+        } else {
+            "NEW HIGH SCORE!"
+        }
     } else {
         "GAME OVER"
     };
@@ -734,26 +742,55 @@ pub fn spawn_game_over(
         Color::srgb(1.0, 0.42, 0.48)
     };
     let s = scale.panel;
-    let panel = Vec2::new(
-        (scale.design.x * 0.88).clamp(340.0, 720.0),
-        (scale.design.y * 0.78).clamp(260.0, 420.0),
-    );
+    // Match menu/mode panels: phones use nearly full design width so titles fit.
+    let panel = if phone {
+        Vec2::new(
+            (scale.design.x * 0.98).clamp(300.0, 720.0),
+            (scale.design.y * 0.82).clamp(260.0, 440.0),
+        )
+    } else {
+        Vec2::new(
+            (scale.design.x * 0.90).clamp(340.0, 720.0),
+            (scale.design.y * 0.78).clamp(260.0, 420.0),
+        )
+    };
+    let title_px = if stats.is_new_record {
+        if phone {
+            26.0
+        } else if compact {
+            32.0
+        } else {
+            40.0
+        }
+    } else if phone {
+        34.0
+    } else if compact {
+        38.0
+    } else {
+        44.0
+    };
+    let title_y = if headline.contains('\n') {
+        0.26
+    } else {
+        0.22
+    };
     spawn_panel_frame(&mut commands, GameOverUi, panel, s);
 
     commands.spawn((
         GameOverUi,
         ScaledText {
-            base_px: 44.0,
+            base_px: title_px,
             menu: true,
         },
         ScaledPos {
-            base: Vec2::new(0.0, panel.y * 0.22),
+            base: Vec2::new(0.0, panel.y * title_y),
             menu: true,
         },
         Text2d::new(headline),
-        font(44.0, s),
+        font(title_px, s),
         TextColor(color),
-        Transform::from_xyz(0.0, panel.y * 0.22 * s, 30.0),
+        TextLayout::justify(Justify::Center),
+        Transform::from_xyz(0.0, panel.y * title_y * s, 30.0),
     ));
     commands.spawn((
         GameOverUi,
@@ -777,7 +814,7 @@ pub fn spawn_game_over(
             stats.best_combo.max(1),
             stats.stars_collected,
             hs,
-            if scale.class.is_phone() {
+            if phone {
                 "Tap: again\nTwo fingers: menu"
             } else if scale.class.is_handheld() {
                 "Tap: play again\nTwo fingers / left edge: menu"
@@ -785,7 +822,7 @@ pub fn spawn_game_over(
                 "ENTER / SPACE: play again\nESC: menu"
             }
         )),
-        font(if scale.class.is_phone() { 14.0 } else { 18.0 }, s),
+        font(if phone { 14.0 } else { 18.0 }, s),
         TextColor(Color::srgb(0.9, 0.92, 0.98)),
         TextLayout::justify(Justify::Center),
         Transform::from_xyz(0.0, -panel.y * 0.06 * s, 30.0),

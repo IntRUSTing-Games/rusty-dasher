@@ -1,13 +1,14 @@
 /**
- * Full visual matrix: every SCREEN × every FORMAT (see scripts/qa_matrix.json).
- * Produces screenshots/viewports/{format}_{shot_suffix}.png for every cell in qa_matrix.json.
+ * Layout matrix PNGs — preferred production is UNIFIED with e2e:
+ *   CAPTURE_MATRIX=1 node scripts/e2e_inputs.mjs
+ * which quality-holds at each screen while recording video (no second full walk).
  *
- * Phone/tablet formats use Chrome **device emulation** and a whole-chain run
- * (navigate to site → boot → menu → mode → play → game over), not an isolated
- * canvas crop in a desktop window.
+ * This script is a FALLBACK / verify-only path when matrix cells are missing
+ * after e2e, or when CAPTURE_MATRIX=0 was used.
  *
- * Uses ?qa_matrix=1 so Game Over can be forced after a brief play (reliable).
- * Requires dist served at http://127.0.0.1:8080/
+ * Env:
+ *   VERIFY_ONLY=1   only check expected files exist (no browser)
+ *   CONCURRENCY=3   parallel formats when capturing
  */
 import puppeteer from 'puppeteer-core';
 import { chromeExecutable, chromeGpuArgs, logChromeGlMode } from './chrome_launch.mjs';
@@ -21,16 +22,73 @@ const ROOT = path.join(__dirname, '..');
 const OUT = path.join(ROOT, 'screenshots/viewports');
 const MATRIX = JSON.parse(fs.readFileSync(path.join(__dirname, 'qa_matrix.json'), 'utf8'));
 const URL = 'http://127.0.0.1:8080/?qa_matrix=1';
+const VERIFY_ONLY = process.env.VERIFY_ONLY === '1';
+const CONCURRENCY = Math.max(1, Number(process.env.CONCURRENCY || 3));
+const HOLD_MS = Number(process.env.MATRIX_HOLD_MS || 450);
 
 fs.mkdirSync(OUT, { recursive: true });
-
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+function missingCells(formats = MATRIX.formats) {
+  const missing = [];
+  for (const format of formats) {
+    for (const screen of MATRIX.screens) {
+      const name = `${format.id}_${screen.shot_suffix}.png`;
+      const file = path.join(OUT, name);
+      if (!fs.existsSync(file) || fs.statSync(file).size < 500) missing.push(name);
+    }
+  }
+  return missing;
+}
+
+function writeManifest(missing) {
+  const manifest = {
+    matrix: MATRIX,
+    cells: MATRIX.formats.length * MATRIX.screens.length,
+    expected_cells: MATRIX.expected_cells,
+    missing,
+    out: OUT,
+    at: new Date().toISOString(),
+  };
+  fs.writeFileSync(path.join(OUT, 'matrix_results.json'), JSON.stringify(manifest, null, 2));
+  return manifest;
+}
+
+if (VERIFY_ONLY) {
+  const missing = missingCells();
+  writeManifest(missing);
+  console.log('=== VIEWPORT VERIFY ONLY ===');
+  console.log('expected', MATRIX.expected_cells, 'missing', missing.length);
+  if (missing.length) {
+    console.error('MISSING:', missing);
+    process.exit(1);
+  }
+  process.exit(0);
+}
+
+// If already complete from unified e2e, skip re-walk
+const preMissing = missingCells();
+if (preMissing.length === 0) {
+  writeManifest([]);
+  console.log('=== VIEWPORT MATRIX ===');
+  console.log('all', MATRIX.expected_cells, 'cells already present (from unified e2e) — skip capture');
+  process.exit(0);
+}
+console.log('[viewport] missing', preMissing.length, '— capturing only incomplete formats');
+
+const needFormats = MATRIX.formats.filter((f) =>
+  MATRIX.screens.some((s) => {
+    const file = path.join(OUT, `${f.id}_${s.shot_suffix}.png`);
+    return !fs.existsSync(file) || fs.statSync(file).size < 500;
+  })
+);
+
 async function shot(page, name) {
+  await sleep(HOLD_MS);
+  await sleep(80);
   const file = path.join(OUT, name + '.png');
-  await page.screenshot({ path: file, fullPage: false });
+  await page.screenshot({ path: file, type: 'png' });
   console.log('saved', name, fs.statSync(file).size);
-  return file;
 }
 
 async function waitBootReady(page) {
@@ -41,86 +99,56 @@ async function waitBootReady(page) {
   );
 }
 
-async function dismissBoot(page, vp) {
-  const cx = Math.floor(vp.width / 2);
-  const cy = Math.floor(vp.height / 2);
-  // Prefer CTA click so we don't double-advance Bevy menus with Enter.
-  try {
-    await page.click('#boot-cta');
-  } catch {
-    if (vp.touch) await page.touchscreen.tap(cx, cy);
-    else await page.mouse.click(cx, cy);
-  }
-  await sleep(700);
-  await page.evaluate(() => {
-    const c = document.querySelector('canvas');
-    if (c) {
-      c.tabIndex = 0;
-      c.focus({ preventScroll: true });
-    }
-  });
-  await sleep(500);
-}
-
 async function captureFormat(browser, format) {
   const page = await browser.newPage();
-  if (isHandheldFormat(format)) {
-    // Full mobile device chain (UA + metrics + touch), not a resized desktop tab.
-    await applyDeviceEmulation(page, format);
-  } else {
-    await page.setViewport({
-      width: format.width,
-      height: format.height,
-      deviceScaleFactor: format.dpr,
-      isMobile: false,
-      hasTouch: false,
+  try {
+    if (isHandheldFormat(format)) await applyDeviceEmulation(page, format);
+    else {
+      await page.setViewport({
+        width: format.width,
+        height: format.height,
+        deviceScaleFactor: format.dpr,
+        isMobile: false,
+        hasTouch: false,
+      });
+    }
+    console.log('=== format', format.id, `${format.width}x${format.height}`);
+    await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 180000 });
+    await waitBootReady(page);
+    await shot(page, `${format.id}_01_boot`);
+    try {
+      await page.click('#boot-cta');
+    } catch {
+      const cx = Math.floor(format.width / 2);
+      const cy = Math.floor(format.height / 2);
+      if (format.touch) await page.touchscreen.tap(cx, cy);
+      else await page.mouse.click(cx, cy);
+    }
+    await sleep(900);
+    await page.evaluate(() => {
+      document.getElementById('install')?.classList.add('hidden');
+      const c = document.querySelector('canvas');
+      if (c) {
+        c.tabIndex = 0;
+        c.focus({ preventScroll: true });
+      }
     });
+    await shot(page, `${format.id}_02_menu`);
+    const cx = Math.floor(format.width / 2);
+    const cy = Math.floor(format.height / 2);
+    if (format.touch) await page.touchscreen.tap(cx, cy);
+    else await page.keyboard.press('Enter');
+    await sleep(1100);
+    await shot(page, `${format.id}_03_mode_select`);
+    if (format.touch) await page.touchscreen.tap(cx, Math.floor(format.height * 0.68));
+    else await page.keyboard.press('Space');
+    await sleep(1500);
+    await shot(page, `${format.id}_04_playing`);
+    await sleep(2800);
+    await shot(page, `${format.id}_05_game_over`);
+  } finally {
+    await page.close();
   }
-
-  console.log(
-    '=== format',
-    format.id,
-    `${format.width}x${format.height}`,
-    isHandheldFormat(format) ? '[device-emulation whole-chain]' : '[desktop]'
-  );
-  // Whole chain: open the website as a mobile/desktop browser would.
-  await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 180000 });
-
-  // 01 boot (ready state — CTA visible)
-  await waitBootReady(page);
-  await sleep(400);
-  await shot(page, `${format.id}_01_boot`);
-
-  await dismissBoot(page, format);
-  await sleep(1000);
-  // 02 menu
-  await shot(page, `${format.id}_02_menu`);
-
-  // 03 mode select
-  const cx = Math.floor(format.width / 2);
-  const cy = Math.floor(format.height / 2);
-  if (format.touch) {
-    await page.touchscreen.tap(cx, cy);
-  } else {
-    await page.keyboard.press('Enter');
-  }
-  await sleep(1200);
-  await shot(page, `${format.id}_03_mode_select`);
-
-  // 04 playing — handheld uses explicit START band (~y 0.58–0.78)
-  if (format.touch) {
-    await page.touchscreen.tap(cx, Math.floor(format.height * 0.68));
-  } else {
-    await page.keyboard.press('Space');
-  }
-  await sleep(1600);
-  await shot(page, `${format.id}_04_playing`);
-
-  // 05 game over (qa_matrix=1 forces after ~2.2s of play)
-  await sleep(2800);
-  await shot(page, `${format.id}_05_game_over`);
-
-  await page.close();
 }
 
 logChromeGlMode();
@@ -130,59 +158,25 @@ const browser = await puppeteer.launch({
   args: chromeGpuArgs(),
 });
 
-// Always tear down Chromium on exit/signals so a killed agent run does not leave
-// headless chrome eating CPU (seen with orphaned puppeteer_dev_chrome_profile-*).
-async function shutdownBrowser(code = 0) {
-  try {
-    if (browser && browser.connected !== false) {
-      await browser.close();
+async function mapPool(items, limit, fn) {
+  let i = 0;
+  async function worker() {
+    while (i < items.length) {
+      const idx = i++;
+      await fn(items[idx]);
     }
-  } catch (_) {}
-  // hard-exit if close hangs
-  setTimeout(() => process.exit(code), 500).unref?.();
-  process.exit(code);
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, () => worker()));
 }
-for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
-  process.on(sig, () => {
-    console.error(`[chrome] ${sig}: closing browser`);
-    shutdownBrowser(130);
-  });
-}
-process.on('uncaughtException', (err) => {
-  console.error('[chrome] uncaughtException', err);
-  shutdownBrowser(1);
-});
 
-
-const missing = [];
 try {
-  for (const format of MATRIX.formats) {
-    await captureFormat(browser, format);
-  }
-
-  // Verify all expected matrix cells exist
-  for (const format of MATRIX.formats) {
-    for (const screen of MATRIX.screens) {
-      const name = `${format.id}_${screen.shot_suffix}.png`;
-      const file = path.join(OUT, name);
-      if (!fs.existsSync(file) || fs.statSync(file).size < 500) {
-        missing.push(name);
-      }
-    }
-  }
+  await mapPool(needFormats, CONCURRENCY, (f) => captureFormat(browser, f));
 } finally {
   await browser.close();
 }
 
-const manifest = {
-  matrix: MATRIX,
-  cells: MATRIX.formats.length * MATRIX.screens.length,
-  missing,
-  out: OUT,
-  at: new Date().toISOString(),
-};
-fs.writeFileSync(path.join(OUT, 'matrix_results.json'), JSON.stringify(manifest, null, 2));
-
+const missing = missingCells();
+writeManifest(missing);
 console.log('\n=== VIEWPORT MATRIX ===');
 console.log('expected', MATRIX.expected_cells, 'missing', missing.length);
 if (missing.length) {

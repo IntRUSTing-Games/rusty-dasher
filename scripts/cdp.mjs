@@ -57,7 +57,7 @@ export async function connectCdp(wsUrl) {
           pending.delete(id);
           reject(new Error(`CDP timeout: ${method}`));
         }
-      }, 60000);
+      }, Number(process.env.CDP_TIMEOUT_MS || 120000));
     });
   }
 
