@@ -460,64 +460,130 @@ async function runPrimaryWithMatrix(format) {
   }
 }
 
+/**
+ * Mouse secondary path. Retries once if play is truncated (CDP hang under
+ * CONCURRENCY≥2 has produced steps=1 / ~3s encodes that still "passed").
+ */
 async function runMouseExhaustive(format) {
   if (MATRIX_ONLY) return;
   const tag = `${format.id}/mouse`;
-  const page = await newPage(format);
-  const { x: cx, y: cy } = center(format);
   const recPath = path.join(VID, `${format.id}_mouse.webm`);
-  let rec;
-  try {
-    page.__errors.length = 0;
-    await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 180000 });
-    await waitReady(page, { timeoutMs: 90000, reloads: 1 });
-    rec = await startPageRecording(page, recPath);
-    await page.mouse.click(cx, cy);
-    await sleep(500);
-    await dismissInstallIfAny(page);
-    await page.mouse.click(cx, cy);
-    await sleep(800);
-    const w = format.width;
-    const h = format.height;
-    await page.mouse.click(Math.floor(w / 2), Math.floor(h * 0.38));
-    await sleep(200);
-    await page.mouse.click(Math.floor(w * 0.88), Math.floor(h * 0.5));
-    await sleep(200);
-    pass(`${tag}: mode+difficulty clicks`);
-    await page.mouse.click(cx, cy);
-    await sleep(1500);
-    // Full PLAY_MS for secondary path (skill: ≥20s play on every path).
-    const end = Date.now() + PLAY_MS;
+  // ~300ms/step nominal; require enough steps for ≥20s continuous play gate.
+  const minSteps = Math.max(20, Math.floor(PLAY_MS / 500));
+  // ~12fps screencast: menu ~4s + play; require enough frames for real play length.
+  const minFrames = Math.max(80, Math.floor((PLAY_MS / 1000) * 6));
+  let modesPassed = false;
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const page = await newPage(format);
+    const { x: cx, y: cy } = center(format);
+    let rec;
     let step = 0;
-    while (Date.now() < end) {
-      const x0 = Math.floor(w * (0.3 + 0.4 * ((step % 5) / 5)));
-      const y0 = Math.floor(h * (0.35 + 0.3 * (((step + 2) % 5) / 5)));
-      await page.mouse.move(x0, y0);
-      await page.mouse.down();
-      await page.mouse.move(x0 + 40, y0 - 30, { steps: 4 });
-      await sleep(180);
-      if (step % 2 === 0) await page.mouse.click(x0 + 40, y0 - 30, { button: 'right' });
-      await page.mouse.up();
-      step++;
-      await sleep(120);
-    }
-    pass(`${tag}: play drag+right-dash`, `steps=${step}`);
-    if (page.__errors.length === 0) pass(`${tag}: no panic`);
-    else fail(`${tag}: panic`, page.__errors.join('; '));
-  } catch (e) {
-    fail(`${tag}: run`, e.stack || String(e));
-  } finally {
-    if (rec) {
-      try {
-        const info = await rec.stop();
-        if (info.bytes > 1000) pass(`${tag}: recording`, `${info.frames}f`);
-        else fail(`${tag}: recording`, info.error || 'empty');
-        await extractReviewStills(recPath, path.join(STILLS, `${format.id}_mouse`), 6);
-      } catch (e) {
-        fail(`${tag}: recording encode`, String(e));
+    let playElapsed = 0;
+    let runErr = null;
+    let recInfo = null;
+    let pagePanics = [];
+    try {
+      page.__errors.length = 0;
+      await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 180000 });
+      await waitReady(page, { timeoutMs: 90000, reloads: 1 });
+      rec = await startPageRecording(page, recPath);
+      await page.mouse.click(cx, cy);
+      await sleep(500);
+      await dismissInstallIfAny(page);
+      await page.mouse.click(cx, cy);
+      await sleep(800);
+      const w = format.width;
+      const h = format.height;
+      await page.mouse.click(Math.floor(w / 2), Math.floor(h * 0.38));
+      await sleep(200);
+      await page.mouse.click(Math.floor(w * 0.88), Math.floor(h * 0.5));
+      await sleep(200);
+      if (!modesPassed) {
+        pass(`${tag}: mode+difficulty clicks`);
+        modesPassed = true;
       }
+      await page.mouse.click(cx, cy);
+      await sleep(1500);
+      // Full PLAY_MS for secondary path (skill: ≥20s play on every path).
+      const playStarted = Date.now();
+      const end = playStarted + PLAY_MS;
+      while (Date.now() < end) {
+        const x0 = Math.floor(w * (0.3 + 0.4 * ((step % 5) / 5)));
+        const y0 = Math.floor(h * (0.35 + 0.3 * (((step + 2) % 5) / 5)));
+        // Drag with left only; right-click dash after release (avoids CDP stall when
+        // right-click is nested while left button is still held under C≥2).
+        await page.mouse.move(x0, y0);
+        await page.mouse.down({ button: 'left' });
+        await page.mouse.move(x0 + 40, y0 - 30, { steps: 4 });
+        await sleep(180);
+        await page.mouse.up({ button: 'left' });
+        if (step % 2 === 0) {
+          await page.mouse.click(x0 + 40, y0 - 30, { button: 'right' });
+        }
+        step++;
+        await sleep(120);
+      }
+      playElapsed = Date.now() - playStarted;
+      pagePanics = [...(page.__errors || [])];
+    } catch (e) {
+      runErr = e.stack || String(e);
+      try {
+        pagePanics = [...(page.__errors || [])];
+      } catch (_) {}
+    } finally {
+      if (rec) {
+        try {
+          recInfo = await rec.stop();
+          await extractReviewStills(recPath, path.join(STILLS, `${format.id}_mouse`), 6);
+        } catch (e) {
+          runErr = runErr || String(e);
+        }
+      }
+      try {
+        await page.close();
+      } catch (_) {}
     }
-    await page.close();
+
+    const shortPlay = step < minSteps || playElapsed < PLAY_MS * 0.85;
+    const frames = recInfo?.frames ?? 0;
+    const bytes = recInfo?.bytes ?? 0;
+    const shortRec = bytes < 1000 || frames < minFrames;
+    const canRetry = attempt < 2 && (shortPlay || shortRec || runErr);
+
+    if (canRetry) {
+      console.warn(
+        `[qa] ${tag}: attempt ${attempt} weak (steps=${step} elapsed_ms=${playElapsed} frames=${frames} err=${runErr ? String(runErr).slice(0, 80) : 'none'}); retry`
+      );
+      continue;
+    }
+
+    // Final attempt results (or good first attempt).
+    if (runErr && (shortPlay || shortRec)) {
+      fail(`${tag}: run`, runErr);
+    } else if (shortPlay) {
+      fail(
+        `${tag}: play drag+right-dash`,
+        `steps=${step} elapsed_ms=${playElapsed} (need ≥${minSteps} steps / ~${PLAY_MS}ms)`
+      );
+    } else {
+      pass(
+        `${tag}: play drag+right-dash`,
+        `steps=${step} elapsed_ms=${playElapsed}${attempt > 1 ? ' retry' : ''}`
+      );
+    }
+    if (!shortPlay) {
+      if (pagePanics.length === 0) pass(`${tag}: no panic`);
+      else fail(`${tag}: panic`, pagePanics.join('; '));
+    }
+    if (bytes > 1000 && frames >= minFrames) {
+      pass(`${tag}: recording`, `${frames}f`);
+    } else if (bytes > 1000) {
+      fail(`${tag}: recording`, `${frames}f too short (min ${minFrames})`);
+    } else {
+      fail(`${tag}: recording`, recInfo?.error || 'empty');
+    }
+    break;
   }
 }
 
