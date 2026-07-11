@@ -42,6 +42,30 @@ const browser = await puppeteer.launch({
   args: chromeGpuArgs(),
 });
 
+// Always tear down Chromium on exit/signals so a killed agent run does not leave
+// headless chrome eating CPU (seen with orphaned puppeteer_dev_chrome_profile-*).
+async function shutdownBrowser(code = 0) {
+  try {
+    if (browser && browser.connected !== false) {
+      await browser.close();
+    }
+  } catch (_) {}
+  // hard-exit if close hangs
+  setTimeout(() => process.exit(code), 500).unref?.();
+  process.exit(code);
+}
+for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+  process.on(sig, () => {
+    console.error(`[chrome] ${sig}: closing browser`);
+    shutdownBrowser(130);
+  });
+}
+process.on('uncaughtException', (err) => {
+  console.error('[chrome] uncaughtException', err);
+  shutdownBrowser(1);
+});
+
+
 async function newPage(format) {
   const page = await browser.newPage();
   const logs = [];

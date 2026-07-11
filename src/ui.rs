@@ -766,9 +766,14 @@ pub fn spawn_hud(
         TextColor(Color::srgb(1.0, 0.85, 0.3)),
         Transform::from_xyz(bounds.center.x, top, 20.0),
     ));
-    // Phone: short label under the top margin so it doesn't collide with score/hearts.
-    let level_px = if phone { 13.0 } else { 17.0 };
-    let level_y = top - if phone { 22.0 } else { 26.0 };
+    // Level line sits *inside* the playfield (below the top border) so it never
+    // clips against the blue edge on narrow phones.
+    let level_px = if phone { 12.0 } else { 17.0 };
+    let level_y = if phone || bounds.chrome {
+        bounds.top() - if phone { 18.0 } else { 20.0 }
+    } else {
+        top - 26.0
+    };
     commands.spawn((
         PlayEntity,
         HudLevel,
@@ -776,18 +781,15 @@ pub fn spawn_hud(
             base_px: level_px,
             menu: false,
         },
-        Text2d::new(format!(
-            "{}  |  {}",
-            stats.mode.label(),
-            stats.chosen_difficulty.label()
-        )),
+        Text2d::new(hud_level_line(stats, phone || ui.class.is_compact())),
         font(level_px, scale),
         TextColor(Color::srgb(0.65, 0.75, 0.95)),
         Transform::from_xyz(bounds.center.x, level_y, 20.0),
     ));
     // Format-specific control hint until power-ups / dash cooldown take over.
+    // Handheld chrome already has a DASH button — don't repeat "Dash READY" as clutter.
     let hint = if ui.class.is_handheld() {
-        "Stick move · DASH button"
+        ""
     } else {
         "WASD / arrows move - SPACE dash"
     };
@@ -839,8 +841,60 @@ pub fn tick_level_banners(
     }
 }
 
+/// Mode / difficulty / level line for the HUD.
+/// Compact form stays inside the play border on phone widths.
+fn hud_level_line(stats: &GameStats, compact: bool) -> String {
+    if compact {
+        if stats.mode == GameMode::Timed {
+            return format!(
+                "{} · {} · {:.0}s",
+                stats.mode.label(),
+                stats.chosen_difficulty.label(),
+                stats.time_left.ceil()
+            );
+        }
+        if matches!(stats.mode, GameMode::Classic | GameMode::Survival) {
+            return format!(
+                "{} · {} · L{} →{}",
+                stats.mode.label(),
+                stats.chosen_difficulty.label(),
+                stats.level,
+                stats.level_target
+            );
+        }
+        return format!(
+            "{} · {} · chill",
+            stats.mode.label(),
+            stats.chosen_difficulty.label()
+        );
+    }
+    if stats.mode == GameMode::Timed {
+        format!(
+            "{}  |  {}  |  {:.0}s left",
+            stats.mode.label(),
+            stats.chosen_difficulty.label(),
+            stats.time_left.ceil()
+        )
+    } else if matches!(stats.mode, GameMode::Classic | GameMode::Survival) {
+        format!(
+            "{}  |  {}  |  Lv {}  |  next {}",
+            stats.mode.label(),
+            stats.chosen_difficulty.label(),
+            stats.level,
+            stats.level_target
+        )
+    } else {
+        format!(
+            "{}  |  {}  |  chill",
+            stats.mode.label(),
+            stats.chosen_difficulty.label()
+        )
+    }
+}
+
 pub fn update_hud(
     stats: Res<GameStats>,
+    ui: Res<UiScale>,
     player: Query<&Player>,
     mut score_q: Query<
         &mut Text2d,
@@ -884,6 +938,9 @@ pub fn update_hud(
         ),
     >,
 ) {
+    let compact = ui.class.is_phone() || ui.class.is_compact();
+    let handheld = ui.class.is_handheld();
+
     if let Ok(mut text) = score_q.single_mut() {
         **text = format!("Score  {}", stats.score);
     }
@@ -903,28 +960,7 @@ pub fn update_hud(
         };
     }
     if let Ok(mut text) = level_q.single_mut() {
-        **text = if stats.mode == GameMode::Timed {
-            format!(
-                "{}  |  {}  |  {:.0}s left",
-                stats.mode.label(),
-                stats.chosen_difficulty.label(),
-                stats.time_left.ceil()
-            )
-        } else if matches!(stats.mode, GameMode::Classic | GameMode::Survival) {
-            format!(
-                "{}  |  {}  |  Lv {}  |  next {}",
-                stats.mode.label(),
-                stats.chosen_difficulty.label(),
-                stats.level,
-                stats.level_target
-            )
-        } else {
-            format!(
-                "{}  |  {}  |  chill",
-                stats.mode.label(),
-                stats.chosen_difficulty.label()
-            )
-        };
+        **text = hud_level_line(&stats, compact);
     }
     if let Ok(mut text) = status_q.single_mut() {
         let Ok(p) = player.single() else {
@@ -933,9 +969,11 @@ pub fn update_hud(
         let mut bits = Vec::new();
         if p.dash_cooldown > 0.0 {
             bits.push(format!("Dash {:.1}s", p.dash_cooldown));
-        } else {
+        } else if !handheld {
+            // Desktop has no on-screen DASH button — keep READY text.
             bits.push("Dash READY".into());
         }
+        // Handheld: bare "Dash READY" is redundant with the red DASH chrome button.
         if p.magnet > 0.0 {
             bits.push(format!("Magnet {:.0}s", p.magnet));
         }

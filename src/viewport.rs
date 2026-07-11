@@ -93,11 +93,14 @@ impl PlayBounds {
 
         let margin = (inset_l + inset_r + inset_t + inset_b) * 0.25;
 
-        // HUD sits in the top/bottom margin bands of the *play screen* (not the stick deck).
+        // HUD: score/hearts in the top margin band; status clear of the blue border.
         let hud_top_y = top + (inset_t * 0.45).min(inset_t * 0.9);
         let hud_bottom_y = if chrome {
-            // Keep status above the control deck, just under the play border.
-            bottom - (inset_t.max(18.0) * 0.35).clamp(10.0, 28.0)
+            // Sit well inside the bottom inset (deck / grip gap), not on the play border.
+            // Midpoint of the strip between play bottom and view bottom.
+            let strip_mid = (bottom + (-view_half.y)) * 0.5;
+            // Prefer a bit above mid so text clears the stick deck edge on portrait.
+            (strip_mid + inset_b * 0.12).clamp(-view_half.y + 14.0, bottom - 12.0)
         } else {
             bottom - (inset_b * 0.45).min(inset_b * 0.9)
         };
@@ -409,7 +412,12 @@ pub fn sync_hud_layout(
         tf.translation = Vec3::new(bounds.center.x, top, 20.0);
     }
     if let Ok(mut tf) = level.single_mut() {
-        let level_y = top - if phone { 22.0 } else { 26.0 };
+        // Inside the playfield, below the top border — avoids clipping on the blue edge.
+        let level_y = if phone || bounds.chrome {
+            bounds.top() - if phone { 18.0 } else { 20.0 }
+        } else {
+            top - 26.0
+        };
         tf.translation = Vec3::new(bounds.center.x, level_y, 20.0);
     }
     if let Ok(mut tf) = status.single_mut() {
