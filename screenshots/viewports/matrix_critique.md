@@ -308,3 +308,32 @@ CRITIQUE 1080p_04_playing: GOOD: recheck this-run open; single border; no stick/
 CRITIQUE 1080p_05_game_over: GOOD: recheck this-run open; GAME OVER unclipped CLASSIC - NORMAL - Score 0; ENTER/SPACE/ESC; no ghost | BAD: none
 
 **open_bads desktop residual matrix (this section):** none
+
+## 2026-07-17 Fortnite stick ship (A6) — emulator recapture
+Run: stick ship worker; run_start_unix 1784321756; criteria scripts/qa_success_criteria.json
+CAPTURE path: e2e_emulator_matrix EMU_REQUIRE=1 CAPTURE_MATRIX=1 formats phone_android,phone_android_landscape,phone_portrait,phone_landscape
+REVIEW: opened this-run PNGs with image tool (playing + midplay stills + menu/mode/GO/boot).
+Scope: partial recapture for Fortnite stick visuals (full matrix not re-run; prior d886814 residual for other formats).
+---
+CRITIQUE phone_android_01_boot: GOOD: title RUSTY DASHER + CTA settled; portrait full-display emu; no Translate; qa_matrix URL | BAD: none
+CRITIQUE phone_android_02_menu: GOOD: stick/DASH phone copy + swap strip; Best 3; no · tofu; portrait | BAD: none
+CRITIQUE phone_android_03_mode_select: GOOD: SELECT MODE all 4 + NORMAL + green START + touch hints; START clear of help | BAD: none
+CRITIQUE phone_android_04_playing: GOOD: Fortnite stick = translucent base + white ring + light knob; DASH red fill + white rim; floating HUD no solid deck; both fully outside blue playfield (V-PLAY-CONTROLS-OUTSIDE-FIELD); single border no nested frames; no side dim slabs; Score/hearts HUD; entities in field | BAD: none
+CRITIQUE phone_android_05_game_over: GOOD: real GAME OVER unclipped SURVIVAL/NORMAL Score 0 + touch hints; force_go | BAD: none
+CRITIQUE phone_android_landscape_01_boot: GOOD: title+CTA settled; landscape full-display emu | BAD: none (lab Chrome URL bar OK)
+CRITIQUE phone_android_landscape_02_menu: GOOD: stick/DASH copy + swap; landscape panel fits | BAD: none
+CRITIQUE phone_android_landscape_03_mode_select: GOOD: modes+diff+START readable landscape | BAD: none
+CRITIQUE phone_android_landscape_04_playing: GOOD: Fortnite white ring+knob left grip; DASH+white rim right grip outside field; floating no solid PSP slabs; single border; Score/hearts | BAD: none
+CRITIQUE phone_android_landscape_05_game_over: GOOD: real GAME OVER CLASSIC/NORMAL + touch hints landscape; force_go | BAD: none
+CRITIQUE phone_portrait_01_boot: GOOD: title+CTA settled portrait | BAD: none
+CRITIQUE phone_portrait_02_menu: GOOD: stick/DASH copy + swap strip; panel clean | BAD: none
+CRITIQUE phone_portrait_03_mode_select: GOOD: modes+diff+START+hints; START clear | BAD: none
+CRITIQUE phone_portrait_04_playing: GOOD: Fortnite stick bottom-left white ring+light knob; DASH bottom-right white rim; floating no Game Boy deck panel; controls outside field; single border; no dim slabs; HUD OK | BAD: none
+CRITIQUE phone_portrait_05_game_over: GOOD: real GAME OVER SURVIVAL/NORMAL Score 0 + touch hints; force_go | BAD: none
+CRITIQUE phone_landscape_01_boot: GOOD: title+CTA settled landscape | BAD: none
+CRITIQUE phone_landscape_02_menu: GOOD: stick/DASH copy + swap; panel fits landscape | BAD: none
+CRITIQUE phone_landscape_03_mode_select: GOOD: modes+diff+wide START landscape | BAD: none
+CRITIQUE phone_landscape_04_playing: GOOD: Fortnite stick left + DASH right outside field; white ring/knob + dash rim; floating no solid grips; single border; Score/hearts | BAD: none
+CRITIQUE phone_landscape_05_game_over: GOOD: real GAME OVER CLASSIC/NORMAL Score 0 + touch hints; force_go | BAD: none
+# Desktop residual spot-check (prior ship PNG; no stick codepath):
+CRITIQUE 1080p_04_playing: GOOD: desktop full field; no stick/DASH chrome (V-PLAY-DESKTOP-NO-STICK); Dash READY; single border | BAD: none [prior-ship artifact; stick change is touch-only]
