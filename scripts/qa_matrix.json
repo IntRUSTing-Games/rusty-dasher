@@ -281,7 +281,7 @@
   "artifact_pattern": "screenshots/viewports/{format}_{shot_suffix}.png",
   "critique_file": "screenshots/viewports/matrix_critique.md",
   "success_criteria": "scripts/qa_success_criteria.json",
-  "success_criteria_note": "PASS/FAIL authority for A4b video review, A6 matrix PNG review, Phase C phone inventory, and A7 pre-prod. Open before writing any CRITIQUE/VIDEO line. BAD: none only when every applicable criterion passes. Script CAPTURE_OK/exit 0 is not review PASS — see qa_success_criteria vocabulary + ui-viewport-qa CAPTURE vs REVIEW.",
+  "success_criteria_note": "PASS/FAIL authority for A4b/A6 + A7. Open before writing CRITIQUE/VIDEO or *.review.json sidecars. Review of each PNG/video is complete only with sibling *.review.json (opened:true, all_good|issues). CAPTURE_OK is not review. A4b also checks input_simulation_scenarios (SIM-*).",
   "e2e_note": "Exhaustive e2e_inputs.mjs: every mode, difficulty, screen, primary input, and >=20s play. PRIMARY artifact is VIDEO (recordings/). CAPTURE only (CAPTURE_OK logs). Reviews: video_critique + matrix_critique. Handheld ship path: Android emulator + adb screenrecord/input. Phone Phase C: e2e_phone.mjs 2x2 video via adb screenrecord.",
   "phone_device_note": "Phone formats: device emulation on PC. USB phone: e2e_phone.mjs after live deploy \u2014 2x2 portrait|landscape x browsing|fullscreen, adb screenrecord video, adb calibrated taps, exhaustive control surface + 20s play."
 }

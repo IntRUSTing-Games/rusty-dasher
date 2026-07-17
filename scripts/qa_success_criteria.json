@@ -1,6 +1,6 @@
 {
-  "description": "Authoritative PASS/FAIL criteria for Rusty Dasher visual + input QA. Pair with scripts/qa_matrix.json (screens \u00d7 formats). Agents MUST open this file before writing matrix_critique.md or video_critique.md. A cell may only use BAD: none when every applicable criterion here is satisfied. Rubber-stamping GOOD without opening each artifact is a process failure.",
-  "version": 2,
+  "description": "Authoritative PASS/FAIL criteria for Rusty Dasher visual + input QA. Pair with scripts/qa_matrix.json (screens × formats). Agents MUST open this file before writing matrix_critique.md or video_critique.md. A cell may only use BAD: none when every applicable criterion here is satisfied. Rubber-stamping GOOD without opening each artifact is a process failure.",
+  "version": 4,
   "updated": "2026-07-17",
   "related": {
     "matrix": "scripts/qa_matrix.json",
@@ -43,10 +43,14 @@
       ]
     },
     "status_language": [
-      "Say 'capture complete (CAPTURE_OK)' for runners \u2014 never 'A4 PASS' alone.",
+      "Say 'capture complete (CAPTURE_OK)' for runners — never 'A4 PASS' alone.",
       "Say 'A4b/A6 reviewed; BAD: none' only after critique lines with opened-image evidence.",
       "A7 is REVIEW only; CAPTURE_OK is a prerequisite, not the gate."
-    ]
+    ],
+    "per_file_review_json": {
+      "means": "Agent analyzed one media file and wrote *.review.json with all_good or issues",
+      "does_not_mean": "Capture succeeded or rollup line exists without sidecar"
+    }
   },
   "gate_rules": {
     "pre_prod_pass_requires": [
@@ -54,7 +58,11 @@
       "Every e2e recording has a VIDEO line",
       "No open BAD where severity is blocker (or user accepted residual BADs in writing with IDs listed)",
       "Artifact labels match actual GameState on the image/frame",
-      "Phase A handhelds used Android emulator + adb screenrecord + adb shell input (not Chrome emulate alone)"
+      "Phase A handhelds used Android emulator + adb screenrecord + adb shell input (not Chrome emulate alone)",
+      "A4b video review checked input_simulation_scenarios expected_video_outcome for paths run this session",
+      "Normal SIM-* scenarios covered per modality used; open edge SIM-* BADs accepted or fixed",
+      "Every expected matrix PNG has this-run *.review.json (opened:true)",
+      "Every required recording has this-run *.review.json (opened:true)"
     ],
     "critique_format": {
       "matrix_line": "CRITIQUE {format_id}_{shot_suffix}: GOOD: <evidence> | BAD: none | BAD: {criterion_id}: <what fails> [; {criterion_id}: ...]",
@@ -64,7 +72,7 @@
         "BAD: none only after opening the artifact(s) and checking every applicable criterion in this file",
         "When failing, cite criterion id(s) from this file (e.g. V-PLAY-NESTED-BORDER)",
         "Listing a directory or trusting a prior agent PASS is not review",
-        "Filename alone is not proof of screen state \u2014 verify GameState from pixels/text"
+        "Filename alone is not proof of screen state — verify GameState from pixels/text"
       ]
     },
     "severity": {
@@ -81,7 +89,13 @@
       "Calling double blue frames or OOB stars 'intentional' without code proof + product sign-off",
       "Treating suite CAPTURE_OK / exit 0 / N/N as A7 or as permission to write BAD: none",
       "Status line '15/15 PASS open_bads none' without opened CRITIQUE/VIDEO evidence for this run",
-      "Calling A5 VERIFY (files present) a visual review"
+      "Calling A5 VERIFY (files present) a visual review",
+      "Marking VIDEO BAD: none without checking motion/dash feedback across ≥20s play",
+      "Skipping edge simulations (dash spam, multi-touch, max stick deflect) entirely",
+      "Assuming keyboard works because mouse path CAPTURE_OK",
+      "Claiming A4b/A6 done without writing per-file *.review.json sidecars",
+      "Batch-writing all_good sidecars without opening each artifact",
+      "Rollup BAD: none while sidecar verdict is issues (or missing sidecar)"
     ]
   },
   "form_factor": {
@@ -117,8 +131,8 @@
         "must": [
           "Virtual stick visible and outside playfield rect",
           "DASH button visible and outside playfield rect",
-          "Stick\u2194DASH gap \u2265 12 CSS px",
-          "Hit target diameter \u2265 48 CSS px (fatty-finger)"
+          "Stick↔DASH gap ≥ 12 CSS px",
+          "Hit target diameter ≥ 48 CSS px (fatty-finger)"
         ],
         "menu_copy_must": [
           "Stick + DASH language",
@@ -128,7 +142,7 @@
     }
   },
   "visual_criteria": {
-    "description": "Apply on every matrix PNG (A6) and relevant video stills (A4b). Any FAIL on a cell \u2192 that cell's BAD must list criterion ids.",
+    "description": "Apply on every matrix PNG (A6) and relevant video stills (A4b). Any FAIL on a cell → that cell's BAD must list criterion ids.",
     "global": [
       {
         "id": "V-CLIP-TEXT",
@@ -169,14 +183,14 @@
       {
         "id": "V-GLYPH-TOFU",
         "severity": "blocker",
-        "check": "No missing-glyph boxes, tofu rectangles, or broken substitute characters in UI strings. Prefer ASCII separators (- | /) if font lacks \u00b7 \u2022 \u2014",
+        "check": "No missing-glyph boxes, tofu rectangles, or broken substitute characters in UI strings. Prefer ASCII separators (- | /) if font lacks · • —",
         "applies": [
           "menu",
           "mode_select",
           "playing",
           "game_over"
         ],
-        "known_risk": "ui.rs uses U+00B7 middle-dot (\u00b7) widely; default font often renders as empty boxes between words"
+        "known_risk": "ui.rs uses U+00B7 middle-dot (·) widely; default font often renders as empty boxes between words"
       },
       {
         "id": "V-LINES-OVER-TEXT",
@@ -233,8 +247,8 @@
           "game_over"
         ],
         "known_fail_examples": [
-          "phone_portrait_02_menu.png \u2014 blue rects above and below panel",
-          "phone_landscape_02_menu.png \u2014 framed empty boxes left and right of panel"
+          "phone_portrait_02_menu.png — blue rects above and below panel",
+          "phone_landscape_02_menu.png — framed empty boxes left and right of panel"
         ]
       },
       {
@@ -334,7 +348,7 @@
       {
         "id": "V-MODE-ALL-OPTIONS",
         "severity": "blocker",
-        "check": "All four modes visible or navigable (Classic, Zen, Survival, Timed) and difficulty control readable (EASY\u2026INSANE or compact chevrons)",
+        "check": "All four modes visible or navigable (Classic, Zen, Survival, Timed) and difficulty control readable (EASY…INSANE or compact chevrons)",
         "applies": [
           "mode_select"
         ]
@@ -347,7 +361,7 @@
           "mode_select"
         ],
         "known_fail_examples": [
-          "phone_landscape_03_mode_select.png \u2014 START over 'Modes up top\u2026'"
+          "phone_landscape_03_mode_select.png — START over 'Modes up top…'"
         ]
       }
     ],
@@ -438,30 +452,50 @@
       {
         "id": "I-PLAY-DURATION",
         "severity": "blocker",
-        "check": "\u2265 min_play_ms continuous play visible on recording (not truncated before 20s unless force_go path documents otherwise for matrix GO shot only)"
+        "check": "≥ min_play_ms continuous play visible on recording (not truncated before 20s unless force_go path documents otherwise for matrix GO shot only)"
       },
       {
         "id": "I-EVENTS-NONZERO",
         "severity": "blocker",
         "check": "Instrumented touch/pointer paths must not report events=0 for stick and DASH after calibrated input (Phase C inventory and emulator adb paths)",
         "known_fail_examples": [
-          "screenshots/web/phone/touch_inventory.md 2026-07-11: stick/dash FAIL events=0 on all 2\u00d72 cells"
+          "screenshots/web/phone/touch_inventory.md 2026-07-11: stick/dash FAIL events=0 on all 2×2 cells"
         ]
       },
       {
         "id": "I-FATTY-FINGER",
         "severity": "major",
-        "check": "Hit diameter \u2265 48 CSS px; stick\u2194dash gap \u2265 12 CSS px on handheld play layouts"
+        "check": "Hit diameter ≥ 48 CSS px; stick↔dash gap ≥ 12 CSS px on handheld play layouts"
+      },
+      {
+        "id": "I-SIM-NORMAL-SUITE",
+        "severity": "blocker",
+        "check": "E2E path exercises SIM-*-NORMAL scenarios for its modality (see input_simulation_scenarios)"
+      },
+      {
+        "id": "I-SIM-EDGE-SUITE",
+        "severity": "major",
+        "check": "E2E path or dedicated edge pass exercises SIM-*-edge cases for modality; failures recorded as VIDEO BADs with scenario ids"
+      },
+      {
+        "id": "I-STICK-CLAMP",
+        "severity": "blocker",
+        "check": "Touch stick knob never renders outside outer ring under max deflection (SIM-STICK-MAX-DEFLECT)"
+      },
+      {
+        "id": "I-MULTITOUCH-STICK-DASH",
+        "severity": "blocker",
+        "check": "Simultaneous stick hold + DASH tap both work (SIM-DASH-WHILE-STICK)"
       }
     ]
   },
   "video_criteria": {
-    "description": "A4b \u2014 continuous playthrough review. Stills help but are not a substitute for sampling the recording when available.",
+    "description": "A4b — continuous playthrough review. Stills help but are not a substitute for sampling the recording when available.",
     "checks": [
       {
         "id": "VID-JOURNEY",
         "severity": "blocker",
-        "check": "Recording shows boot\u2192menu\u2192mode\u2192play\u2192(game over when in scope) without panic/blank/stuck boot"
+        "check": "Recording shows boot→menu→mode→play→(game over when in scope) without panic/blank/stuck boot"
       },
       {
         "id": "VID-INPUT-WORKS",
@@ -481,12 +515,38 @@
       {
         "id": "VID-VISUAL-SAME-AS-MATRIX",
         "severity": "blocker",
-        "check": "If matrix PNGs fail a visual criterion, matching video stills must not be marked BAD: none \u2014 same visual rules apply"
+        "check": "If matrix PNGs fail a visual criterion, matching video stills must not be marked BAD: none — same visual rules apply"
+      },
+      {
+        "id": "SIM-VIDEO-MATCHES-INPUT",
+        "severity": "blocker",
+        "check": "For each scenario the capture path claims (normal + exercised edges), video/stills match expected_video_outcome in input_simulation_scenarios.scenarios"
+      },
+      {
+        "id": "SIM-NORMAL-PATH-COVERED",
+        "severity": "blocker",
+        "check": "Recording includes boot dismiss → menu → mode cycle → play ≥20s move+dash → game over when in scope (normal scenarios)"
+      },
+      {
+        "id": "SIM-EDGE-NO-PANIC",
+        "severity": "blocker",
+        "check": "Edge scenarios (dash spam, opposing keys, multi-touch, max stick deflect) never show panic blank, freeze, or controls stacked mid-field"
+      },
+      {
+        "id": "SIM-STICK-VISUAL-FEEDBACK",
+        "severity": "blocker",
+        "check": "Handheld: while stick dragged, knob offset visible inside ring; on release knob recenters. Fortnite-style ring stick OK if feedback clear.",
+        "when": "handheld"
+      },
+      {
+        "id": "SIM-DASH-VISUAL-FEEDBACK",
+        "severity": "major",
+        "check": "Dash input produces visible feedback (trail, cooldown text, or button press scale) within ~0.5s of input in the recording"
       }
     ]
   },
   "artifact_criteria": {
-    "description": "Integrity of capture outputs \u2014 wrong labels and empty proofs are FAILs even if 'something' was saved.",
+    "description": "Integrity of capture outputs — wrong labels and empty proofs are FAILs even if 'something' was saved.",
     "checks": [
       {
         "id": "A-MATRIX-COMPLETE",
@@ -496,7 +556,7 @@
       {
         "id": "A-RECORDING-PRESENT",
         "severity": "blocker",
-        "check": "Each required matrix unit \u00d7 input path has a primary recording (webm/mp4) for the ship path under review"
+        "check": "Each required matrix unit × input path has a primary recording (webm/mp4) for the ship path under review"
       },
       {
         "id": "A-LABEL-TRUTH",
@@ -506,13 +566,28 @@
       {
         "id": "A-PHONE-2X2",
         "severity": "blocker",
-        "check": "Phase C when device present: portrait|landscape \u00d7 browsing|fullscreen all run; inventory written; open_bads must be 0 or user-accepted by id",
+        "check": "Phase C when device present: portrait|landscape × browsing|fullscreen all run; inventory written; open_bads must be 0 or user-accepted by id",
         "when": "phase_c_device_present"
       },
       {
         "id": "A-CRITIQUE-COVERAGE",
         "severity": "blocker",
         "check": "Every matrix cell and every recording has a critique line for THIS run (mtime/run id evidence preferred)"
+      },
+      {
+        "id": "A-REVIEW-SIDECAR-MATRIX",
+        "severity": "blocker",
+        "check": "Every expected matrix PNG has sibling *.review.json with opened:true, verdict all_good|issues, and this-run run_start_unix or fresh mtime"
+      },
+      {
+        "id": "A-REVIEW-SIDECAR-VIDEO",
+        "severity": "blocker",
+        "check": "Every required e2e/phone primary recording has sibling *.review.json with opened:true and valid verdict for this run"
+      },
+      {
+        "id": "A-REVIEW-SIDECAR-CONSISTENT",
+        "severity": "blocker",
+        "check": "Sidecar verdict issues implies rollup CRITIQUE/VIDEO BAD not none; all_good only when criteria truly pass"
       }
     ]
   },
@@ -600,13 +675,583 @@
     ]
   },
   "agent_instructions": [
+    "A7 must fail if any required sidecar is missing or opened is not true.",
+    "After opening each PNG or video, write sibling *.review.json (all good OR list what is wrong). Review incomplete without it.",
+    "Compare video frames to expected_video_outcome; CAPTURE_OK step counts do not prove motion/dash feedback.",
+    "Simulate or confirm e2e covers both normal use and edge cases — not only happy-path boot→play.",
+    "When reviewing VIDEO: walk input_simulation_scenarios (normal + edge) for that modality; cite SIM-* ids on BAD lines.",
     "In status files, label capture vs review explicitly (CAPTURE_OK vs A4b/A6 reviewed).",
-    "CAPTURE_OK (scripts) \u2260 REVIEW. Never mark BAD: none solely because capture printed PASS/CAPTURE_OK.",
+    "CAPTURE_OK (scripts) ≠ REVIEW. Never mark BAD: none solely because capture printed PASS/CAPTURE_OK.",
     "Before any A4b/A6 critique line: open scripts/qa_success_criteria.json and scripts/qa_matrix.json.",
     "Open each artifact with the image tool (or sample video stills). Directory listing is not review.",
     "For each screen, walk review_checklist_by_screen and mark FAIL with criterion id if any check fails.",
-    "If unsure whether a shape is intentional VFX, FAIL major and ask \u2014 do not invent BAD: none.",
+    "If unsure whether a shape is intentional VFX, FAIL major and ask — do not invent BAD: none.",
     "When this file and a skill text disagree on PASS/FAIL, this file wins for criteria; skills win for process/order.",
-    "Update this file when new regression classes are found (add criterion id + known_fail_examples) \u2014 do not only mention them in chat."
-  ]
+    "Update this file when new regression classes are found (add criterion id + known_fail_examples) — do not only mention them in chat."
+  ],
+  "input_simulation_scenarios": {
+    "description": "Simulate real user input (normal play + edge cases). Capture VIDEO of each path. A4b review must compare frames/timeline to expected_video_outcome. CAPTURE_OK (script steps) is not enough — video must match expectations. Runners: e2e_inputs (kb/mouse), e2e_emulator_matrix / e2e_phone (touch).",
+    "how_to_review_video": [
+      "Open recording or extracted stills across the timeline (not only first/last frame).",
+      "For each scenario id that the path claims to exercise, verify expected_video_outcome.",
+      "If outcome fails, VIDEO line BAD must cite scenario id and/or criterion id (SIM-*).",
+      "Matrix PNGs alone cannot pass SIM-* criteria — need continuous video/stills."
+    ],
+    "modalities": {
+      "keyboard": "Desktop/laptop primary: WASD/arrows move, Space dash, Enter/Esc menus",
+      "mouse": "Desktop: left-drag point-to-move, right-click dash, clicks for menus",
+      "touch": "Handheld: virtual stick + DASH button; taps for menus; two-finger back where defined"
+    },
+    "scenarios": [
+      {
+        "id": "SIM-BOOT-DISMISS-NORMAL",
+        "kind": "normal",
+        "modality": [
+          "keyboard",
+          "mouse",
+          "touch"
+        ],
+        "screens": [
+          "boot"
+        ],
+        "simulate": "User dismisses boot CTA once (Enter/Space or click/tap on CTA).",
+        "expected_video_outcome": [
+          "Boot overlay disappears within ~1s of input",
+          "Main menu (RUSTY DASHER title panel) appears — not stuck on blank/WASM spinner",
+          "No double-advance past menu into mode select on a single dismiss"
+        ],
+        "severity": "blocker"
+      },
+      {
+        "id": "SIM-MENU-CONFIRM-NORMAL",
+        "kind": "normal",
+        "modality": [
+          "keyboard",
+          "mouse",
+          "touch"
+        ],
+        "screens": [
+          "menu"
+        ],
+        "simulate": "User confirms main menu (Enter/Space or tap/click panel center).",
+        "expected_video_outcome": [
+          "Transitions to SELECT MODE",
+          "All four modes visible or navigable",
+          "No panic/black frame"
+        ],
+        "severity": "blocker"
+      },
+      {
+        "id": "SIM-MENU-SWAP-TOUCH-NORMAL",
+        "kind": "normal",
+        "modality": [
+          "touch"
+        ],
+        "screens": [
+          "menu"
+        ],
+        "when": "handheld",
+        "simulate": "User taps swap-controls band (bottom strip) then confirms into play; verify stick/DASH sides swapped vs default.",
+        "expected_video_outcome": [
+          "Swap band reacts (or copy updates Stick LEFT/RIGHT)",
+          "In Playing, stick and DASH appear on swapped sides",
+          "Both still outside playfield"
+        ],
+        "severity": "major"
+      },
+      {
+        "id": "SIM-MODE-CYCLE-NORMAL",
+        "kind": "normal",
+        "modality": [
+          "keyboard",
+          "mouse",
+          "touch"
+        ],
+        "screens": [
+          "mode_select"
+        ],
+        "simulate": "User cycles all 4 modes and all 4 difficulties, then START.",
+        "expected_video_outcome": [
+          "Selection highlight/cursor moves through Classic, Zen, Survival, Timed",
+          "Difficulty changes Easy→Insane (or compact chevrons)",
+          "START enters Playing with matching mode/difficulty on HUD"
+        ],
+        "severity": "blocker"
+      },
+      {
+        "id": "SIM-PLAY-MOVE-KB-NORMAL",
+        "kind": "normal",
+        "modality": [
+          "keyboard"
+        ],
+        "screens": [
+          "playing"
+        ],
+        "when": "desktop",
+        "simulate": "Hold WASD/arrows ≥20s with direction changes; Space dash ≥2 times.",
+        "expected_video_outcome": [
+          "Player (cyan disc) translates in pressed directions — not frozen",
+          "Dash produces visible burst/trail or cooldown text change (Dash READY → timer → READY)",
+          "No stick/DASH on-screen chrome",
+          "Score/hearts/HUD update or at least remain live (not frozen boot frame)"
+        ],
+        "severity": "blocker"
+      },
+      {
+        "id": "SIM-PLAY-MOVE-MOUSE-NORMAL",
+        "kind": "normal",
+        "modality": [
+          "mouse"
+        ],
+        "screens": [
+          "playing"
+        ],
+        "when": "desktop",
+        "simulate": "Left-drag point-to-move across field ≥20s; right-click dash ≥2 times.",
+        "expected_video_outcome": [
+          "Player moves toward cursor / drag direction over many frames",
+          "Right-click dash visible (trail/cooldown)",
+          "No virtual stick chrome",
+          "Continuous play not a still image"
+        ],
+        "severity": "blocker"
+      },
+      {
+        "id": "SIM-PLAY-STICK-NORMAL",
+        "kind": "normal",
+        "modality": [
+          "touch"
+        ],
+        "screens": [
+          "playing"
+        ],
+        "when": "handheld",
+        "simulate": "Drag virtual stick in ≥3 directions over ≥20s; tap DASH ≥2 times.",
+        "expected_video_outcome": [
+          "Stick knob offsets from base while dragging; returns toward center on release",
+          "Player moves matching stick direction",
+          "DASH press scales/highlights button; dash effect or cooldown visible",
+          "Stick + DASH stay outside blue playfield (Fortnite-style ring stick OK)",
+          "Portrait: controls in bottom margin; landscape: stick L grip, DASH R grip (or swapped)"
+        ],
+        "severity": "blocker"
+      },
+      {
+        "id": "SIM-GO-AGAIN-NORMAL",
+        "kind": "normal",
+        "modality": [
+          "keyboard",
+          "mouse",
+          "touch"
+        ],
+        "screens": [
+          "game_over"
+        ],
+        "simulate": "After Game Over, confirm again (Enter/Space/tap).",
+        "expected_video_outcome": [
+          "GAME OVER / NEW HIGH SCORE panel visible first",
+          "Again restarts Playing or returns to a valid post-GO flow without blank/panic"
+        ],
+        "severity": "blocker"
+      },
+      {
+        "id": "SIM-GO-BACK-NORMAL",
+        "kind": "normal",
+        "modality": [
+          "keyboard",
+          "mouse",
+          "touch"
+        ],
+        "screens": [
+          "game_over",
+          "mode_select"
+        ],
+        "simulate": "Back/Esc or two-finger / left-edge back to menu when reachable.",
+        "expected_video_outcome": [
+          "Leaves current screen to Menu or ModeSelect as designed",
+          "No stuck GO overlay"
+        ],
+        "severity": "major"
+      },
+      {
+        "id": "SIM-BOOT-DOUBLE-TAP",
+        "kind": "edge",
+        "modality": [
+          "mouse",
+          "touch",
+          "keyboard"
+        ],
+        "screens": [
+          "boot"
+        ],
+        "simulate": "Double-dismiss boot (two quick Enter/clicks/taps).",
+        "expected_video_outcome": [
+          "Ends on Menu or ModeSelect — not Playing skipped accidentally without mode UI",
+          "No crash; canvas still receiving input"
+        ],
+        "severity": "major"
+      },
+      {
+        "id": "SIM-BOOT-MISS-CTA",
+        "kind": "edge",
+        "modality": [
+          "mouse",
+          "touch"
+        ],
+        "screens": [
+          "boot"
+        ],
+        "simulate": "Tap/click far from CTA (corner) then on CTA.",
+        "expected_video_outcome": [
+          "Miss does not freeze game",
+          "CTA hit eventually dismisses boot"
+        ],
+        "severity": "minor"
+      },
+      {
+        "id": "SIM-STICK-DEADZONE",
+        "kind": "edge",
+        "modality": [
+          "touch"
+        ],
+        "screens": [
+          "playing"
+        ],
+        "when": "handheld",
+        "simulate": "Micro-nudge stick inside deadzone (~<12% radius) then full deflection.",
+        "expected_video_outcome": [
+          "Near-center nudge does not cause large player teleport",
+          "Full deflection moves player clearly",
+          "Knob does not leave outer stick ring"
+        ],
+        "severity": "major"
+      },
+      {
+        "id": "SIM-STICK-MAX-DEFLECT",
+        "kind": "edge",
+        "modality": [
+          "touch"
+        ],
+        "screens": [
+          "playing"
+        ],
+        "when": "handheld",
+        "simulate": "Drag stick far past max radius (outside base).",
+        "expected_video_outcome": [
+          "Knob clamps to ring edge (no knob flying across screen)",
+          "Player still moves in that direction at full strength",
+          "Release returns knob toward center"
+        ],
+        "severity": "blocker"
+      },
+      {
+        "id": "SIM-STICK-OUTSIDE-HIT",
+        "kind": "edge",
+        "modality": [
+          "touch"
+        ],
+        "screens": [
+          "playing"
+        ],
+        "when": "handheld",
+        "simulate": "First touch on stick-side deck/grip away from exact center (fat-finger grab zone).",
+        "expected_video_outcome": [
+          "Stick engages (knob follows) without requiring pixel-perfect center hit",
+          "Does not accidentally trigger DASH"
+        ],
+        "severity": "major"
+      },
+      {
+        "id": "SIM-DASH-SPAM",
+        "kind": "edge",
+        "modality": [
+          "keyboard",
+          "mouse",
+          "touch"
+        ],
+        "screens": [
+          "playing"
+        ],
+        "simulate": "Spam dash (Space / right-click / DASH) ≥5 times in 2s including during cooldown.",
+        "expected_video_outcome": [
+          "No crash/panic",
+          "Cooldownhes only when allowed; cooldown text or button feedback appears",
+          "Player does not rubber-band out of bounds"
+        ],
+        "severity": "major"
+      },
+      {
+        "id": "SIM-DASH-WHILE-STICK",
+        "kind": "edge",
+        "modality": [
+          "touch"
+        ],
+        "screens": [
+          "playing"
+        ],
+        "when": "handheld",
+        "simulate": "Multi-touch: hold stick deflection + tap DASH (two fingers).",
+        "expected_video_outcome": [
+          "Both controls respond: movement continues while dash fires",
+          "No control swap/glitch; stick knob stays on stick side",
+          "Player dashes roughly along move facing"
+        ],
+        "severity": "blocker"
+      },
+      {
+        "id": "SIM-MULTI-TOUCH-STRAY",
+        "kind": "edge",
+        "modality": [
+          "touch"
+        ],
+        "screens": [
+          "playing"
+        ],
+        "when": "handheld",
+        "simulate": "Third finger tap on field / HUD while stick owned.",
+        "expected_video_outcome": [
+          "Stick ownership not stolen into random teleport",
+          "No unintended menu exit mid-play"
+        ],
+        "severity": "major"
+      },
+      {
+        "id": "SIM-MOUSE-DRAG-OFFSCREEN",
+        "kind": "edge",
+        "modality": [
+          "mouse"
+        ],
+        "screens": [
+          "playing"
+        ],
+        "when": "desktop",
+        "simulate": "Drag cursor to window edge / outside canvas then back.",
+        "expected_video_outcome": [
+          "No panic",
+          "Player motion remains sane when cursor returns",
+          "No stuck dash or frozen input"
+        ],
+        "severity": "major"
+      },
+      {
+        "id": "SIM-KB-OPPOSING-KEYS",
+        "kind": "edge",
+        "modality": [
+          "keyboard"
+        ],
+        "screens": [
+          "playing"
+        ],
+        "when": "desktop",
+        "simulate": "Hold Left+Right or Up+Down simultaneously, then release one.",
+        "expected_video_outcome": [
+          "No crash",
+          "Motion cancels or prefers one axis consistently; release resumes correct direction"
+        ],
+        "severity": "minor"
+      },
+      {
+        "id": "SIM-PLAY-RAPID-ESC",
+        "kind": "edge",
+        "modality": [
+          "keyboard"
+        ],
+        "screens": [
+          "playing",
+          "menu"
+        ],
+        "simulate": "Press Esc during play (if supported) or after short play.",
+        "expected_video_outcome": [
+          "Either returns to menu cleanly or is ignored without freeze",
+          "Not a half-drawn hybrid HUD/menu"
+        ],
+        "severity": "major"
+      },
+      {
+        "id": "SIM-MODE-START-DOUBLE",
+        "kind": "edge",
+        "modality": [
+          "touch",
+          "mouse",
+          "keyboard"
+        ],
+        "screens": [
+          "mode_select",
+          "playing"
+        ],
+        "simulate": "Double-activate START.",
+        "expected_video_outcome": [
+          "Single clean enter into Playing",
+          "Not two overlapping runs or missing chrome"
+        ],
+        "severity": "major"
+      },
+      {
+        "id": "SIM-GO-FORCE-TIMEOUT",
+        "kind": "edge",
+        "modality": [
+          "keyboard",
+          "mouse",
+          "touch"
+        ],
+        "screens": [
+          "playing",
+          "game_over"
+        ],
+        "simulate": "qa_matrix force game-over path (suite): play until forced GO.",
+        "expected_video_outcome": [
+          "Real GAME OVER or NEW HIGH SCORE panel (not menu, not mid-play freeze)",
+          "Stats readable; form-factor hints correct",
+          "No clipped title"
+        ],
+        "severity": "blocker"
+      },
+      {
+        "id": "SIM-ORIENTATION-CHROME",
+        "kind": "edge",
+        "modality": [
+          "touch"
+        ],
+        "screens": [
+          "playing"
+        ],
+        "when": "handheld",
+        "simulate": "Compare portrait vs landscape recordings for same phone class.",
+        "expected_video_outcome": [
+          "Portrait: stick+DASH bottom margin (Game Boy)",
+          "Landscape: stick left + DASH right grips (PSP) unless swapped",
+          "Never stacked mid-field (rodin regression)"
+        ],
+        "severity": "blocker"
+      },
+      {
+        "id": "SIM-FAT-FINGER-GAP",
+        "kind": "edge",
+        "modality": [
+          "touch"
+        ],
+        "screens": [
+          "playing"
+        ],
+        "when": "handheld",
+        "simulate": "Tap near midpoint between stick and DASH.",
+        "expected_video_outcome": [
+          "Does not fire both or neither chaotically every frame",
+          "Hit targets remain ≥48 CSS px; gap ≥12 CSS px (geometry)",
+          "Video shows intentional single control when aiming at one"
+        ],
+        "severity": "major"
+      },
+      {
+        "id": "SIM-INPUT-AFTER-BOOT-FOCUS",
+        "kind": "edge",
+        "modality": [
+          "keyboard"
+        ],
+        "screens": [
+          "boot",
+          "menu",
+          "playing"
+        ],
+        "simulate": "After boot dismiss, press movement keys without extra click.",
+        "expected_video_outcome": [
+          "Keys work in menu/play (canvas focused) — not dead keyboard until click",
+          "Player moves once in Playing without requiring a prior canvas click"
+        ],
+        "severity": "blocker"
+      },
+      {
+        "id": "SIM-LONG-PLAY-STABILITY",
+        "kind": "normal",
+        "modality": [
+          "keyboard",
+          "mouse",
+          "touch"
+        ],
+        "screens": [
+          "playing"
+        ],
+        "simulate": "Continuous play ≥20s (suite default play_ms) with periodic move+dash.",
+        "expected_video_outcome": [
+          "Recording length supports ≥20s play segment (or stills span that duration)",
+          "No freeze-frame after 2s of motion",
+          "No progressive HUD corruption or control disappearance"
+        ],
+        "severity": "blocker"
+      }
+    ]
+  },
+  "review_checklist_input_sim": {
+    "keyboard_desktop": [
+      "SIM-BOOT-DISMISS-NORMAL",
+      "SIM-MENU-CONFIRM-NORMAL",
+      "SIM-MODE-CYCLE-NORMAL",
+      "SIM-PLAY-MOVE-KB-NORMAL",
+      "SIM-DASH-SPAM",
+      "SIM-KB-OPPOSING-KEYS",
+      "SIM-LONG-PLAY-STABILITY",
+      "SIM-GO-FORCE-TIMEOUT",
+      "SIM-INPUT-AFTER-BOOT-FOCUS"
+    ],
+    "mouse_desktop": [
+      "SIM-BOOT-DISMISS-NORMAL",
+      "SIM-MENU-CONFIRM-NORMAL",
+      "SIM-MODE-CYCLE-NORMAL",
+      "SIM-PLAY-MOVE-MOUSE-NORMAL",
+      "SIM-DASH-SPAM",
+      "SIM-MOUSE-DRAG-OFFSCREEN",
+      "SIM-LONG-PLAY-STABILITY",
+      "SIM-GO-FORCE-TIMEOUT"
+    ],
+    "touch_handheld": [
+      "SIM-BOOT-DISMISS-NORMAL",
+      "SIM-MENU-CONFIRM-NORMAL",
+      "SIM-MENU-SWAP-TOUCH-NORMAL",
+      "SIM-MODE-CYCLE-NORMAL",
+      "SIM-PLAY-STICK-NORMAL",
+      "SIM-DASH-WHILE-STICK",
+      "SIM-STICK-MAX-DEFLECT",
+      "SIM-STICK-DEADZONE",
+      "SIM-STICK-OUTSIDE-HIT",
+      "SIM-DASH-SPAM",
+      "SIM-MULTI-TOUCH-STRAY",
+      "SIM-FAT-FINGER-GAP",
+      "SIM-ORIENTATION-CHROME",
+      "SIM-LONG-PLAY-STABILITY",
+      "SIM-GO-FORCE-TIMEOUT"
+    ]
+  },
+  "per_artifact_review": {
+    "description": "Review of a media file is complete only after the AI agent opens it and writes a sidecar *.review.json. Rollup CRITIQUE/VIDEO lines alone are insufficient.",
+    "format": "json",
+    "why_json": "Machine-checkable at A7; stable schema; easy to count missing sidecars.",
+    "paths": {
+      "matrix_png": "screenshots/viewports/{format}_{shot}.review.json next to {format}_{shot}.png",
+      "e2e_recording": "screenshots/web/e2e/recordings/{name}.review.json next to {name}.webm|.mp4",
+      "phone_recording": "screenshots/web/phone/recordings/{cell}.review.json next to {cell}.mp4"
+    },
+    "schema": {
+      "artifact": "string path relative to repo root",
+      "artifact_kind": "matrix_png | e2e_video | phone_video | e2e_still",
+      "reviewed_at": "ISO-8601",
+      "reviewer": "agent",
+      "run_start_unix": "number from .grok/status/run_start_unix for this pass",
+      "opened": "must be true — agent used image tool or sampled video/stills",
+      "verdict": "all_good | issues",
+      "summary": "all good OR short description of what is wrong",
+      "issues": "[] if all_good; else [{id, detail}] with criterion or SIM-* id",
+      "criteria_checked": "array of criterion ids walked",
+      "sim_scenarios_checked": "optional array of SIM-* ids for videos"
+    },
+    "examples": {
+      "all_good_summary": "all good",
+      "issues_summary": "nested play border; stick mid-field"
+    },
+    "completeness": [
+      "File F is reviewed only if F.review.json exists with opened:true and valid verdict",
+      "A7 requires sidecars for every expected matrix cell and every required recording this run",
+      "verdict issues must not pair with rollup BAD: none for the same artifact/unit",
+      "Stale sidecars from older run_start_unix do not count"
+    ]
+  }
 }
