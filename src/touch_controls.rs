@@ -11,9 +11,11 @@
 //!   - Mode list band: top half = previous mode, bottom half = next mode
 //!   - Difficulty row: left half = easier, right half = harder
 //!   - **START** button band → confirm
-//!   - Two-finger tap → back
+//!   - Bottom strip / far-left edge → back (no multi-finger gestures)
 //! Menus (main / game over):
 //!   - Tap → confirm (except swap-controls band on main menu)
+//!   - Far-left edge → back on main/game over (no two-finger back)
+//! Playing desktop: left-drag move, **right-click** dash only (no two-finger dash)
 
 use crate::components::{MainCamera, Player};
 use crate::save::SaveData;
@@ -292,9 +294,7 @@ pub fn update_touch_controls(
                 .map(|p| web_pointer::remap_to_window(p, window));
 
             let Some(pos) = tap else {
-                if touches.iter().count() >= 2 {
-                    controls.back_just = true;
-                }
+                // No single-finger tap: do not treat multi-touch as back/dash.
                 return;
             };
 
@@ -327,7 +327,6 @@ pub fn update_touch_controls(
                         // Bottom strip / far-left: treat as back on handheld
                         controls.back_just = true;
                     }
-                    // Two-finger still works via the empty-tap path above
                 }
                 GameState::ModeSelect => {
                     // Desktop/tablet-wide: keep side strips + thirds
@@ -517,24 +516,17 @@ fn update_playing_desktop(
     controls.stick_pointer = None;
     controls.stick_knob_offset = Vec2::ZERO;
 
-    let active: Vec<_> = touches.iter().collect();
-    let just_pressed: Vec<_> = touches.iter_just_pressed().collect();
-    let touch_count = active.len();
-    let held_prior = touch_count.saturating_sub(just_pressed.len());
-
-    if held_prior >= 1 && !just_pressed.is_empty() {
-        controls.dash_just = true;
-        controls.dash = true;
-    } else if touch_count >= 2 {
-        controls.dash = true;
-    }
-
+    // Desktop / non-chrome path: move with primary pointer only.
+    // Dash is right-click only — no two-finger / multi-touch dash (too easy to miss-time).
     if mouse_right_just {
         controls.dash_just = true;
         controls.dash = true;
     }
 
-    let move_screen = pick_move_pointer(&active, &just_pressed, touch_count)
+    let move_screen = touches
+        .iter()
+        .next()
+        .map(|t| t.position())
         .or_else(|| {
             if mouse_down {
                 window.cursor_position()
@@ -561,25 +553,6 @@ fn update_playing_desktop(
             }
         }
     }
-}
-
-fn pick_move_pointer(
-    active: &[&bevy::input::touch::Touch],
-    just_pressed: &[&bevy::input::touch::Touch],
-    touch_count: usize,
-) -> Option<Vec2> {
-    if active.is_empty() {
-        return None;
-    }
-
-    if touch_count >= 2 && !just_pressed.is_empty() {
-        let just_ids: Vec<_> = just_pressed.iter().map(|t| t.id()).collect();
-        if let Some(held) = active.iter().find(|t| !just_ids.contains(&t.id())) {
-            return Some(held.position());
-        }
-    }
-
-    Some(active[0].position())
 }
 
 /// Convert window logical position → world using the live camera (matches playfield).

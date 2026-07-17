@@ -983,7 +983,7 @@
     "modalities": {
       "keyboard": "Desktop/laptop primary: WASD/arrows move, Space dash, Enter/Esc menus",
       "mouse": "Desktop: left-drag point-to-move, right-click dash, clicks for menus",
-      "touch": "Handheld: virtual stick + DASH button; taps for menus; two-finger back where defined"
+      "touch": "Handheld: virtual stick + DASH button (simultaneous multi-touch OK on those hit targets); single-finger taps for menus; left-edge / bottom strip back — no two-finger gestures"
     },
     "scenarios": [
       {
@@ -1149,7 +1149,7 @@
           "game_over",
           "mode_select"
         ],
-        "simulate": "Back/Esc or two-finger / left-edge back to menu when reachable.",
+        "simulate": "Back/Esc or left-edge / bottom-strip back to menu when reachable (no two-finger back).",
         "expected_video_outcome": [
           "Leaves current screen to Menu or ModeSelect as designed",
           "No stuck GO overlay"

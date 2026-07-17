@@ -419,7 +419,7 @@ fn spawn_mode_select_with(
                 base: Vec2::new(0.0, help_y),
                 menu: true,
             },
-            Text2d::new("Modes up top - < > difficulty - two fingers back"),
+            Text2d::new("Modes up top - < > difficulty - bottom / edge: back"),
             font(help_px, s),
             TextColor(Color::srgb(0.6, 0.68, 0.85)),
             TextLayout::justify(Justify::Center),
@@ -836,9 +836,9 @@ pub fn spawn_game_over(
             stats.stars_collected,
             hs,
             if phone {
-                "Tap: again\nTwo fingers: menu"
+                "Tap: again\nLeft edge: menu"
             } else if scale.class.is_handheld() {
-                "Tap: play again\nTwo fingers / left edge: menu"
+                "Tap: play again\nLeft edge: menu"
             } else {
                 "ENTER / SPACE: play again\nESC: menu"
             }
