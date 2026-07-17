@@ -52,15 +52,9 @@ impl PlayBounds {
 
     /// Choose orthographic height so short phone screens don't look microscopic.
     /// Lower world height → larger physical sprites on the same CSS pixels.
+    /// Source of truth: [`ViewportClass::view_height_world`] (also used by menu fit).
     pub fn view_height_for(class: ViewportClass) -> f32 {
-        match class {
-            // Landscape phones were ~2× tinier than portrait under FixedVertical 1080.
-            ViewportClass::PhoneLandscape => 560.0,
-            ViewportClass::PhonePortrait => 820.0,
-            ViewportClass::TabletLandscape => 900.0,
-            ViewportClass::TabletPortrait => 980.0,
-            ViewportClass::Desktop1080 | ViewportClass::Desktop4k => Self::VIEW_HEIGHT,
-        }
+        class.view_height_world()
     }
 
     pub fn from_aspect(aspect: f32) -> Self {

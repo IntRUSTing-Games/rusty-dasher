@@ -60,6 +60,22 @@ impl ViewportClass {
             Self::PhonePortrait | Self::PhoneLandscape | Self::TabletPortrait
         )
     }
+
+    /// Orthographic FixedVertical world height for this class.
+    ///
+    /// **Must match** the camera / [`crate::viewport::PlayBounds`] world height.
+    /// Menu panel fit uses this so panels do not overflow the actual camera view
+    /// (phone portrait/landscape use a shorter world than desktop 1080).
+    pub fn view_height_world(self) -> f32 {
+        match self {
+            // Landscape phones were ~2× tinier than portrait under FixedVertical 1080.
+            Self::PhoneLandscape => 560.0,
+            Self::PhonePortrait => 820.0,
+            Self::TabletLandscape => 900.0,
+            Self::TabletPortrait => 980.0,
+            Self::Desktop1080 | Self::Desktop4k => 1080.0,
+        }
+    }
 }
 
 /// Classify CSS/logical window size into a layout class.
@@ -186,28 +202,40 @@ pub fn menu_design(aspect: f32, window_h: f32) -> Vec2 {
     menu_design_for(class, aspect)
 }
 
-/// Design fonts assume FixedVertical VIEW_HEIGHT = 1080 world units.
+/// Design fonts scale against the **same** FixedVertical world height the camera uses.
+/// Phone portrait/landscape use a shorter world (`ViewportClass::view_height_world`) so
+/// fitting against 1080 would oversize menus and clip them on the laterals.
 pub fn compute_ui_scale(window_width: f32, window_height: f32) -> UiScale {
     let h = window_height.max(200.0);
     let w = window_width.max(200.0);
     let aspect = w / h;
     let class = classify_viewport(w, h);
-    let view_h = 1080.0;
+    // Match PlayBounds / camera orthographic height — not always 1080.
+    let view_h = class.view_height_world();
     let view_w = view_h * aspect;
     let design = menu_design_for(class, aspect);
 
-    // Fit design panel with ~10% padding on each axis.
-    let fit = (0.90 * view_w / design.x).min(0.90 * view_h / design.y);
+    // Fit design **plus** the 14px border ring with side padding so laterals never clip
+    // (V-PANEL-IN-CANVAS / V-CLIP-TEXT). Phone portrait is the high-risk case.
+    let pad = match class {
+        ViewportClass::PhonePortrait | ViewportClass::PhoneLandscape => 0.84,
+        ViewportClass::TabletPortrait | ViewportClass::TabletLandscape => 0.88,
+        _ => 0.90,
+    };
+    // design is content; border is design+14 on each axis in base units at scale 1.
+    let border_x = design.x + 14.0;
+    let border_y = design.y + 14.0;
+    let fit = (pad * view_w / border_x).min(pad * view_h / border_y);
 
     // Big screens: comfortable, not huge. Short/narrow: allow higher scale so
-    // body text stays ~14+ physical pixels.
+    // body text stays ~14+ physical pixels — but never above fit (clipping wins).
     let comfort_max = match class {
         ViewportClass::Desktop4k => 1.05,
         ViewportClass::Desktop1080 => 1.15,
         ViewportClass::TabletLandscape => 1.40,
         ViewportClass::TabletPortrait => 1.55,
-        ViewportClass::PhoneLandscape => 2.20,
-        ViewportClass::PhonePortrait => 2.55,
+        ViewportClass::PhoneLandscape => 1.85,
+        ViewportClass::PhonePortrait => 1.90,
     };
     let panel = fit.min(comfort_max).clamp(0.42, 2.55);
 
@@ -438,5 +466,43 @@ mod tests {
         assert!(ViewportClass::TabletLandscape.is_handheld());
         assert!(!ViewportClass::Desktop1080.is_handheld());
         assert!(!ViewportClass::Desktop4k.is_handheld());
+    }
+
+    /// Regression: phone camera world height is shorter than 1080; menu fit must
+    /// use that height so the blue panel border stays inside the canvas.
+    #[test]
+    fn phone_menu_panel_fits_camera_world() {
+        for (w, h) in [
+            (390.0, 844.0),
+            (360.0, 800.0),
+            (412.0, 915.0),
+            (747.0, 1600.0),
+            (844.0, 390.0),
+            (800.0, 360.0),
+        ] {
+            let ui = compute_ui_scale(w, h);
+            let view_h = ui.class.view_height_world();
+            let view_w = view_h * ui.aspect;
+            // Worst-case content uses ~design; border is design+14 base units.
+            let border = ui.design + Vec2::new(14.0, 14.0);
+            let world = border * ui.panel;
+            assert!(
+                world.x <= view_w + 0.5,
+                "css {w}x{h}: border width {bw:.1} > view_w {view_w:.1} (panel scale {})",
+                ui.panel,
+                bw = world.x,
+            );
+            assert!(
+                world.y <= view_h + 0.5,
+                "css {w}x{h}: border height {bh:.1} > view_h {view_h:.1} (panel scale {})",
+                ui.panel,
+                bh = world.y,
+            );
+            // Lateral margin should remain visible (not flush).
+            assert!(
+                (view_w - world.x) * 0.5 >= 4.0,
+                "css {w}x{h}: lateral margin too small"
+            );
+        }
     }
 }

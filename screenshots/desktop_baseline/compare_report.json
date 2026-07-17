@@ -1,5 +1,5 @@
 {
-  "compared_at": "2026-07-17T22:08:54.872Z",
+  "compared_at": "2026-07-17T22:30:15.910Z",
   "baseline": {
     "final_state": "game_over",
     "samples": 48,
@@ -15,9 +15,9 @@
   },
   "video_frames": {
     "baseline": 1813,
-    "replay": 1096
+    "replay": 1156
   },
-  "frame_delta": 717,
+  "frame_delta": 657,
   "notes": [
     "Coarse auto check only — open baseline_*.webm vs replay_*.webm for desktop feel.",
     "If motion/dash/layout on desktop changed, revert non-handheld-gated code."

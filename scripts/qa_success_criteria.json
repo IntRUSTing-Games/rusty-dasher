@@ -1,6 +1,6 @@
 {
   "description": "Authoritative PASS/FAIL criteria for Rusty Dasher visual + input QA. Pair with scripts/qa_matrix.json (screens \u00d7 formats). Agents MUST open this file before writing matrix_critique.md or video_critique.md. A cell may only use BAD: none when every applicable criterion here is satisfied. Rubber-stamping GOOD without opening each artifact is a process failure.",
-  "version": 5,
+  "version": 6,
   "updated": "2026-07-17",
   "related": {
     "matrix": "scripts/qa_matrix.json",
@@ -100,7 +100,10 @@
       "Rollup BAD: none while sidecar verdict is issues (or missing sidecar)",
       "Fixing handheld fairness by changing desktop world speeds, PLAYER_RADIUS, or Desktop1080 view_height",
       "Calling handheld play fair without checking F-* (play area, entity CSS size, cross-time, stick size) on this-run playing shots",
-      "Skipping phone_rodin_chrome / short-height landscape when judging resize fairness"
+      "Skipping phone_rodin_chrome / short-height landscape when judging resize fairness",
+      "Marking portrait menu/mode BAD: none while blue panel laterals are cut by the canvas edge (V-PANEL-IN-CANVAS)",
+      "Marking playing BAD: none while 'Dash X.Xs' / status text sits on the stick or DASH button (V-PLAY-HUD-CLEAR / V-OVERLAP)",
+      "Skipping mode_select V-PANEL-IN-CANVAS because menu was already reviewed"
     ]
   },
   "form_factor": {
@@ -368,13 +371,17 @@
       {
         "id": "V-CLIP-TEXT",
         "severity": "blocker",
-        "check": "No text clipped by panel edge, canvas edge, safe area, or another control",
+        "check": "No text clipped by panel edge, canvas edge, safe area, or another control. Includes help lines under START, swap-band labels, and side-cut title/body on portrait menus.",
         "applies": [
           "boot",
           "menu",
           "mode_select",
           "playing",
           "game_over"
+        ],
+        "known_fail_examples": [
+          "phone portrait mode_select: 'Modes up top…' help cut by panel bottom blue border",
+          "phone portrait menus: body/swap text tight against lateral panel edge"
         ]
       },
       {
@@ -393,12 +400,15 @@
       {
         "id": "V-OVERLAP",
         "severity": "blocker",
-        "check": "No unintended overlap of interactive controls or of status text by other UI chrome (START must not cover help; stick must not cover score)",
+        "check": "No unintended overlap of interactive controls or of status text by other UI chrome (START must not cover help; stick must not cover score; HUD status must not sit on stick/DASH)",
         "applies": [
           "menu",
           "mode_select",
           "playing",
           "game_over"
+        ],
+        "known_fail_examples": [
+          "playing portrait: 'Dash 0.5s' status text drawn between virtual stick and DASH button"
         ]
       },
       {
@@ -451,12 +461,17 @@
       {
         "id": "V-PANEL-IN-CANVAS",
         "severity": "blocker",
-        "check": "Menu/mode/game-over panels fully inside the game canvas; not cut by browser chrome in a way that removes required controls (START, swap band, again hints)",
+        "check": "Menu/mode/game-over panels (including the blue border ring) fully inside the game canvas on all four sides. Laterals must not be cut: both left and right blue edges must be fully visible with a clear dark margin to the canvas edge. Not cut by browser chrome in a way that removes required controls (START, swap band, again hints).",
         "applies": [
           "menu",
           "mode_select",
           "game_over"
-        ]
+        ],
+        "known_fail_examples": [
+          "phone portrait_browsing mode_select / menu: blue panel border clipped on left and right laterals (UiScale fit used desktop 1080 world height while phone camera uses 820)",
+          "phone portrait: panel fills full CSS width with no side margin"
+        ],
+        "notes": "Physical phone portrait is highest risk. Emulator phone_portrait / phone_android must show full blue ring. Fail if either lateral of the blue border is missing or flush with the canvas edge."
       },
       {
         "id": "V-GHOST-FIELD",
@@ -533,9 +548,12 @@
       {
         "id": "V-PLAY-HUD-CLEAR",
         "severity": "blocker",
-        "check": "Score, hearts, status/level line, Dash READY/cooldown remain legible and not covered by stick/DASH or cut by field border mid-glyph",
+        "check": "Score, hearts, status/level line remain legible and not covered by stick/DASH or cut by field border mid-glyph. On handheld, 'Dash READY' / 'Dash X.Xs' text must NOT appear over the virtual stick, DASH button, or the gap between them (redundant with chrome — suppress or place clear of controls).",
         "applies": [
           "playing"
+        ],
+        "known_fail_examples": [
+          "screenshots/web/phone/stills/portrait_browsing/t75.jpg — 'Dash 0.5s' overlaid between stick ring and DASH button while hazard also OOB below field"
         ]
       },
       {
@@ -866,8 +884,10 @@
       "V-READABLE",
       "V-GLYPH-TOFU",
       "V-GHOST-FIELD",
+      "V-PANEL-IN-CANVAS",
       "V-FORM-FACTOR-COPY",
-      "V-OVERLAP"
+      "V-OVERLAP",
+      "V-LINES-OVER-TEXT"
     ],
     "playing": [
       "V-STATE-MATCH",
@@ -881,6 +901,7 @@
       "V-PLAY-HAZARD-NOT-ON-HUD",
       "V-PLAY-CONTROLS-OUTSIDE-FIELD",
       "V-PLAY-DESKTOP-NO-STICK",
+      "V-OVERLAP",
       "V-GLYPH-TOFU",
       "V-CLIP-TEXT",
       "V-READABLE",
@@ -898,6 +919,7 @@
       "V-STATE-MATCH",
       "V-GO-UNCLIPPED",
       "V-GHOST-FIELD",
+      "V-PANEL-IN-CANVAS",
       "V-READABLE",
       "V-CLIP-TEXT",
       "V-FORM-FACTOR-COPY",

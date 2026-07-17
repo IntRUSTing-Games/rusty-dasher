@@ -342,3 +342,15 @@ CRITIQUE phone_rodin_04_playing: GOOD: this-run fix recapture; hazards in blue r
 # Residual (pre-fix art / not re-reviewed this ship for OOB/HUD):
 # phone_android_landscape_04_playing.review.json still has V-PLAY-HAZARD-NOT-ON-HUD issues from pre-fix open
 # Other touch formats (iphone, samsung, large, rodin_landscape, rodin_chrome midplay, tablet, etc.) keep prior A6/Fortnite art
+
+## Fix-ship review 2026-07-17T22:34:18Z (run_start_unix=1784327295) — scoped phone_portrait + phone_landscape
+CRITIQUE phone_portrait_01_boot: GOOD: boot overlay visible | BAD: none
+CRITIQUE phone_portrait_02_menu: GOOD: full blue panel L/R margins, swap band inside, no lateral clip | BAD: none
+CRITIQUE phone_portrait_03_mode_select: GOOD: full panel laterals, START clear, help inside bottom | BAD: none
+CRITIQUE phone_portrait_04_playing: GOOD: stick+DASH outside field; no Dash READY/X.Xs on chrome | BAD: none
+CRITIQUE phone_portrait_05_game_over: GOOD: GO panel full border with side margins | BAD: none
+CRITIQUE phone_landscape_01_boot: GOOD: boot present | BAD: none
+CRITIQUE phone_landscape_02_menu: GOOD: panel centered full border no lateral clip | BAD: none
+CRITIQUE phone_landscape_03_mode_select: GOOD: full border START clear | BAD: none
+CRITIQUE phone_landscape_04_playing: GOOD: grips outside field no Dash status on chrome | BAD: none
+CRITIQUE phone_landscape_05_game_over: GOOD: GO panel in canvas | BAD: none

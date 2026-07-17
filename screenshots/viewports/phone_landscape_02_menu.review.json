@@ -1,5 +1,5 @@
 {
-  "artifact": "screenshots/viewports/phone_landscape_04_playing.png",
+  "artifact": "screenshots/viewports/phone_landscape_02_menu.png",
   "artifact_kind": "matrix_png",
   "reviewed_at": "2026-07-17T22:34:07Z",
   "reviewer": "fix-ship-agent",
@@ -11,25 +11,24 @@
   "run_start_unix": 1784327295,
   "opened": true,
   "frames_or_stills_opened": [
-    "screenshots/viewports/phone_landscape_04_playing.png"
+    "screenshots/viewports/phone_landscape_02_menu.png"
   ],
   "discovery_notes": [
-    "Stick left grip + DASH right outside field",
-    "No Dash READY/cooldown text on chrome",
-    "Single field border"
+    "Panel centered with full blue border and side margins on short landscape",
+    "Swap band fully inside"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 landscape play no Dash text on chrome",
+  "summary": "all good \u2014 landscape menu panel in canvas",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
-    "V-PLAY-SINGLE-BORDER",
-    "V-PLAY-CONTROLS-OUTSIDE-FIELD",
-    "V-PLAY-HUD-CLEAR",
-    "V-OVERLAP",
-    "V-PLAY-ENTITIES-IN-BOUNDS",
+    "V-PANEL-IN-CANVAS",
     "V-CLIP-TEXT",
-    "V-READABLE"
+    "V-READABLE",
+    "V-GHOST-FIELD",
+    "V-FORM-FACTOR-COPY",
+    "V-OVERLAP",
+    "V-GLYPH-TOFU"
   ],
   "sim_scenarios_checked": [],
   "adversary_reviewed": true,

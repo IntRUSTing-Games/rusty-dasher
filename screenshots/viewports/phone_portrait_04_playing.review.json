@@ -1,23 +1,41 @@
 {
   "artifact": "screenshots/viewports/phone_portrait_04_playing.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-17T22:06:01Z",
-  "reviewer": "agent",
-  "run_start_unix": 1784325961,
+  "reviewed_at": "2026-07-17T22:34:07Z",
+  "reviewer": "fix-ship-agent",
+  "review_roles_completed": [
+    "discover",
+    "map_checklist",
+    "adversary"
+  ],
+  "run_start_unix": 1784327295,
   "opened": true,
+  "frames_or_stills_opened": [
+    "screenshots/viewports/phone_portrait_04_playing.png"
+  ],
+  "discovery_notes": [
+    "Stick left + DASH right outside blue field",
+    "No Dash READY or Dash X.Xs text in bottom deck or between controls",
+    "Score/hearts above field; single blue play border"
+  ],
   "verdict": "all_good",
-  "summary": "all good",
+  "summary": "all good \u2014 no Dash status on stick/DASH chrome",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
     "V-PLAY-SINGLE-BORDER",
-    "V-PLAY-ENTITIES-IN-BOUNDS",
-    "V-PLAY-HUD-CLEAR",
-    "V-PLAY-HAZARD-NOT-ON-HUD",
     "V-PLAY-CONTROLS-OUTSIDE-FIELD",
-    "V-FORM-FACTOR-CHROME",
+    "V-PLAY-HUD-CLEAR",
+    "V-OVERLAP",
+    "V-PLAY-ENTITIES-IN-BOUNDS",
+    "V-CLIP-TEXT",
     "V-READABLE"
   ],
   "sim_scenarios_checked": [],
-  "notes": "Phase A fix-loop re-capture after hazard in-bounds + HUD z patches. Hazards inside blue rect; no deck float; mode|diff line legible."
+  "adversary_reviewed": true,
+  "fix_scope": [
+    "V-PANEL-IN-CANVAS",
+    "V-PLAY-HUD-CLEAR",
+    "V-OVERLAP"
+  ]
 }

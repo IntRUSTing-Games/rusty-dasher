@@ -39,15 +39,16 @@ fn spawn_menu_with(commands: &mut Commands, save: &SaveData, scale: &UiScale) {
     let phone = scale.class.is_phone();
     let handheld = scale.class.is_handheld();
     let compact = scale.class.is_compact() || scale.aspect < 0.85;
-    // Content-tight panel: phones use almost full design (already compact).
+    // Content-tight panel: phones leave headroom so the +14 border stays in canvas
+    // (V-PANEL-IN-CANVAS — physical portrait was clipping blue laterals).
     let panel = if phone {
         Vec2::new(
-            (scale.design.x * 0.98).clamp(300.0, 360.0),
-            (scale.design.y * 0.96).clamp(300.0, 460.0),
+            (scale.design.x * 0.92).clamp(280.0, 340.0),
+            (scale.design.y * 0.92).clamp(280.0, 430.0),
         )
     } else if compact {
         Vec2::new(
-            (scale.design.x * 0.94).clamp(320.0, 480.0),
+            (scale.design.x * 0.92).clamp(300.0, 460.0),
             (scale.design.y * 0.90).clamp(280.0, 520.0),
         )
     } else {
@@ -317,11 +318,12 @@ fn spawn_mode_select_with(
 ) {
     let s = scale.panel;
     let phone = scale.class.is_phone();
-    // Phone: slightly inset from design so border never clips labels.
+    // Phone: inset from design so blue border + help stay inside the canvas
+    // (V-PANEL-IN-CANVAS / V-CLIP-TEXT — portrait laterals + bottom help were clipping).
     let panel = if phone {
         Vec2::new(
-            (scale.design.x * 0.98).clamp(300.0, 720.0),
-            (scale.design.y * 0.96).clamp(260.0, 440.0),
+            (scale.design.x * 0.90).clamp(280.0, 680.0),
+            (scale.design.y * 0.90).clamp(250.0, 400.0),
         )
     } else {
         scale.design
@@ -364,18 +366,19 @@ fn spawn_mode_select_with(
         ) || scale.aspect > 1.2;
         let start_h = if landscape { 40.0 } else { 48.0 };
         let start_y = if landscape {
-            -panel.y * 0.24
+            -panel.y * 0.22
         } else {
-            -panel.y * 0.28
+            -panel.y * 0.26
         };
+        // Keep help above the panel bottom edge (was clipping under blue border).
         let help_y = if landscape {
-            -panel.y * 0.42
+            -panel.y * 0.38
         } else {
-            -panel.y * 0.40
+            -panel.y * 0.36
         };
         // Ensure help sits fully below the START pill bottom edge (base units).
         let start_bottom = start_y - start_h * 0.5;
-        let help_y = help_y.min(start_bottom - 16.0);
+        let help_y = help_y.min(start_bottom - 14.0).max(-panel.y * 0.5 + 18.0);
         let start_pill = Vec2::new(panel.x * 0.72, start_h);
         commands.spawn((
             ModeUi,
@@ -711,8 +714,8 @@ pub fn mode_select_input(
         }
         let panel = if scale.class.is_phone() {
             Vec2::new(
-                (scale.design.x * 0.98).clamp(300.0, 720.0),
-                (scale.design.y * 0.96).clamp(260.0, 440.0),
+                (scale.design.x * 0.90).clamp(280.0, 680.0),
+                (scale.design.y * 0.90).clamp(250.0, 400.0),
             )
         } else {
             scale.design
@@ -760,11 +763,11 @@ pub fn spawn_game_over(
         Color::srgb(1.0, 0.42, 0.48)
     };
     let s = scale.panel;
-    // Match menu/mode panels: phones use nearly full design width so titles fit.
+    // Match menu/mode panels: phones leave lateral headroom for the blue border.
     let panel = if phone {
         Vec2::new(
-            (scale.design.x * 0.98).clamp(300.0, 720.0),
-            (scale.design.y * 0.82).clamp(260.0, 440.0),
+            (scale.design.x * 0.90).clamp(280.0, 680.0),
+            (scale.design.y * 0.82).clamp(250.0, 420.0),
         )
     } else {
         Vec2::new(
@@ -1140,13 +1143,16 @@ pub fn update_hud(
             return;
         };
         let mut bits = Vec::new();
-        if p.dash_cooldown > 0.0 {
-            bits.push(format!("Dash {:.1}s", p.dash_cooldown));
-        } else if !handheld {
-            // Desktop has no on-screen DASH button — keep READY text.
-            bits.push("Dash READY".into());
+        // Handheld: never put "Dash READY" / "Dash 0.Xs" in the bottom deck —
+        // it lands on the stick + DASH chrome (V-PLAY-HUD-CLEAR / V-OVERLAP).
+        // Desktop has no on-screen DASH button — keep READY / cooldown text.
+        if !handheld {
+            if p.dash_cooldown > 0.0 {
+                bits.push(format!("Dash {:.1}s", p.dash_cooldown));
+            } else {
+                bits.push("Dash READY".into());
+            }
         }
-        // Handheld: bare "Dash READY" is redundant with the red DASH chrome button.
         if p.magnet > 0.0 {
             bits.push(format!("Magnet {:.0}s", p.magnet));
         }

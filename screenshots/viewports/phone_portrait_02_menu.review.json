@@ -1,5 +1,5 @@
 {
-  "artifact": "screenshots/viewports/phone_landscape_04_playing.png",
+  "artifact": "screenshots/viewports/phone_portrait_02_menu.png",
   "artifact_kind": "matrix_png",
   "reviewed_at": "2026-07-17T22:34:07Z",
   "reviewer": "fix-ship-agent",
@@ -11,25 +11,25 @@
   "run_start_unix": 1784327295,
   "opened": true,
   "frames_or_stills_opened": [
-    "screenshots/viewports/phone_landscape_04_playing.png"
+    "screenshots/viewports/phone_portrait_02_menu.png"
   ],
   "discovery_notes": [
-    "Stick left grip + DASH right outside field",
-    "No Dash READY/cooldown text on chrome",
-    "Single field border"
+    "Full blue panel border visible L/R/T/B with dark margin to canvas edges",
+    "Title/body/swap band fully inside panel; no lateral clip",
+    "No ghost field behind panel"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 landscape play no Dash text on chrome",
+  "summary": "all good \u2014 full panel border with lateral margins",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
-    "V-PLAY-SINGLE-BORDER",
-    "V-PLAY-CONTROLS-OUTSIDE-FIELD",
-    "V-PLAY-HUD-CLEAR",
-    "V-OVERLAP",
-    "V-PLAY-ENTITIES-IN-BOUNDS",
+    "V-PANEL-IN-CANVAS",
     "V-CLIP-TEXT",
-    "V-READABLE"
+    "V-READABLE",
+    "V-GHOST-FIELD",
+    "V-FORM-FACTOR-COPY",
+    "V-OVERLAP",
+    "V-GLYPH-TOFU"
   ],
   "sim_scenarios_checked": [],
   "adversary_reviewed": true,

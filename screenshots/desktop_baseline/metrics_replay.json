@@ -1,16 +1,16 @@
 {
   "version": 2,
   "format_id": "1080p",
-  "replayed_at": "2026-07-17T22:08:52.280Z",
+  "replayed_at": "2026-07-17T22:30:13.009Z",
   "video": {
     "path": "screenshots/desktop_baseline/replay_1080p_keyboard.webm",
-    "frames": 1096,
-    "bytes": 8908708
+    "frames": 1156,
+    "bytes": 9179795
   },
   "timeline": [
     {
       "phase": "play_start",
-      "t_wall": 1784326044241,
+      "t_wall": 1784327322328,
       "state": "playing",
       "inner": [
         1920,
@@ -24,8 +24,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 505,
-      "t_wall": 1784326044743,
+      "play_offset_ms": 515,
+      "t_wall": 1784327322831,
       "state": "playing",
       "inner": [
         1920,
@@ -39,8 +39,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 1004,
-      "t_wall": 1784326045243,
+      "play_offset_ms": 1016,
+      "t_wall": 1784327323332,
       "state": "playing",
       "inner": [
         1920,
@@ -54,8 +54,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 1508,
-      "t_wall": 1784326045747,
+      "play_offset_ms": 1515,
+      "t_wall": 1784327323832,
       "state": "playing",
       "inner": [
         1920,
@@ -69,8 +69,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 2004,
-      "t_wall": 1784326046243,
+      "play_offset_ms": 2017,
+      "t_wall": 1784327324333,
       "state": "playing",
       "inner": [
         1920,
@@ -84,8 +84,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 2504,
-      "t_wall": 1784326046743,
+      "play_offset_ms": 2517,
+      "t_wall": 1784327324833,
       "state": "playing",
       "inner": [
         1920,
@@ -99,8 +99,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 3005,
-      "t_wall": 1784326047244,
+      "play_offset_ms": 3025,
+      "t_wall": 1784327325341,
       "state": "playing",
       "inner": [
         1920,
@@ -114,8 +114,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 3504,
-      "t_wall": 1784326047744,
+      "play_offset_ms": 3518,
+      "t_wall": 1784327325834,
       "state": "playing",
       "inner": [
         1920,
@@ -129,8 +129,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 4005,
-      "t_wall": 1784326048244,
+      "play_offset_ms": 4018,
+      "t_wall": 1784327326335,
       "state": "playing",
       "inner": [
         1920,
@@ -144,8 +144,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 4505,
-      "t_wall": 1784326048744,
+      "play_offset_ms": 4518,
+      "t_wall": 1784327326834,
       "state": "playing",
       "inner": [
         1920,
@@ -159,8 +159,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 5007,
-      "t_wall": 1784326049246,
+      "play_offset_ms": 5030,
+      "t_wall": 1784327327345,
       "state": "playing",
       "inner": [
         1920,
@@ -174,8 +174,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 5508,
-      "t_wall": 1784326049747,
+      "play_offset_ms": 5524,
+      "t_wall": 1784327327840,
       "state": "playing",
       "inner": [
         1920,
@@ -189,8 +189,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 6006,
-      "t_wall": 1784326050245,
+      "play_offset_ms": 6021,
+      "t_wall": 1784327328337,
       "state": "playing",
       "inner": [
         1920,
@@ -204,8 +204,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 6507,
-      "t_wall": 1784326050746,
+      "play_offset_ms": 6533,
+      "t_wall": 1784327328847,
       "state": "playing",
       "inner": [
         1920,
@@ -219,8 +219,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 7009,
-      "t_wall": 1784326051247,
+      "play_offset_ms": 7020,
+      "t_wall": 1784327329337,
       "state": "playing",
       "inner": [
         1920,
@@ -234,8 +234,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 7509,
-      "t_wall": 1784326051748,
+      "play_offset_ms": 7523,
+      "t_wall": 1784327329839,
       "state": "playing",
       "inner": [
         1920,
@@ -249,8 +249,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 8009,
-      "t_wall": 1784326052248,
+      "play_offset_ms": 8028,
+      "t_wall": 1784327330343,
       "state": "playing",
       "inner": [
         1920,
@@ -264,8 +264,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 8508,
-      "t_wall": 1784326052748,
+      "play_offset_ms": 8526,
+      "t_wall": 1784327330843,
       "state": "playing",
       "inner": [
         1920,
@@ -279,8 +279,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 9012,
-      "t_wall": 1784326053250,
+      "play_offset_ms": 9022,
+      "t_wall": 1784327331338,
       "state": "playing",
       "inner": [
         1920,
@@ -294,8 +294,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 9511,
-      "t_wall": 1784326053750,
+      "play_offset_ms": 9529,
+      "t_wall": 1784327331845,
       "state": "playing",
       "inner": [
         1920,
@@ -309,8 +309,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 10012,
-      "t_wall": 1784326054251,
+      "play_offset_ms": 10030,
+      "t_wall": 1784327332346,
       "state": "playing",
       "inner": [
         1920,
@@ -324,8 +324,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 10513,
-      "t_wall": 1784326054752,
+      "play_offset_ms": 10529,
+      "t_wall": 1784327332844,
       "state": "playing",
       "inner": [
         1920,
@@ -339,8 +339,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 11019,
-      "t_wall": 1784326055258,
+      "play_offset_ms": 11027,
+      "t_wall": 1784327333342,
       "state": "playing",
       "inner": [
         1920,
@@ -354,8 +354,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 11515,
-      "t_wall": 1784326055754,
+      "play_offset_ms": 11529,
+      "t_wall": 1784327333846,
       "state": "playing",
       "inner": [
         1920,
@@ -369,8 +369,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 12013,
-      "t_wall": 1784326056253,
+      "play_offset_ms": 12032,
+      "t_wall": 1784327334347,
       "state": "playing",
       "inner": [
         1920,
@@ -384,8 +384,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 12514,
-      "t_wall": 1784326056753,
+      "play_offset_ms": 12528,
+      "t_wall": 1784327334845,
       "state": "playing",
       "inner": [
         1920,
@@ -399,8 +399,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 13014,
-      "t_wall": 1784326057254,
+      "play_offset_ms": 13026,
+      "t_wall": 1784327335342,
       "state": "playing",
       "inner": [
         1920,
@@ -414,8 +414,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 13522,
-      "t_wall": 1784326057761,
+      "play_offset_ms": 13536,
+      "t_wall": 1784327335852,
       "state": "playing",
       "inner": [
         1920,
@@ -429,8 +429,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 14018,
-      "t_wall": 1784326058257,
+      "play_offset_ms": 14032,
+      "t_wall": 1784327336348,
       "state": "playing",
       "inner": [
         1920,
@@ -444,8 +444,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 14516,
-      "t_wall": 1784326058755,
+      "play_offset_ms": 14527,
+      "t_wall": 1784327336843,
       "state": "playing",
       "inner": [
         1920,
@@ -459,8 +459,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 15015,
-      "t_wall": 1784326059254,
+      "play_offset_ms": 15030,
+      "t_wall": 1784327337346,
       "state": "playing",
       "inner": [
         1920,
@@ -474,8 +474,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 15523,
-      "t_wall": 1784326059762,
+      "play_offset_ms": 15527,
+      "t_wall": 1784327337843,
       "state": "playing",
       "inner": [
         1920,
@@ -489,8 +489,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 16016,
-      "t_wall": 1784326060255,
+      "play_offset_ms": 16033,
+      "t_wall": 1784327338349,
       "state": "playing",
       "inner": [
         1920,
@@ -504,8 +504,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 16526,
-      "t_wall": 1784326060765,
+      "play_offset_ms": 16528,
+      "t_wall": 1784327338844,
       "state": "playing",
       "inner": [
         1920,
@@ -519,8 +519,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 17020,
-      "t_wall": 1784326061259,
+      "play_offset_ms": 17027,
+      "t_wall": 1784327339344,
       "state": "playing",
       "inner": [
         1920,
@@ -534,8 +534,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 17521,
-      "t_wall": 1784326061760,
+      "play_offset_ms": 17529,
+      "t_wall": 1784327339844,
       "state": "playing",
       "inner": [
         1920,
@@ -549,8 +549,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 18017,
-      "t_wall": 1784326062256,
+      "play_offset_ms": 18031,
+      "t_wall": 1784327340347,
       "state": "playing",
       "inner": [
         1920,
@@ -564,8 +564,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 18516,
-      "t_wall": 1784326062756,
+      "play_offset_ms": 18530,
+      "t_wall": 1784327340845,
       "state": "playing",
       "inner": [
         1920,
@@ -579,8 +579,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 19018,
-      "t_wall": 1784326063257,
+      "play_offset_ms": 19034,
+      "t_wall": 1784327341349,
       "state": "playing",
       "inner": [
         1920,
@@ -594,8 +594,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 19524,
-      "t_wall": 1784326063762,
+      "play_offset_ms": 19532,
+      "t_wall": 1784327341848,
       "state": "playing",
       "inner": [
         1920,
@@ -609,8 +609,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 20019,
-      "t_wall": 1784326064258,
+      "play_offset_ms": 20029,
+      "t_wall": 1784327342345,
       "state": "playing",
       "inner": [
         1920,
@@ -624,8 +624,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 20546,
-      "t_wall": 1784326064785,
+      "play_offset_ms": 20531,
+      "t_wall": 1784327342847,
       "state": "playing",
       "inner": [
         1920,
@@ -639,8 +639,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 21020,
-      "t_wall": 1784326065259,
+      "play_offset_ms": 21029,
+      "t_wall": 1784327343345,
       "state": "playing",
       "inner": [
         1920,
@@ -654,8 +654,8 @@
     },
     {
       "phase": "play",
-      "play_offset_ms": 21526,
-      "t_wall": 1784326065765,
+      "play_offset_ms": 21535,
+      "t_wall": 1784327343851,
       "state": "playing",
       "inner": [
         1920,
@@ -669,7 +669,7 @@
     },
     {
       "phase": "play_end",
-      "t_wall": 1784326066527,
+      "t_wall": 1784327344590,
       "state": "playing",
       "inner": [
         1920,
@@ -683,7 +683,7 @@
     },
     {
       "phase": "session_end",
-      "t_wall": 1784326068030,
+      "t_wall": 1784327346092,
       "state": "playing",
       "inner": [
         1920,
