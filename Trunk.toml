@@ -9,5 +9,6 @@ ignore = ["dist", "screenshots", "target", "save_data.json"]
 
 [serve]
 addresses = ["127.0.0.1"]
-port = 8080
+# Unique default — not 8080 (often taken by other local apps).
+port = 17880
 open = false

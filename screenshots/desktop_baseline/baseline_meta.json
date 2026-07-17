@@ -1,0 +1,25 @@
+{
+  "kind": "desktop_baseline",
+  "version": 2,
+  "created_at": "2026-07-17T22:00:04.607Z",
+  "purpose": "Exact desktop keyboard input log + video + metrics. Replay after mobile-only changes to prove desktop feel unchanged.",
+  "base_url": "http://127.0.0.1:17880/",
+  "url": "http://127.0.0.1:17880/?e2e=1&qa_matrix=1&qa_go_ms=27000&baseline=1",
+  "format": {
+    "id": "1080p",
+    "width": 1920,
+    "height": 1080,
+    "dpr": 1,
+    "touch": false,
+    "expected_class": "Desktop1080"
+  },
+  "play_ms": 22000,
+  "force_go_ms": 27000,
+  "paths": {
+    "inputs": "inputs.json",
+    "metrics": "metrics_record.json",
+    "video": "baseline_1080p_keyboard.webm",
+    "stills": "stills_1080p_keyboard",
+    "meta": "baseline_meta.json"
+  }
+}

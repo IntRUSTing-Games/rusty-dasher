@@ -1,0 +1,706 @@
+{
+  "version": 2,
+  "format_id": "1080p",
+  "replayed_at": "2026-07-17T22:08:52.280Z",
+  "video": {
+    "path": "screenshots/desktop_baseline/replay_1080p_keyboard.webm",
+    "frames": 1096,
+    "bytes": 8908708
+  },
+  "timeline": [
+    {
+      "phase": "play_start",
+      "t_wall": 1784326044241,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 505,
+      "t_wall": 1784326044743,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 1004,
+      "t_wall": 1784326045243,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 1508,
+      "t_wall": 1784326045747,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 2004,
+      "t_wall": 1784326046243,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 2504,
+      "t_wall": 1784326046743,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 3005,
+      "t_wall": 1784326047244,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 3504,
+      "t_wall": 1784326047744,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 4005,
+      "t_wall": 1784326048244,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 4505,
+      "t_wall": 1784326048744,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 5007,
+      "t_wall": 1784326049246,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 5508,
+      "t_wall": 1784326049747,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 6006,
+      "t_wall": 1784326050245,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 6507,
+      "t_wall": 1784326050746,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 7009,
+      "t_wall": 1784326051247,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 7509,
+      "t_wall": 1784326051748,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 8009,
+      "t_wall": 1784326052248,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 8508,
+      "t_wall": 1784326052748,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 9012,
+      "t_wall": 1784326053250,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 9511,
+      "t_wall": 1784326053750,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 10012,
+      "t_wall": 1784326054251,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 10513,
+      "t_wall": 1784326054752,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 11019,
+      "t_wall": 1784326055258,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 11515,
+      "t_wall": 1784326055754,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 12013,
+      "t_wall": 1784326056253,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 12514,
+      "t_wall": 1784326056753,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 13014,
+      "t_wall": 1784326057254,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 13522,
+      "t_wall": 1784326057761,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 14018,
+      "t_wall": 1784326058257,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 14516,
+      "t_wall": 1784326058755,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 15015,
+      "t_wall": 1784326059254,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 15523,
+      "t_wall": 1784326059762,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 16016,
+      "t_wall": 1784326060255,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 16526,
+      "t_wall": 1784326060765,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 17020,
+      "t_wall": 1784326061259,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 17521,
+      "t_wall": 1784326061760,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 18017,
+      "t_wall": 1784326062256,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 18516,
+      "t_wall": 1784326062756,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 19018,
+      "t_wall": 1784326063257,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 19524,
+      "t_wall": 1784326063762,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 20019,
+      "t_wall": 1784326064258,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 20546,
+      "t_wall": 1784326064785,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 21020,
+      "t_wall": 1784326065259,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play",
+      "play_offset_ms": 21526,
+      "t_wall": 1784326065765,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "play_end",
+      "t_wall": 1784326066527,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    },
+    {
+      "phase": "session_end",
+      "t_wall": 1784326068030,
+      "state": "playing",
+      "inner": [
+        1920,
+        1080
+      ],
+      "dpr": 1,
+      "canvas": {
+        "w": 1920,
+        "h": 1080
+      }
+    }
+  ],
+  "summary": {
+    "final_state": "playing",
+    "samples": 46,
+    "viewport": "1920x1080",
+    "play_ms": 22000
+  },
+  "executed_events": 117
+}

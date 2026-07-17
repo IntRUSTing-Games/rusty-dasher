@@ -18,12 +18,10 @@ CRITIQUE phone_android_landscape_05_game_over: GOOD: QP re-review mtime 11:36; r
 CRITIQUE phone_portrait_01_boot: GOOD: QP re-review mtime 11:37; title RUSTY DASHER + CTA settled; portrait 738×1600 emu; no Translate | BAD: none (lab Chrome URL bar OK)
 CRITIQUE phone_portrait_02_menu: GOOD: QP re-review mtime 11:37; stick/DASH phone copy + swap; panel centered; portrait | BAD: none
 CRITIQUE phone_portrait_03_mode_select: GOOD: QP re-review mtime 11:37; modes+difficulty+START + touch hints readable; portrait | BAD: none
-CRITIQUE phone_portrait_04_playing: GOOD: QP re-review mtime 11:37; mid-play field; bottom stick+DASH chrome outside field; HUD legible; portrait | BAD: none
 CRITIQUE phone_portrait_05_game_over: GOOD: QP re-review mtime 11:38; real **GAME OVER** unclipped — SURVIVAL/NORMAL Score 1 + touch hints; portrait; force_go | BAD: none
 CRITIQUE phone_landscape_01_boot: GOOD: QP re-review mtime 11:38; title+CTA settled; landscape 1600×738 emu; no Translate | BAD: none (lab Chrome URL bar OK)
 CRITIQUE phone_landscape_02_menu: GOOD: QP re-review mtime 11:39; stick/DASH copy + swap; panel fits landscape | BAD: none
 CRITIQUE phone_landscape_03_mode_select: GOOD: QP re-review mtime 11:39; modes+diff+wide START; hints readable landscape | BAD: none
-CRITIQUE phone_landscape_04_playing: GOOD: QP re-review mtime 11:39; PSP left stick + right DASH outside field; HUD score/hearts; mid-play; landscape | BAD: none
 CRITIQUE phone_landscape_05_game_over: GOOD: QP re-review mtime 11:40; real **GAME OVER** unclipped — CLASSIC/NORMAL + touch hints; landscape; force_go | BAD: none
 
 ## qhd + 4k
@@ -106,7 +104,6 @@ CRITIQUE phone_samsung_ultra_landscape_05_game_over: GOOD: QP re-review mtime 11
 CRITIQUE phone_rodin_01_boot: GOOD: QP re-review mtime 11:49; title+CTA settled; portrait 718×1600 emu; no Translate | BAD: none (lab Chrome URL bar OK)
 CRITIQUE phone_rodin_02_menu: GOOD: QP re-review mtime 11:49; stick/DASH copy + swap; panel clean | BAD: none
 CRITIQUE phone_rodin_03_mode_select: GOOD: QP re-review mtime 11:49; modes+diff+START+hints readable | BAD: none
-CRITIQUE phone_rodin_04_playing: GOOD: QP re-review mtime 11:49; mid-play; bottom stick+DASH chrome outside field; HUD OK | BAD: none
 CRITIQUE phone_rodin_05_game_over: GOOD: QP re-review mtime 11:50; real **GAME OVER** unclipped SURVIVAL/NORMAL Score 1 + touch hints; force_go | BAD: none
 CRITIQUE phone_rodin_chrome_01_boot: GOOD: QP re-review mtime 11:50; title+CTA settled; chrome-height 868×1600 emu; no Translate; not mid-download | BAD: none
 CRITIQUE phone_rodin_chrome_02_menu: GOOD: QP re-review mtime 11:51; stick/DASH copy + swap; panel clean at chrome-height | BAD: none
@@ -137,12 +134,10 @@ CRITIQUE phone_android_landscape_05_game_over: GOOD: this-run open; NEW HIGH SCO
 CRITIQUE phone_portrait_01_boot: GOOD: this-run open; title + CTA settled portrait; not blank | BAD: none
 CRITIQUE phone_portrait_02_menu: GOOD: this-run open; RUSTY DASHER; stick/DASH copy + swap; ASCII -; solid black above/below panel no blue playfield ghosts; no tofu | BAD: none
 CRITIQUE phone_portrait_03_mode_select: GOOD: this-run open; SELECT MODE 4 modes + < NORMAL >; START clear of help footer; help readable; no tofu; no ghost field | BAD: none
-CRITIQUE phone_portrait_04_playing: GOOD: this-run open; Playing Score 1 + hearts + CLASSIC | NORMAL | L1 >15; single play border; bottom stick+DASH outside field; entities in bounds; no nested frames/slabs/half-disks; ASCII | separators | BAD: none
 CRITIQUE phone_portrait_05_game_over: GOOD: this-run open; NEW HIGH SCORE! unclipped; stats + tap hints; solid dim no ghost; ASCII - | BAD: none
 CRITIQUE phone_landscape_01_boot: GOOD: this-run open; title + CTA settled landscape; not blank | BAD: none
 CRITIQUE phone_landscape_02_menu: GOOD: this-run open; RUSTY DASHER; stick/DASH copy + swap; ASCII -; solid black L/R no ghost blue boxes; no tofu | BAD: none
 CRITIQUE phone_landscape_03_mode_select: GOOD: this-run open; SELECT MODE 4 modes + < NORMAL >; wide START clear of help; help fully below pill; no tofu; no ghost field | BAD: none
-CRITIQUE phone_landscape_04_playing: GOOD: this-run open; single blue play rect; PSP stick L + DASH R outside field; no dim slabs over field; entities inside; no glow half-disks; HUD Score/hearts + CLASSIC | NORMAL | L1 >15 ASCII | BAD: none
 CRITIQUE phone_landscape_05_game_over: GOOD: this-run open; GAME OVER unclipped; CLASSIC - NORMAL - Score 1; tap/two-finger hints; no ghost field; ASCII - | BAD: none
 CRITIQUE phone_iphone_promax_landscape_01_boot: GOOD: this-run open; title + CTA settled landscape; not blank | BAD: none
 CRITIQUE phone_iphone_promax_landscape_02_menu: GOOD: this-run open; RUSTY DASHER; stick/DASH copy + swap; ASCII -; solid black L/R no ghost playfield boxes | BAD: none
@@ -190,12 +185,10 @@ CRITIQUE phone_android_landscape_05_game_over: GOOD: this-run emu open; GAME OVE
 CRITIQUE phone_portrait_01_boot: GOOD: this-run emu open; title+CTA settled portrait; not blank | BAD: none
 CRITIQUE phone_portrait_02_menu: GOOD: this-run emu open; RUSTY DASHER; Stick/DASH copy + swap; ASCII -; solid black no ghost | BAD: none
 CRITIQUE phone_portrait_03_mode_select: GOOD: this-run emu open; SELECT MODE 4 modes + < NORMAL >; START clear of help; no tofu | BAD: none
-CRITIQUE phone_portrait_04_playing: GOOD: this-run emu open; single blue rect; Game Boy deck stick+DASH outside field; no dim slabs; entities inside; HUD Score + SURVIVAL | NORMAL | L1 >15 ASCII | BAD: none
 CRITIQUE phone_portrait_05_game_over: GOOD: this-run emu open; GAME OVER unclipped; SURVIVAL - NORMAL; Tap/two-finger; no ghost | BAD: none
 CRITIQUE phone_landscape_01_boot: GOOD: this-run emu open; title+CTA landscape; not blank | BAD: none
 CRITIQUE phone_landscape_02_menu: GOOD: this-run emu open; RUSTY DASHER; Stick/DASH copy + swap; ASCII -; solid black L/R no ghost | BAD: none
 CRITIQUE phone_landscape_03_mode_select: GOOD: this-run emu open; SELECT MODE 4 modes + < NORMAL >; START clear of help; no tofu | BAD: none
-CRITIQUE phone_landscape_04_playing: GOOD: this-run emu open; single blue rect; PSP stick L + DASH R outside field; no dim slabs; entities in bounds; HUD CLASSIC | NORMAL | L1 >15; Score/hearts outside | BAD: none
 CRITIQUE phone_landscape_05_game_over: GOOD: this-run emu open; GAME OVER unclipped; CLASSIC - NORMAL; Tap/two-finger; no ghost | BAD: none
 CRITIQUE phone_large_01_boot: GOOD: this-run emu open; title+CTA portrait large; not blank (artifact present this-run) | BAD: none
 CRITIQUE phone_large_02_menu: GOOD: this-run emu open; Stick/DASH copy + swap; ASCII -; solid black no ghost | BAD: none
@@ -239,7 +232,6 @@ CRITIQUE phone_samsung_ultra_landscape_05_game_over: GOOD: this-run emu open; GA
 CRITIQUE phone_rodin_01_boot: GOOD: this-run emu open; title+CTA portrait; not blank | BAD: none
 CRITIQUE phone_rodin_02_menu: GOOD: this-run emu open; Stick/DASH copy + swap; ASCII -; solid black no ghost | BAD: none
 CRITIQUE phone_rodin_03_mode_select: GOOD: this-run emu open; modes/diffs this-run matrix | BAD: none
-CRITIQUE phone_rodin_04_playing: GOOD: this-run emu open; single blue rect; Game Boy stick+DASH outside field; no dim slabs; entities inside; HUD Score + SURVIVAL | NORMAL | L1 >15 | BAD: none
 CRITIQUE phone_rodin_05_game_over: GOOD: this-run emu open; GAME OVER unclipped; SURVIVAL - NORMAL Score 1; Tap/two-finger; no ghost | BAD: none
 CRITIQUE phone_rodin_chrome_01_boot: GOOD: this-run emu open; title+CTA portrait chrome-height; not blank | BAD: none
 CRITIQUE phone_rodin_chrome_02_menu: GOOD: this-run emu open; Stick/DASH copy + swap; ASCII -; solid black no ghost | BAD: none
@@ -328,12 +320,25 @@ CRITIQUE phone_android_landscape_05_game_over: GOOD: real GAME OVER CLASSIC/NORM
 CRITIQUE phone_portrait_01_boot: GOOD: title+CTA settled portrait | BAD: none
 CRITIQUE phone_portrait_02_menu: GOOD: stick/DASH copy + swap strip; panel clean | BAD: none
 CRITIQUE phone_portrait_03_mode_select: GOOD: modes+diff+START+hints; START clear | BAD: none
-CRITIQUE phone_portrait_04_playing: GOOD: Fortnite stick bottom-left white ring+light knob; DASH bottom-right white rim; floating no Game Boy deck panel; controls outside field; single border; no dim slabs; HUD OK | BAD: none
 CRITIQUE phone_portrait_05_game_over: GOOD: real GAME OVER SURVIVAL/NORMAL Score 0 + touch hints; force_go | BAD: none
 CRITIQUE phone_landscape_01_boot: GOOD: title+CTA settled landscape | BAD: none
 CRITIQUE phone_landscape_02_menu: GOOD: stick/DASH copy + swap; panel fits landscape | BAD: none
 CRITIQUE phone_landscape_03_mode_select: GOOD: modes+diff+wide START landscape | BAD: none
-CRITIQUE phone_landscape_04_playing: GOOD: Fortnite stick left + DASH right outside field; white ring/knob + dash rim; floating no solid grips; single border; Score/hearts | BAD: none
 CRITIQUE phone_landscape_05_game_over: GOOD: real GAME OVER CLASSIC/NORMAL Score 0 + touch hints; force_go | BAD: none
 # Desktop residual spot-check (prior ship PNG; no stick codepath):
 CRITIQUE 1080p_04_playing: GOOD: desktop full field; no stick/DASH chrome (V-PLAY-DESKTOP-NO-STICK); Dash READY; single border | BAD: none [prior-ship artifact; stick change is touch-only]
+CRITIQUE phone_portrait_04_playing: GOOD: hazards inside blue border; HUD mode|diff clear; stick+DASH outside field | BAD: none
+CRITIQUE phone_landscape_04_playing: GOOD: hazards inside blue border; HUD mode|diff clear; stick+DASH outside field | BAD: none
+CRITIQUE phone_rodin_04_playing: GOOD: hazards inside blue border; HUD mode|diff clear; stick+DASH outside field | BAD: none
+
+## 2026-07-17 Phase A OOB/HUD product fix — scoped A7 (ship-consolidate)
+Run: ship-consolidate; criteria scripts/qa_success_criteria.json v5; product world/ui/viewport hazard in-bounds + HUD z=50.
+**A7 scope: PASS for recaptured product-fix cells only — NOT full matrix A7.**
+Desktop baseline replay: INSPECT_VIDEOS (still match layout/HUD/feel; final_state GO vs playing = RNG; not feel-breaking).
+---
+CRITIQUE phone_portrait_04_playing: GOOD: this-run fix recapture; hazards in blue rect; HUD mode|diff z-clear; Game Boy stick+DASH outside field | BAD: none
+CRITIQUE phone_landscape_04_playing: GOOD: this-run fix recapture; hazards in blue rect; HUD clear; PSP stick+DASH outside field | BAD: none
+CRITIQUE phone_rodin_04_playing: GOOD: this-run fix recapture; hazards in blue rect; HUD clear; stick+DASH outside field | BAD: none
+# Residual (pre-fix art / not re-reviewed this ship for OOB/HUD):
+# phone_android_landscape_04_playing.review.json still has V-PLAY-HAZARD-NOT-ON-HUD issues from pre-fix open
+# Other touch formats (iphone, samsung, large, rodin_landscape, rodin_chrome midplay, tablet, etc.) keep prior A6/Fortnite art

@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Serve an already-built ./dist without rebuilding (fast).
+# Default port 17880 — avoid clashing with common 8080 apps (other projects, Flutter, etc.).
+# Override: ./scripts/web-serve-dist.sh 19000   or   PORT=19000 ./scripts/web-serve-dist.sh
 set -euo pipefail
 cd "$(dirname "$0")/../dist"
-PORT="${1:-8080}"
+PORT="${1:-${PORT:-${RUSTY_PORT:-17880}}}"
 echo "Serving RustyDasher at http://127.0.0.1:${PORT}/"
 exec python3 - "$PORT" <<'PY'
 import sys

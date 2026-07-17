@@ -4,7 +4,7 @@
 //! cargo run                         # native desktop
 //! cargo run -- --screenshots        # capture screens
 //! cargo build --release             # native ship build
-//! trunk serve                       # browser (WASM) at http://127.0.0.1:8080
+//! trunk serve                       # browser (WASM) at http://127.0.0.1:17880
 //! trunk build --release             # static web dist/ for hosting
 //! ```
 

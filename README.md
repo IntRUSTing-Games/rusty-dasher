@@ -60,7 +60,7 @@ rustup target add wasm32-unknown-unknown
 
 ./scripts/web-build.sh              # local fast (cargo profile wasm-fast) → ./dist
 ./scripts/web-build.sh --release    # production-like (same as GitHub Pages)
-./scripts/web-serve-dist.sh         # http://127.0.0.1:8080/
+./scripts/web-serve-dist.sh         # http://127.0.0.1:17880/  (not 8080 — less clash)
 ./scripts/web-serve.sh              # live reload
 ```
 

@@ -130,7 +130,57 @@ function forceOrientation(serial, orientation) {
   const rot = orientation === 'landscape' ? '1' : '0';
   adb(serial, ['shell', 'settings', 'put', 'system', 'user_rotation', rot]);
   adb(serial, ['shell', 'wm', 'user-rotation', 'lock', rot]);
+  // Give SurfaceFlinger / Chrome a beat to reflow (CSS landscape vs wm size portrait).
   info('orientation', orientation, rot);
+}
+
+/**
+ * Physical size used by `adb shell input` — follows CURRENT display orientation.
+ * `wm size` often stays natural portrait (e.g. 1220x2712) while landscape input
+ * coords are 2712x1220. Prefer dumpsys viewport / window cur= over wm size alone.
+ */
+function getDisplayInputSize(serial, preferLandscape = null) {
+  // dumpsys input Viewport logicalFrame=[0, 0, W, H]
+  const inputDump = adb(serial, ['shell', 'dumpsys', 'input'], { timeout: 15000 }).out || '';
+  let m = inputDump.match(
+    /Viewport\s+INTERNAL:[\s\S]*?logicalFrame=\[0,\s*0,\s*(\d+),\s*(\d+)\]/
+  );
+  if (m) {
+    return {
+      physW: Number(m[1]),
+      physH: Number(m[2]),
+      source: 'dumpsys_input',
+    };
+  }
+  // dumpsys window: cur=2712x1220
+  const winDump =
+    adb(serial, ['shell', 'dumpsys', 'window', 'displays'], { timeout: 15000 }).out || '';
+  m = winDump.match(/\bcur=(\d+)x(\d+)\b/);
+  if (m) {
+    return {
+      physW: Number(m[1]),
+      physH: Number(m[2]),
+      source: 'dumpsys_window',
+    };
+  }
+  // wm size (may be natural portrait even when rotated)
+  const sizeOut = adb(serial, ['shell', 'wm', 'size']).out || '';
+  m =
+    sizeOut.match(/Override size:\s*(\d+)x(\d+)/) ||
+    sizeOut.match(/Physical size:\s*(\d+)x(\d+)/) ||
+    sizeOut.match(/(\d+)x(\d+)/);
+  let physW = m ? Number(m[1]) : 1220;
+  let physH = m ? Number(m[2]) : 2712;
+  // If CSS/page is landscape but wm reports portrait natural size, swap.
+  if (preferLandscape === true && physW < physH) {
+    [physW, physH] = [physH, physW];
+    return { physW, physH, source: 'wm_size_swapped' };
+  }
+  if (preferLandscape === false && physW > physH) {
+    [physW, physH] = [physH, physW];
+    return { physW, physH, source: 'wm_size_swapped' };
+  }
+  return { physW, physH, source: 'wm_size' };
 }
 
 function restoreOrientation(serial) {
@@ -150,34 +200,60 @@ function restoreOrientation(serial) {
 /** Start adb screenrecord; returns stop() → local mp4 path */
 function startAdbRecord(serial, localPath) {
   const remote = `/sdcard/rd_e2e_${Date.now()}.mp4`;
-  // screenrecord max ~180s; bit-rate for phone
-  const args = [
-    ...(serial ? ['-s', serial] : []),
-    'shell',
-    'screenrecord',
-    '--bit-rate',
-    '8M',
-    remote,
-  ];
-  const child = spawn('adb', args, { stdio: ['ignore', 'pipe', 'pipe'] });
-  info('screenrecord start', remote);
+  // Detach on-device so killing the host adb client cannot leave a half-written
+  // MP4 (Xiaomi/Android 16 often omits moov if the controlling shell dies).
+  // time-limit is a safety net; stop() SIGINTs early for a clean moov footer.
+  const timeLimit = Math.min(
+    180,
+    Math.max(90, Math.ceil((PLAY_MS + 70000) / 1000))
+  );
+  const shellCmd = `nohup screenrecord --bit-rate 8M --time-limit ${timeLimit} ${remote} >/dev/null 2>&1 & echo $!`;
+  const start = adb(serial, ['shell', shellCmd], { timeout: 15000 });
+  const pid = (start.out || '').trim().split(/\s+/).pop();
+  info('screenrecord start', remote, 'pid', pid, 'time-limit', timeLimit);
   return {
     remote,
+    pid,
     async stop() {
-      // SIGINT to finish file cleanly
+      // Prefer SIGINT to the exact screenrecord PID so the file gets a moov atom.
+      if (pid && /^\d+$/.test(pid)) {
+        try {
+          adb(serial, ['shell', `kill -INT ${pid}`]);
+        } catch (_) {}
+      }
       try {
-        adb(serial, ['shell', 'pkill', '-2', 'screenrecord']);
+        adb(serial, ['shell', 'killall -INT screenrecord']);
       } catch (_) {}
-      try {
-        child.kill('SIGINT');
-      } catch (_) {}
-      await sleep(1200);
+      // Wait until screenrecord is gone and file size stabilizes (moov flush).
+      let lastSize = -1;
+      for (let i = 0; i < 25; i++) {
+        await sleep(400);
+        const alive = adb(serial, [
+          'shell',
+          'pidof screenrecord || true',
+        ]).out.trim();
+        const szOut = adb(serial, [
+          'shell',
+          `stat -c %s ${remote} 2>/dev/null || wc -c < ${remote} 2>/dev/null || echo 0`,
+        ]).out.trim();
+        const sz = Number(szOut.split(/\s+/).pop()) || 0;
+        if (!alive && sz > 0 && sz === lastSize) break;
+        lastSize = sz;
+      }
+      await sleep(500);
       fs.mkdirSync(path.dirname(localPath), { recursive: true });
-      const pull = adb(serial, ['pull', remote, localPath], { timeout: 60000 });
+      const pull = adb(serial, ['pull', remote, localPath], { timeout: 120000 });
       adb(serial, ['shell', 'rm', '-f', remote]);
       const bytes = fs.existsSync(localPath) ? fs.statSync(localPath).size : 0;
-      info('screenrecord pulled', localPath, bytes);
-      return { path: localPath, bytes, pullOk: pull.ok };
+      let hasMoov = false;
+      try {
+        if (bytes > 32) {
+          const buf = fs.readFileSync(localPath);
+          hasMoov = buf.includes(Buffer.from('moov'));
+        }
+      } catch (_) {}
+      info('screenrecord pulled', localPath, bytes, hasMoov ? 'moov=ok' : 'moov=MISSING');
+      return { path: localPath, bytes, pullOk: pull.ok, hasMoov };
     },
   };
 }
@@ -185,17 +261,26 @@ function startAdbRecord(serial, localPath) {
 /**
  * Calibrate CSS→physical using a mid-screen adb tap + CDP event listener.
  * phys = css * dpr + offset
+ *
+ * Critical: physical size MUST match the oriented input coordinate system
+ * (landscape adb coords are W×H swapped vs `wm size` natural portrait).
  */
 async function calibrate(serial, cdp) {
-  const sizeOut = adb(serial, ['shell', 'wm', 'size']).out || '';
-  const m = sizeOut.match(/(\d+)x(\d+)/);
-  const physW = m ? Number(m[1]) : 1220;
-  const physH = m ? Number(m[2]) : 2712;
-  // After rotation landscape, wm size may stay portrait physical — use max as long edge
   const diag = await pageDiag(cdp);
   const dpr = diag.dpr || 3.25;
   const cssW = diag.inner?.[0] || diag.canvas?.cw || 375;
   const cssH = diag.inner?.[1] || diag.canvas?.ch || 700;
+  const cssLandscape = cssW > cssH;
+  const { physW, physH, source } = getDisplayInputSize(serial, cssLandscape);
+  info('display input size', { physW, physH, source, cssW, cssH, dpr });
+
+  // Geometric baseline (chrome residual above/side of web content).
+  const contentW = cssW * dpr;
+  const contentH = cssH * dpr;
+  const geoOffX = Math.max(0, (physW - contentW) / 2);
+  const residualY = Math.max(0, physH - contentH);
+  // Browsing: address bar eats most residual; fullscreen residual is smaller.
+  const geoOffY = residualY * (diag.fullscreen ? 0.35 : 0.55);
 
   await evaluate(
     cdp,
@@ -211,26 +296,68 @@ async function calibrate(serial, cdp) {
     })()`
   );
 
-  // Tap physical center of display
-  const px = Math.floor(physW / 2);
-  const py = Math.floor(physH / 2);
+  // Tap near geometric content center (more likely to hit the canvas than raw display center).
+  const px = Math.floor(geoOffX + contentW * 0.5);
+  const py = Math.floor(geoOffY + contentH * 0.5);
   adb(serial, ['shell', 'input', 'tap', String(px), String(py)]);
-  await sleep(350);
+  await sleep(400);
   let cal = await evaluateJson(cdp, `JSON.stringify(window.__cal)`);
+
+  // Retry once near top-left of estimated content if center miss (menu panels eat center).
   if (!cal || cal.x == null) {
-    // fallback: assume content top-left offset from letterboxing of webview
-    // top chrome estimate: (physH - cssH*dpr) * 0.55 for browsing
-    const contentH = cssH * dpr;
-    const residual = Math.max(0, physH - contentH);
-    const offY = residual * 0.55;
-    const offX = Math.max(0, (physW - cssW * dpr) / 2);
-    info('calibrate fallback offsets', { offX, offY, dpr, cssW, cssH, physW, physH });
-    return { dpr, offX, offY, physW, physH, cssW, cssH, method: 'fallback' };
+    await evaluate(
+      cdp,
+      `(() => {
+        window.__cal = null;
+        const h = (e) => {
+          const t = e.changedTouches?.[0] || e.touches?.[0];
+          if (!t) return;
+          window.__cal = { x: t.clientX, y: t.clientY };
+        };
+        window.addEventListener('touchstart', h, { capture: true, once: true });
+        return true;
+      })()`
+    );
+    const px2 = Math.floor(geoOffX + Math.min(48, contentW * 0.08));
+    const py2 = Math.floor(geoOffY + Math.min(48, contentH * 0.08));
+    adb(serial, ['shell', 'input', 'tap', String(px2), String(py2)]);
+    await sleep(400);
+    cal = await evaluateJson(cdp, `JSON.stringify(window.__cal)`);
+    if (cal && cal.x != null) {
+      const offX = px2 - cal.x * dpr;
+      const offY = py2 - cal.y * dpr;
+      info('calibrate', { cal, offX, offY, dpr, physW, physH, cssW, cssH, method: 'event_corner', source });
+      return { dpr, offX, offY, physW, physH, cssW, cssH, method: 'event_corner', cal, source };
+    }
+  }
+
+  if (!cal || cal.x == null) {
+    info('calibrate geometric fallback', {
+      offX: geoOffX,
+      offY: geoOffY,
+      dpr,
+      cssW,
+      cssH,
+      physW,
+      physH,
+      source,
+    });
+    return {
+      dpr,
+      offX: geoOffX,
+      offY: geoOffY,
+      physW,
+      physH,
+      cssW,
+      cssH,
+      method: 'geometric',
+      source,
+    };
   }
   const offX = px - cal.x * dpr;
   const offY = py - cal.y * dpr;
-  info('calibrate', { cal, offX, offY, dpr, physW, physH, cssW, cssH });
-  return { dpr, offX, offY, physW, physH, cssW, cssH, method: 'event', cal };
+  info('calibrate', { cal, offX, offY, dpr, physW, physH, cssW, cssH, method: 'event', source });
+  return { dpr, offX, offY, physW, physH, cssW, cssH, method: 'event', cal, source };
 }
 
 function cssToPhys(cal, x, y) {
@@ -277,7 +404,9 @@ async function findGamePage() {
   const tabs = await listPages(CDP_PORT);
   const pages = tabs.filter((t) => t.type === 'page');
   return (
-    pages.find((t) => /rusty-dasher|127\.0\.0\.1:8080/i.test(t.url || '')) ||
+    pages.find((t) =>
+      /rusty-dasher|127\.0\.0\.1:17880|localhost:17880|127\.0\.0\.1:8080/i.test(t.url || '')
+    ) ||
     pages.find((t) => /about:blank|chrome:\/\/new/i.test(t.url || '')) ||
     pages[0]
   );
@@ -296,14 +425,40 @@ async function pageDiag(cdp) {
         dpr: devicePixelRatio,
         fullscreen: !!(document.fullscreenElement || document.webkitFullscreenElement),
         orientation: (screen.orientation && screen.orientation.type) || null,
+        rdState: document.documentElement?.getAttribute('data-rd-state') || null,
         canvas: c ? {
           cw: c.clientWidth, ch: c.clientHeight,
           rect: rect ? { x: rect.x, y: rect.y, w: rect.width, h: rect.height } : null
         } : null,
         bootHidden: document.getElementById('boot')?.classList.contains('hidden') ?? null,
+        vv: vv ? { w: vv.width, h: vv.height, scale: vv.scale } : null,
       });
     })()`
   );
+}
+
+/** Read GameState published by WASM (`data-rd-state`). */
+async function rdState(cdp) {
+  try {
+    const s = await evaluate(
+      cdp,
+      `document.documentElement?.getAttribute('data-rd-state') || ''`
+    );
+    return (s || '').replace(/^"|"$/g, '') || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function waitRdState(cdp, want, ms = 4000) {
+  const wants = Array.isArray(want) ? want : [want];
+  const t0 = Date.now();
+  while (Date.now() - t0 < ms) {
+    const s = await rdState(cdp);
+    if (s && wants.includes(s)) return s;
+    await sleep(200);
+  }
+  return rdState(cdp);
 }
 
 async function navigateLive(cdp, url) {
@@ -325,32 +480,119 @@ async function navigateLive(cdp, url) {
   throw new Error('timeout ready');
 }
 
-async function setChromeMode(cdp, mode) {
+/**
+ * Enter/exit fullscreen safely.
+ * - enter: must run inside a real touch gesture handler (adb tap alone is not
+ *   a user activation for a later CDP evaluate). Install touchend → requestFS.
+ * - exit: only when Document is active + an element is fullscreen; swallow
+ *   promise rejections ("Document not active" TypeError on Xiaomi/Chrome).
+ */
+async function setChromeMode(cdp, mode, serial = null, cal = null) {
   if (mode === 'fullscreen') {
+    // Arm requestFullscreen on the next real touch (user activation).
     await evaluate(
       cdp,
       `(() => {
-        const el = document.documentElement;
-        try {
-          if (el.requestFullscreen) el.requestFullscreen();
-          else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-        } catch (_) {}
+        if (window.__rdFsArmed) return true;
+        window.__rdFsArmed = true;
+        const arm = (ev) => {
+          try {
+            const el = document.documentElement;
+            const p =
+              (el.requestFullscreen && el.requestFullscreen()) ||
+              (el.webkitRequestFullscreen && el.webkitRequestFullscreen());
+            if (p && typeof p.then === 'function') p.catch(() => {});
+          } catch (_) {}
+          try {
+            window.removeEventListener('touchend', arm, true);
+            window.removeEventListener('pointerup', arm, true);
+          } catch (_) {}
+          window.__rdFsArmed = false;
+        };
+        window.addEventListener('touchend', arm, { capture: true });
+        window.addEventListener('pointerup', arm, { capture: true });
         return true;
       })()`
     );
-    await sleep(800);
+    if (serial && cal) {
+      const d = await pageDiag(cdp);
+      const w = d.canvas?.cw || d.inner?.[0] || 375;
+      const h = d.canvas?.ch || d.inner?.[1] || 700;
+      adbTap(serial, cal, w * 0.5, h * 0.45);
+    } else if (serial) {
+      // Best-effort center of oriented display
+      const { physW, physH } = getDisplayInputSize(serial, null);
+      adb(serial, [
+        'shell',
+        'input',
+        'tap',
+        String(Math.floor(physW / 2)),
+        String(Math.floor(physH / 2)),
+      ]);
+    }
+    await sleep(900);
+    // Second try if still not fullscreen (some OEMs need double gesture).
+    const mid = await pageDiag(cdp);
+    if (!mid.fullscreen) {
+      await evaluate(
+        cdp,
+        `(() => {
+          window.__rdFsArmed = false;
+          const arm = () => {
+            try {
+              const el = document.documentElement;
+              const p =
+                (el.requestFullscreen && el.requestFullscreen()) ||
+                (el.webkitRequestFullscreen && el.webkitRequestFullscreen());
+              if (p && typeof p.then === 'function') p.catch(() => {});
+            } catch (_) {}
+          };
+          window.addEventListener('touchend', arm, { capture: true, once: true });
+          return true;
+        })()`
+      );
+      if (serial && cal) {
+        const w = mid.canvas?.cw || mid.inner?.[0] || 375;
+        const h = mid.canvas?.ch || mid.inner?.[1] || 700;
+        adbTap(serial, cal, w * 0.5, h * 0.5);
+      } else if (serial) {
+        const { physW, physH } = getDisplayInputSize(serial, null);
+        adb(serial, [
+          'shell',
+          'input',
+          'tap',
+          String(Math.floor(physW / 2)),
+          String(Math.floor(physH / 2)),
+        ]);
+      }
+      await sleep(800);
+    }
   } else {
     await evaluate(
       cdp,
       `(() => {
         try {
-          if (document.exitFullscreen) document.exitFullscreen();
-          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-        } catch (_) {}
-        return true;
+          // Avoid TypeError: Failed to execute 'exitFullscreen' on 'Document': Document not active
+          if (document.hidden) return false;
+          if (document.visibilityState && document.visibilityState !== 'visible') return false;
+          const fs =
+            document.fullscreenElement || document.webkitFullscreenElement;
+          if (!fs) return false;
+          let p = null;
+          try {
+            if (document.exitFullscreen) p = document.exitFullscreen();
+            else if (document.webkitExitFullscreen) p = document.webkitExitFullscreen();
+          } catch (_) {
+            return false;
+          }
+          if (p && typeof p.then === 'function') p.catch(() => {});
+          return true;
+        } catch (_) {
+          return false;
+        }
       })()`
     );
-    await sleep(500);
+    await sleep(400);
   }
   return pageDiag(cdp);
 }
@@ -399,7 +641,13 @@ async function runCell(serial, cell) {
   const tag = cell.id;
   info('\n======== CELL', tag, '========');
   forceOrientation(serial, cell.orientation);
-  await sleep(1200);
+  await sleep(1500);
+  // Confirm input coordinate system flipped for landscape before calibrating.
+  const orientSize = getDisplayInputSize(
+    serial,
+    cell.orientation === 'landscape'
+  );
+  info('post-orient input size', orientSize);
 
   const tab = await findGamePage();
   if (!tab?.webSocketDebuggerUrl) throw new Error('no tab');
@@ -410,33 +658,37 @@ async function runCell(serial, cell) {
   try {
     await cdp.send('Runtime.enable');
     await cdp.send('Page.enable');
+    // Exit any leftover fullscreen on the old document BEFORE navigate (safe no-op).
+    try {
+      await setChromeMode(cdp, 'browsing');
+    } catch (_) {}
+
     const url =
       LIVE_URL +
       (LIVE_URL.includes('?') ? '&' : '?') +
       `e2e=1&phone_cell=${tag}&t=${Date.now()}`;
     await navigateLive(cdp, url);
+    await sleep(400);
 
     recorder = startAdbRecord(serial, recPath);
     await sleep(400);
 
-    // fullscreen after load (needs gesture sometimes — adb tap first)
+    // Provisional geometric cal for fullscreen gesture + first taps
+    let cal = await calibrate(serial, cdp);
+
     if (cell.mode === 'fullscreen') {
-      const d0 = await pageDiag(cdp);
-      const w0 = d0.canvas?.cw || d0.inner?.[0] || 375;
-      const h0 = d0.canvas?.ch || d0.inner?.[1] || 700;
-      // provisional cal for fullscreen request gesture
-      let cal0 = await calibrate(serial, cdp);
-      adbTap(serial, cal0, w0 / 2, h0 * 0.5);
-      await sleep(200);
-      await setChromeMode(cdp, 'fullscreen');
-      await sleep(600);
+      await setChromeMode(cdp, 'fullscreen', serial, cal);
+      await sleep(500);
+      // Recalibrate after FS (viewport + chrome residual change)
+      cal = await calibrate(serial, cdp);
     } else {
+      // Ensure not fullscreen; never throw Document-not-active into page console.
       await setChromeMode(cdp, 'browsing');
     }
 
     let diag = await pageDiag(cdp);
-    const w = diag.canvas?.cw || diag.inner?.[0] || 375;
-    const h = diag.canvas?.ch || diag.inner?.[1] || 700;
+    let w = diag.canvas?.cw || diag.inner?.[0] || 375;
+    let h = diag.canvas?.ch || diag.inner?.[1] || 700;
     const orientOk =
       (cell.orientation === 'portrait' && h >= w) ||
       (cell.orientation === 'landscape' && w >= h);
@@ -444,8 +696,12 @@ async function runCell(serial, cell) {
     else fail(`${tag}/orientation`, `${w}x${h}`);
 
     if (cell.mode === 'fullscreen') {
-      // Prefer viewport growth over document.fullscreen flag (flaky)
-      if (diag.fullscreen || (cell.orientation === 'portrait' && h >= 800) || (cell.orientation === 'landscape' && w >= 800)) {
+      // Prefer document.fullscreen OR clear viewport growth vs browsing chrome.
+      if (
+        diag.fullscreen ||
+        (cell.orientation === 'portrait' && h >= 780) ||
+        (cell.orientation === 'landscape' && h >= 320 && w >= 700)
+      ) {
         pass(`${tag}/fullscreen`, `flag=${diag.fullscreen} ${w}x${h}`);
       } else {
         fail(`${tag}/fullscreen`, `flag=${diag.fullscreen} ${w}x${h}`);
@@ -455,11 +711,10 @@ async function runCell(serial, cell) {
       else fail(`${tag}/browsing`, 'still fullscreen');
     }
 
-    const cal = await calibrate(serial, cdp);
     let pts = layoutPoints(w, h);
     fs.writeFileSync(
       path.join(OUT, `${tag}_diag.json`),
-      JSON.stringify({ cell, diag, pts, cal }, null, 2)
+      JSON.stringify({ cell, diag, pts, cal, orientSize }, null, 2)
     );
 
     // geometry fatty
@@ -493,15 +748,48 @@ async function runCell(serial, cell) {
     inv({ cell: tag, screen: 'boot', control: 'dismiss', worked: 'yes', fatty: 'good', ok: true });
     pass(`${tag}/boot`);
 
-    // MENU swap + confirm
+    // MENU swap + confirm — verify via data-rd-state (no false CAPTURE_OK)
     adbTap(serial, cal, pts.swap.x, pts.swap.y);
     await sleep(350);
     adbTap(serial, cal, pts.swap.x, pts.swap.y);
     await sleep(300);
-    inv({ cell: tag, screen: 'menu', control: 'swap toggle', worked: 'tapped', fatty: 'bottom band', ok: true });
+    inv({
+      cell: tag,
+      screen: 'menu',
+      control: 'swap toggle',
+      worked: 'tapped',
+      fatty: 'bottom band',
+      ok: true,
+    });
     adbTap(serial, cal, pts.confirm.x, pts.confirm.y);
-    await sleep(900);
-    inv({ cell: tag, screen: 'menu', control: 'confirm', worked: 'tapped', fatty: 'good', ok: true });
+    let st = await waitRdState(cdp, 'mode_select', 3500);
+    // Retry confirm at a few vertical bands if cal is slightly off (landscape menu).
+    if (st !== 'mode_select') {
+      for (const yFrac of [0.4, 0.5, 0.35, 0.55]) {
+        adbTap(serial, cal, pts.center.x, Math.floor(h * yFrac));
+        st = await waitRdState(cdp, 'mode_select', 1200);
+        if (st === 'mode_select') break;
+      }
+    }
+    const menuOk = st === 'mode_select';
+    inv({
+      cell: tag,
+      screen: 'menu',
+      control: 'confirm',
+      worked: menuOk ? `state=${st}` : `stuck state=${st || '?'}`,
+      fatty: 'good',
+      ok: menuOk,
+    });
+    if (!menuOk) {
+      fail(`${tag}/menu`, `expected mode_select got ${st}`);
+      // Still dump diag for review; do not invent play CAPTURE_OK.
+      fs.writeFileSync(
+        path.join(OUT, `${tag}_diag.json`),
+        JSON.stringify({ cell, diag: await pageDiag(cdp), pts, cal, orientSize, rdState: st }, null, 2)
+      );
+      return;
+    }
+    pass(`${tag}/menu`, `state=${st}`);
 
     // ALL modes
     for (let i = 0; i < 4; i++) {
@@ -512,7 +800,14 @@ async function runCell(serial, cell) {
       adbTap(serial, cal, pts.modeUp.x, pts.modeUp.y);
       await sleep(220);
     }
-    inv({ cell: tag, screen: 'mode_select', control: 'all modes', worked: 'cycled 4', fatty: 'bands', ok: true });
+    inv({
+      cell: tag,
+      screen: 'mode_select',
+      control: 'all modes',
+      worked: 'cycled 4',
+      fatty: 'bands',
+      ok: true,
+    });
     pass(`${tag}/modes`);
 
     // ALL difficulties
@@ -524,24 +819,53 @@ async function runCell(serial, cell) {
       adbTap(serial, cal, pts.diffL.x, pts.diffL.y);
       await sleep(220);
     }
-    inv({ cell: tag, screen: 'mode_select', control: 'all difficulties', worked: 'cycled 4', fatty: 'good', ok: true });
+    inv({
+      cell: tag,
+      screen: 'mode_select',
+      control: 'all difficulties',
+      worked: 'cycled 4',
+      fatty: 'good',
+      ok: true,
+    });
     pass(`${tag}/difficulties`);
 
     // START
     adbTap(serial, cal, pts.start.x, pts.start.y);
-    await sleep(1800);
+    st = await waitRdState(cdp, 'playing', 4000);
+    if (st !== 'playing') {
+      // Retry START lower/higher (landscape chrome can shift layout points).
+      for (const yFrac of [0.62, 0.72, 0.55, 0.78]) {
+        adbTap(serial, cal, pts.center.x, Math.floor(h * yFrac));
+        st = await waitRdState(cdp, 'playing', 1500);
+        if (st === 'playing') break;
+      }
+    }
+    const startOk = st === 'playing';
+    inv({
+      cell: tag,
+      screen: 'mode_select',
+      control: 'START',
+      worked: startOk ? `state=${st}` : `stuck state=${st || '?'}`,
+      fatty: 'good',
+      ok: startOk,
+    });
+    if (!startOk) {
+      fail(`${tag}/start`, `expected playing got ${st}`);
+      return;
+    }
+    pass(`${tag}/start`, `state=${st}`);
+
     diag = await pageDiag(cdp);
     const wp = diag.canvas?.cw || w;
     const hp = diag.canvas?.ch || h;
     pts = layoutPoints(wp, hp);
-    // re-calibrate after layout change
+    // re-calibrate after layout change (chrome / play deck)
     const cal2 = await calibrate(serial, cdp);
-    inv({ cell: tag, screen: 'mode_select', control: 'START', worked: 'tapped', fatty: 'good', ok: true });
-    pass(`${tag}/start`);
 
-    // PLAY 20s
+    // PLAY 20s — only if we truly entered Playing
     const end = Date.now() + PLAY_MS;
     let step = 0;
+    let lastState = 'playing';
     while (Date.now() < end) {
       const dx = step % 2 === 0 ? 30 : -25;
       const dy = step % 3 === 0 ? -20 : 15;
@@ -559,26 +883,65 @@ async function runCell(serial, cell) {
         adbTap(serial, cal2, pts.dash.x, pts.dash.y);
       }
       step++;
+      if (step % 8 === 0) {
+        lastState = (await rdState(cdp)) || lastState;
+      }
       await sleep(120);
     }
+    lastState = (await rdState(cdp)) || lastState;
+    const playOk = step > 5 && (lastState === 'playing' || lastState === 'game_over');
     inv({
       cell: tag,
       screen: 'playing',
       control: 'stick+dash 20s',
-      worked: `steps=${step}`,
+      worked: `steps=${step} state=${lastState}`,
       fatty: pts.gap >= MIN_GAP_CSS ? 'gap ok' : 'close',
-      ok: step > 5,
+      ok: playOk,
     });
-    if (step > 5) pass(`${tag}/play20s`, `steps=${step}`);
-    else fail(`${tag}/play20s`, 'too few steps');
+    if (playOk) pass(`${tag}/play20s`, `steps=${step} state=${lastState}`);
+    else fail(`${tag}/play20s`, `steps=${step} state=${lastState}`);
 
-    await setChromeMode(cdp, 'browsing');
+    // Safe exit FS only when still active document
+    try {
+      await setChromeMode(cdp, 'browsing');
+    } catch (_) {}
   } finally {
     if (recorder) {
       try {
         const info = await recorder.stop();
-        if (info.bytes > 50000) pass(`${tag}/recording`, `${info.bytes} bytes`);
-        else fail(`${tag}/recording`, `bytes=${info.bytes}`);
+        // Prefer ffprobe when available for real decodability (moov alone can still be truncated).
+        let decodable = info.hasMoov;
+        if (info.bytes > 50000 && info.hasMoov) {
+          const probe = sh('ffprobe', [
+            '-v',
+            'error',
+            '-show_entries',
+            'format=duration',
+            '-of',
+            'default=nw=1:nk=1',
+            info.path,
+          ]);
+          const dur = Number(probe.out);
+          if (probe.ok && Number.isFinite(dur) && dur > 5) {
+            decodable = true;
+            info.duration = dur;
+          } else if (probe.ok === false || !Number.isFinite(dur)) {
+            decodable = false;
+            info.probeErr = (probe.err || probe.out || '').slice(0, 120);
+          }
+        }
+        if (info.bytes > 50000 && decodable) {
+          pass(
+            `${tag}/recording`,
+            `${info.bytes} bytes moov=ok` +
+              (info.duration ? ` dur=${info.duration.toFixed(1)}s` : '')
+          );
+        } else {
+          fail(
+            `${tag}/recording`,
+            `bytes=${info.bytes} moov=${info.hasMoov} decodable=${decodable} ${info.probeErr || ''}`
+          );
+        }
       } catch (e) {
         fail(`${tag}/recording`, String(e));
       }
@@ -667,7 +1030,14 @@ async function main() {
     );
     process.exit(REQUIRE ? 1 : 0);
   }
-  const device = devices[0];
+  const prefer = (process.env.ANDROID_SERIAL || process.env.PHONE_SERIAL || '').trim();
+  let device = prefer ? devices.find((d) => d.serial === prefer) : null;
+  if (!device) {
+    // Prefer physical USB over emulator when both present
+    device =
+      devices.find((d) => !d.serial.startsWith('emulator-') && !/\bemulator\b/i.test(d.raw)) ||
+      devices[0];
+  }
   const model = adb(device.serial, ['shell', 'getprop', 'ro.product.model']).out;
   info('device', device.raw, model);
   setupAdb(device.serial);

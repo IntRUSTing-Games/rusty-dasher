@@ -1,0 +1,1414 @@
+{
+  "version": 2,
+  "format_id": "1080p",
+  "session_t0_note": "menu_script t_ms from session_t0 after waitReady",
+  "play_t0_note": "play_script t_ms from play_t0 (after menu_script completes)",
+  "play_ms": 22000,
+  "menu_script": [
+    {
+      "t_ms": 0,
+      "type": "note",
+      "text": "after_ready"
+    },
+    {
+      "t_ms": 200,
+      "type": "clickBootCta"
+    },
+    {
+      "t_ms": 1400,
+      "type": "focusCanvas"
+    },
+    {
+      "t_ms": 1600,
+      "type": "keyPress",
+      "key": "Enter"
+    },
+    {
+      "t_ms": 2600,
+      "type": "keyPress",
+      "key": "ArrowDown"
+    },
+    {
+      "t_ms": 2760,
+      "type": "keyPress",
+      "key": "ArrowDown"
+    },
+    {
+      "t_ms": 2920,
+      "type": "keyPress",
+      "key": "ArrowDown"
+    },
+    {
+      "t_ms": 3080,
+      "type": "keyPress",
+      "key": "ArrowDown"
+    },
+    {
+      "t_ms": 3240,
+      "type": "keyPress",
+      "key": "ArrowUp"
+    },
+    {
+      "t_ms": 3400,
+      "type": "keyPress",
+      "key": "ArrowUp"
+    },
+    {
+      "t_ms": 3560,
+      "type": "keyPress",
+      "key": "ArrowUp"
+    },
+    {
+      "t_ms": 3720,
+      "type": "keyPress",
+      "key": "ArrowUp"
+    },
+    {
+      "t_ms": 4000,
+      "type": "keyPress",
+      "key": "ArrowRight"
+    },
+    {
+      "t_ms": 4160,
+      "type": "keyPress",
+      "key": "ArrowRight"
+    },
+    {
+      "t_ms": 4320,
+      "type": "keyPress",
+      "key": "ArrowRight"
+    },
+    {
+      "t_ms": 4480,
+      "type": "keyPress",
+      "key": "ArrowRight"
+    },
+    {
+      "t_ms": 4640,
+      "type": "keyPress",
+      "key": "ArrowLeft"
+    },
+    {
+      "t_ms": 4800,
+      "type": "keyPress",
+      "key": "ArrowLeft"
+    },
+    {
+      "t_ms": 4960,
+      "type": "keyPress",
+      "key": "ArrowLeft"
+    },
+    {
+      "t_ms": 5120,
+      "type": "keyPress",
+      "key": "ArrowLeft"
+    },
+    {
+      "t_ms": 5400,
+      "type": "keyPress",
+      "key": "Space"
+    },
+    {
+      "t_ms": 6500,
+      "type": "note",
+      "text": "play_settle"
+    }
+  ],
+  "play_script": [
+    {
+      "t_ms": 0,
+      "type": "keyDown",
+      "key": "KeyW"
+    },
+    {
+      "t_ms": 450,
+      "type": "keyUp",
+      "key": "KeyW"
+    },
+    {
+      "t_ms": 530,
+      "type": "keyPress",
+      "key": "Space"
+    },
+    {
+      "t_ms": 660,
+      "type": "keyDown",
+      "key": "KeyD"
+    },
+    {
+      "t_ms": 1160,
+      "type": "keyUp",
+      "key": "KeyD"
+    },
+    {
+      "t_ms": 1240,
+      "type": "keyDown",
+      "key": "KeyS"
+    },
+    {
+      "t_ms": 1690,
+      "type": "keyUp",
+      "key": "KeyS"
+    },
+    {
+      "t_ms": 1770,
+      "type": "keyDown",
+      "key": "KeyA"
+    },
+    {
+      "t_ms": 2270,
+      "type": "keyUp",
+      "key": "KeyA"
+    },
+    {
+      "t_ms": 2350,
+      "type": "keyPress",
+      "key": "Space"
+    },
+    {
+      "t_ms": 2480,
+      "type": "keyDown",
+      "key": "ArrowUp"
+    },
+    {
+      "t_ms": 2880,
+      "type": "keyUp",
+      "key": "ArrowUp"
+    },
+    {
+      "t_ms": 2960,
+      "type": "keyDown",
+      "key": "ArrowRight"
+    },
+    {
+      "t_ms": 3410,
+      "type": "keyUp",
+      "key": "ArrowRight"
+    },
+    {
+      "t_ms": 3490,
+      "type": "keyDown",
+      "key": "ArrowDown"
+    },
+    {
+      "t_ms": 3890,
+      "type": "keyUp",
+      "key": "ArrowDown"
+    },
+    {
+      "t_ms": 3970,
+      "type": "keyPress",
+      "key": "Space"
+    },
+    {
+      "t_ms": 4100,
+      "type": "keyDown",
+      "key": "ArrowLeft"
+    },
+    {
+      "t_ms": 4550,
+      "type": "keyUp",
+      "key": "ArrowLeft"
+    },
+    {
+      "t_ms": 4630,
+      "type": "keyDown",
+      "key": "KeyW"
+    },
+    {
+      "t_ms": 5080,
+      "type": "keyUp",
+      "key": "KeyW"
+    },
+    {
+      "t_ms": 5160,
+      "type": "keyDown",
+      "key": "KeyD"
+    },
+    {
+      "t_ms": 5660,
+      "type": "keyUp",
+      "key": "KeyD"
+    },
+    {
+      "t_ms": 5740,
+      "type": "keyPress",
+      "key": "Space"
+    },
+    {
+      "t_ms": 5870,
+      "type": "keyDown",
+      "key": "KeyS"
+    },
+    {
+      "t_ms": 6320,
+      "type": "keyUp",
+      "key": "KeyS"
+    },
+    {
+      "t_ms": 6400,
+      "type": "keyDown",
+      "key": "KeyA"
+    },
+    {
+      "t_ms": 6900,
+      "type": "keyUp",
+      "key": "KeyA"
+    },
+    {
+      "t_ms": 6980,
+      "type": "keyDown",
+      "key": "ArrowUp"
+    },
+    {
+      "t_ms": 7380,
+      "type": "keyUp",
+      "key": "ArrowUp"
+    },
+    {
+      "t_ms": 7460,
+      "type": "keyPress",
+      "key": "Space"
+    },
+    {
+      "t_ms": 7590,
+      "type": "keyDown",
+      "key": "ArrowRight"
+    },
+    {
+      "t_ms": 8040,
+      "type": "keyUp",
+      "key": "ArrowRight"
+    },
+    {
+      "t_ms": 8120,
+      "type": "keyDown",
+      "key": "ArrowDown"
+    },
+    {
+      "t_ms": 8520,
+      "type": "keyUp",
+      "key": "ArrowDown"
+    },
+    {
+      "t_ms": 8600,
+      "type": "keyDown",
+      "key": "ArrowLeft"
+    },
+    {
+      "t_ms": 9050,
+      "type": "keyUp",
+      "key": "ArrowLeft"
+    },
+    {
+      "t_ms": 9130,
+      "type": "keyPress",
+      "key": "Space"
+    },
+    {
+      "t_ms": 9260,
+      "type": "keyDown",
+      "key": "KeyW"
+    },
+    {
+      "t_ms": 9710,
+      "type": "keyUp",
+      "key": "KeyW"
+    },
+    {
+      "t_ms": 9790,
+      "type": "keyDown",
+      "key": "KeyD"
+    },
+    {
+      "t_ms": 10290,
+      "type": "keyUp",
+      "key": "KeyD"
+    },
+    {
+      "t_ms": 10370,
+      "type": "keyDown",
+      "key": "KeyS"
+    },
+    {
+      "t_ms": 10820,
+      "type": "keyUp",
+      "key": "KeyS"
+    },
+    {
+      "t_ms": 10900,
+      "type": "keyPress",
+      "key": "Space"
+    },
+    {
+      "t_ms": 11030,
+      "type": "keyDown",
+      "key": "KeyA"
+    },
+    {
+      "t_ms": 11530,
+      "type": "keyUp",
+      "key": "KeyA"
+    },
+    {
+      "t_ms": 11610,
+      "type": "keyDown",
+      "key": "ArrowUp"
+    },
+    {
+      "t_ms": 12010,
+      "type": "keyUp",
+      "key": "ArrowUp"
+    },
+    {
+      "t_ms": 12090,
+      "type": "keyDown",
+      "key": "ArrowRight"
+    },
+    {
+      "t_ms": 12540,
+      "type": "keyUp",
+      "key": "ArrowRight"
+    },
+    {
+      "t_ms": 12620,
+      "type": "keyPress",
+      "key": "Space"
+    },
+    {
+      "t_ms": 12750,
+      "type": "keyDown",
+      "key": "ArrowDown"
+    },
+    {
+      "t_ms": 13150,
+      "type": "keyUp",
+      "key": "ArrowDown"
+    },
+    {
+      "t_ms": 13230,
+      "type": "keyDown",
+      "key": "ArrowLeft"
+    },
+    {
+      "t_ms": 13680,
+      "type": "keyUp",
+      "key": "ArrowLeft"
+    },
+    {
+      "t_ms": 13760,
+      "type": "keyDown",
+      "key": "KeyW"
+    },
+    {
+      "t_ms": 14210,
+      "type": "keyUp",
+      "key": "KeyW"
+    },
+    {
+      "t_ms": 14290,
+      "type": "keyPress",
+      "key": "Space"
+    },
+    {
+      "t_ms": 14420,
+      "type": "keyDown",
+      "key": "KeyD"
+    },
+    {
+      "t_ms": 14920,
+      "type": "keyUp",
+      "key": "KeyD"
+    },
+    {
+      "t_ms": 15000,
+      "type": "keyDown",
+      "key": "KeyS"
+    },
+    {
+      "t_ms": 15450,
+      "type": "keyUp",
+      "key": "KeyS"
+    },
+    {
+      "t_ms": 15530,
+      "type": "keyDown",
+      "key": "KeyA"
+    },
+    {
+      "t_ms": 16030,
+      "type": "keyUp",
+      "key": "KeyA"
+    },
+    {
+      "t_ms": 16110,
+      "type": "keyPress",
+      "key": "Space"
+    },
+    {
+      "t_ms": 16240,
+      "type": "keyDown",
+      "key": "ArrowUp"
+    },
+    {
+      "t_ms": 16640,
+      "type": "keyUp",
+      "key": "ArrowUp"
+    },
+    {
+      "t_ms": 16720,
+      "type": "keyDown",
+      "key": "ArrowRight"
+    },
+    {
+      "t_ms": 17170,
+      "type": "keyUp",
+      "key": "ArrowRight"
+    },
+    {
+      "t_ms": 17250,
+      "type": "keyDown",
+      "key": "ArrowDown"
+    },
+    {
+      "t_ms": 17650,
+      "type": "keyUp",
+      "key": "ArrowDown"
+    },
+    {
+      "t_ms": 17730,
+      "type": "keyPress",
+      "key": "Space"
+    },
+    {
+      "t_ms": 17860,
+      "type": "keyDown",
+      "key": "ArrowLeft"
+    },
+    {
+      "t_ms": 18310,
+      "type": "keyUp",
+      "key": "ArrowLeft"
+    },
+    {
+      "t_ms": 18390,
+      "type": "keyDown",
+      "key": "KeyW"
+    },
+    {
+      "t_ms": 18840,
+      "type": "keyUp",
+      "key": "KeyW"
+    },
+    {
+      "t_ms": 18920,
+      "type": "keyDown",
+      "key": "KeyD"
+    },
+    {
+      "t_ms": 19420,
+      "type": "keyUp",
+      "key": "KeyD"
+    },
+    {
+      "t_ms": 19500,
+      "type": "keyPress",
+      "key": "Space"
+    },
+    {
+      "t_ms": 19630,
+      "type": "keyDown",
+      "key": "KeyS"
+    },
+    {
+      "t_ms": 20080,
+      "type": "keyUp",
+      "key": "KeyS"
+    },
+    {
+      "t_ms": 20160,
+      "type": "keyDown",
+      "key": "KeyA"
+    },
+    {
+      "t_ms": 20660,
+      "type": "keyUp",
+      "key": "KeyA"
+    },
+    {
+      "t_ms": 20740,
+      "type": "keyDown",
+      "key": "ArrowUp"
+    },
+    {
+      "t_ms": 21140,
+      "type": "keyUp",
+      "key": "ArrowUp"
+    },
+    {
+      "t_ms": 21960,
+      "type": "keyUp",
+      "key": "KeyW"
+    },
+    {
+      "t_ms": 21960,
+      "type": "keyUp",
+      "key": "KeyA"
+    },
+    {
+      "t_ms": 21960,
+      "type": "keyUp",
+      "key": "KeyS"
+    },
+    {
+      "t_ms": 21960,
+      "type": "keyUp",
+      "key": "KeyD"
+    },
+    {
+      "t_ms": 21960,
+      "type": "keyUp",
+      "key": "ArrowUp"
+    },
+    {
+      "t_ms": 21960,
+      "type": "keyUp",
+      "key": "ArrowLeft"
+    },
+    {
+      "t_ms": 21960,
+      "type": "keyUp",
+      "key": "ArrowDown"
+    },
+    {
+      "t_ms": 21960,
+      "type": "keyUp",
+      "key": "ArrowRight"
+    },
+    {
+      "t_ms": 21960,
+      "type": "keyUp",
+      "key": "Space"
+    }
+  ],
+  "executed": [
+    {
+      "t_ms": 0,
+      "type": "note",
+      "text": "after_ready",
+      "wall_ms": 1784325606697,
+      "offset_ms": 3
+    },
+    {
+      "t_ms": 200,
+      "type": "clickBootCta",
+      "wall_ms": 1784325606894,
+      "offset_ms": 200
+    },
+    {
+      "t_ms": 1400,
+      "type": "focusCanvas",
+      "wall_ms": 1784325608094,
+      "offset_ms": 1400
+    },
+    {
+      "t_ms": 1600,
+      "type": "keyPress",
+      "key": "Enter",
+      "wall_ms": 1784325608296,
+      "offset_ms": 1602
+    },
+    {
+      "t_ms": 2600,
+      "type": "keyPress",
+      "key": "ArrowDown",
+      "wall_ms": 1784325609294,
+      "offset_ms": 2600
+    },
+    {
+      "t_ms": 2760,
+      "type": "keyPress",
+      "key": "ArrowDown",
+      "wall_ms": 1784325609454,
+      "offset_ms": 2760
+    },
+    {
+      "t_ms": 2920,
+      "type": "keyPress",
+      "key": "ArrowDown",
+      "wall_ms": 1784325609614,
+      "offset_ms": 2920
+    },
+    {
+      "t_ms": 3080,
+      "type": "keyPress",
+      "key": "ArrowDown",
+      "wall_ms": 1784325609774,
+      "offset_ms": 3080
+    },
+    {
+      "t_ms": 3240,
+      "type": "keyPress",
+      "key": "ArrowUp",
+      "wall_ms": 1784325609934,
+      "offset_ms": 3240
+    },
+    {
+      "t_ms": 3400,
+      "type": "keyPress",
+      "key": "ArrowUp",
+      "wall_ms": 1784325610094,
+      "offset_ms": 3400
+    },
+    {
+      "t_ms": 3560,
+      "type": "keyPress",
+      "key": "ArrowUp",
+      "wall_ms": 1784325610254,
+      "offset_ms": 3560
+    },
+    {
+      "t_ms": 3720,
+      "type": "keyPress",
+      "key": "ArrowUp",
+      "wall_ms": 1784325610414,
+      "offset_ms": 3720
+    },
+    {
+      "t_ms": 4000,
+      "type": "keyPress",
+      "key": "ArrowRight",
+      "wall_ms": 1784325610695,
+      "offset_ms": 4001
+    },
+    {
+      "t_ms": 4160,
+      "type": "keyPress",
+      "key": "ArrowRight",
+      "wall_ms": 1784325610854,
+      "offset_ms": 4160
+    },
+    {
+      "t_ms": 4320,
+      "type": "keyPress",
+      "key": "ArrowRight",
+      "wall_ms": 1784325611015,
+      "offset_ms": 4321
+    },
+    {
+      "t_ms": 4480,
+      "type": "keyPress",
+      "key": "ArrowRight",
+      "wall_ms": 1784325611174,
+      "offset_ms": 4480
+    },
+    {
+      "t_ms": 4640,
+      "type": "keyPress",
+      "key": "ArrowLeft",
+      "wall_ms": 1784325611334,
+      "offset_ms": 4640
+    },
+    {
+      "t_ms": 4800,
+      "type": "keyPress",
+      "key": "ArrowLeft",
+      "wall_ms": 1784325611494,
+      "offset_ms": 4800
+    },
+    {
+      "t_ms": 4960,
+      "type": "keyPress",
+      "key": "ArrowLeft",
+      "wall_ms": 1784325611655,
+      "offset_ms": 4961
+    },
+    {
+      "t_ms": 5120,
+      "type": "keyPress",
+      "key": "ArrowLeft",
+      "wall_ms": 1784325611814,
+      "offset_ms": 5120
+    },
+    {
+      "t_ms": 5400,
+      "type": "keyPress",
+      "key": "Space",
+      "wall_ms": 1784325612094,
+      "offset_ms": 5400
+    },
+    {
+      "t_ms": 6500,
+      "type": "note",
+      "text": "play_settle",
+      "wall_ms": 1784325613197,
+      "offset_ms": 6503
+    },
+    {
+      "t_ms": 0,
+      "type": "keyDown",
+      "key": "KeyW",
+      "wall_ms": 1784325613612,
+      "offset_ms": 2
+    },
+    {
+      "t_ms": 450,
+      "type": "keyUp",
+      "key": "KeyW",
+      "wall_ms": 1784325614060,
+      "offset_ms": 450
+    },
+    {
+      "t_ms": 530,
+      "type": "keyPress",
+      "key": "Space",
+      "wall_ms": 1784325614141,
+      "offset_ms": 531
+    },
+    {
+      "t_ms": 660,
+      "type": "keyDown",
+      "key": "KeyD",
+      "wall_ms": 1784325614271,
+      "offset_ms": 661
+    },
+    {
+      "t_ms": 1160,
+      "type": "keyUp",
+      "key": "KeyD",
+      "wall_ms": 1784325614770,
+      "offset_ms": 1160
+    },
+    {
+      "t_ms": 1240,
+      "type": "keyDown",
+      "key": "KeyS",
+      "wall_ms": 1784325614851,
+      "offset_ms": 1241
+    },
+    {
+      "t_ms": 1690,
+      "type": "keyUp",
+      "key": "KeyS",
+      "wall_ms": 1784325615301,
+      "offset_ms": 1691
+    },
+    {
+      "t_ms": 1770,
+      "type": "keyDown",
+      "key": "KeyA",
+      "wall_ms": 1784325615381,
+      "offset_ms": 1771
+    },
+    {
+      "t_ms": 2270,
+      "type": "keyUp",
+      "key": "KeyA",
+      "wall_ms": 1784325615880,
+      "offset_ms": 2270
+    },
+    {
+      "t_ms": 2350,
+      "type": "keyPress",
+      "key": "Space",
+      "wall_ms": 1784325615960,
+      "offset_ms": 2350
+    },
+    {
+      "t_ms": 2480,
+      "type": "keyDown",
+      "key": "ArrowUp",
+      "wall_ms": 1784325616090,
+      "offset_ms": 2480
+    },
+    {
+      "t_ms": 2880,
+      "type": "keyUp",
+      "key": "ArrowUp",
+      "wall_ms": 1784325616490,
+      "offset_ms": 2880
+    },
+    {
+      "t_ms": 2960,
+      "type": "keyDown",
+      "key": "ArrowRight",
+      "wall_ms": 1784325616570,
+      "offset_ms": 2960
+    },
+    {
+      "t_ms": 3410,
+      "type": "keyUp",
+      "key": "ArrowRight",
+      "wall_ms": 1784325617020,
+      "offset_ms": 3410
+    },
+    {
+      "t_ms": 3490,
+      "type": "keyDown",
+      "key": "ArrowDown",
+      "wall_ms": 1784325617100,
+      "offset_ms": 3490
+    },
+    {
+      "t_ms": 3890,
+      "type": "keyUp",
+      "key": "ArrowDown",
+      "wall_ms": 1784325617500,
+      "offset_ms": 3890
+    },
+    {
+      "t_ms": 3970,
+      "type": "keyPress",
+      "key": "Space",
+      "wall_ms": 1784325617580,
+      "offset_ms": 3970
+    },
+    {
+      "t_ms": 4100,
+      "type": "keyDown",
+      "key": "ArrowLeft",
+      "wall_ms": 1784325617711,
+      "offset_ms": 4101
+    },
+    {
+      "t_ms": 4550,
+      "type": "keyUp",
+      "key": "ArrowLeft",
+      "wall_ms": 1784325618161,
+      "offset_ms": 4551
+    },
+    {
+      "t_ms": 4630,
+      "type": "keyDown",
+      "key": "KeyW",
+      "wall_ms": 1784325618240,
+      "offset_ms": 4630
+    },
+    {
+      "t_ms": 5080,
+      "type": "keyUp",
+      "key": "KeyW",
+      "wall_ms": 1784325618690,
+      "offset_ms": 5080
+    },
+    {
+      "t_ms": 5160,
+      "type": "keyDown",
+      "key": "KeyD",
+      "wall_ms": 1784325618770,
+      "offset_ms": 5160
+    },
+    {
+      "t_ms": 5660,
+      "type": "keyUp",
+      "key": "KeyD",
+      "wall_ms": 1784325619270,
+      "offset_ms": 5660
+    },
+    {
+      "t_ms": 5740,
+      "type": "keyPress",
+      "key": "Space",
+      "wall_ms": 1784325619350,
+      "offset_ms": 5740
+    },
+    {
+      "t_ms": 5870,
+      "type": "keyDown",
+      "key": "KeyS",
+      "wall_ms": 1784325619480,
+      "offset_ms": 5870
+    },
+    {
+      "t_ms": 6320,
+      "type": "keyUp",
+      "key": "KeyS",
+      "wall_ms": 1784325619930,
+      "offset_ms": 6320
+    },
+    {
+      "t_ms": 6400,
+      "type": "keyDown",
+      "key": "KeyA",
+      "wall_ms": 1784325620010,
+      "offset_ms": 6400
+    },
+    {
+      "t_ms": 6900,
+      "type": "keyUp",
+      "key": "KeyA",
+      "wall_ms": 1784325620510,
+      "offset_ms": 6900
+    },
+    {
+      "t_ms": 6980,
+      "type": "keyDown",
+      "key": "ArrowUp",
+      "wall_ms": 1784325620590,
+      "offset_ms": 6980
+    },
+    {
+      "t_ms": 7380,
+      "type": "keyUp",
+      "key": "ArrowUp",
+      "wall_ms": 1784325620990,
+      "offset_ms": 7380
+    },
+    {
+      "t_ms": 7460,
+      "type": "keyPress",
+      "key": "Space",
+      "wall_ms": 1784325621071,
+      "offset_ms": 7461
+    },
+    {
+      "t_ms": 7590,
+      "type": "keyDown",
+      "key": "ArrowRight",
+      "wall_ms": 1784325621201,
+      "offset_ms": 7591
+    },
+    {
+      "t_ms": 8040,
+      "type": "keyUp",
+      "key": "ArrowRight",
+      "wall_ms": 1784325621650,
+      "offset_ms": 8040
+    },
+    {
+      "t_ms": 8120,
+      "type": "keyDown",
+      "key": "ArrowDown",
+      "wall_ms": 1784325621730,
+      "offset_ms": 8120
+    },
+    {
+      "t_ms": 8520,
+      "type": "keyUp",
+      "key": "ArrowDown",
+      "wall_ms": 1784325622130,
+      "offset_ms": 8520
+    },
+    {
+      "t_ms": 8600,
+      "type": "keyDown",
+      "key": "ArrowLeft",
+      "wall_ms": 1784325622211,
+      "offset_ms": 8601
+    },
+    {
+      "t_ms": 9050,
+      "type": "keyUp",
+      "key": "ArrowLeft",
+      "wall_ms": 1784325622660,
+      "offset_ms": 9050
+    },
+    {
+      "t_ms": 9130,
+      "type": "keyPress",
+      "key": "Space",
+      "wall_ms": 1784325622740,
+      "offset_ms": 9130
+    },
+    {
+      "t_ms": 9260,
+      "type": "keyDown",
+      "key": "KeyW",
+      "wall_ms": 1784325622870,
+      "offset_ms": 9260
+    },
+    {
+      "t_ms": 9710,
+      "type": "keyUp",
+      "key": "KeyW",
+      "wall_ms": 1784325623320,
+      "offset_ms": 9710
+    },
+    {
+      "t_ms": 9790,
+      "type": "keyDown",
+      "key": "KeyD",
+      "wall_ms": 1784325623401,
+      "offset_ms": 9791
+    },
+    {
+      "t_ms": 10290,
+      "type": "keyUp",
+      "key": "KeyD",
+      "wall_ms": 1784325623900,
+      "offset_ms": 10290
+    },
+    {
+      "t_ms": 10370,
+      "type": "keyDown",
+      "key": "KeyS",
+      "wall_ms": 1784325623981,
+      "offset_ms": 10371
+    },
+    {
+      "t_ms": 10820,
+      "type": "keyUp",
+      "key": "KeyS",
+      "wall_ms": 1784325624430,
+      "offset_ms": 10820
+    },
+    {
+      "t_ms": 10900,
+      "type": "keyPress",
+      "key": "Space",
+      "wall_ms": 1784325624511,
+      "offset_ms": 10901
+    },
+    {
+      "t_ms": 11030,
+      "type": "keyDown",
+      "key": "KeyA",
+      "wall_ms": 1784325624640,
+      "offset_ms": 11030
+    },
+    {
+      "t_ms": 11530,
+      "type": "keyUp",
+      "key": "KeyA",
+      "wall_ms": 1784325625140,
+      "offset_ms": 11530
+    },
+    {
+      "t_ms": 11610,
+      "type": "keyDown",
+      "key": "ArrowUp",
+      "wall_ms": 1784325625220,
+      "offset_ms": 11610
+    },
+    {
+      "t_ms": 12010,
+      "type": "keyUp",
+      "key": "ArrowUp",
+      "wall_ms": 1784325625621,
+      "offset_ms": 12011
+    },
+    {
+      "t_ms": 12090,
+      "type": "keyDown",
+      "key": "ArrowRight",
+      "wall_ms": 1784325625701,
+      "offset_ms": 12091
+    },
+    {
+      "t_ms": 12540,
+      "type": "keyUp",
+      "key": "ArrowRight",
+      "wall_ms": 1784325626150,
+      "offset_ms": 12540
+    },
+    {
+      "t_ms": 12620,
+      "type": "keyPress",
+      "key": "Space",
+      "wall_ms": 1784325626230,
+      "offset_ms": 12620
+    },
+    {
+      "t_ms": 12750,
+      "type": "keyDown",
+      "key": "ArrowDown",
+      "wall_ms": 1784325626360,
+      "offset_ms": 12750
+    },
+    {
+      "t_ms": 13150,
+      "type": "keyUp",
+      "key": "ArrowDown",
+      "wall_ms": 1784325626761,
+      "offset_ms": 13151
+    },
+    {
+      "t_ms": 13230,
+      "type": "keyDown",
+      "key": "ArrowLeft",
+      "wall_ms": 1784325626841,
+      "offset_ms": 13231
+    },
+    {
+      "t_ms": 13680,
+      "type": "keyUp",
+      "key": "ArrowLeft",
+      "wall_ms": 1784325627290,
+      "offset_ms": 13680
+    },
+    {
+      "t_ms": 13760,
+      "type": "keyDown",
+      "key": "KeyW",
+      "wall_ms": 1784325627370,
+      "offset_ms": 13760
+    },
+    {
+      "t_ms": 14210,
+      "type": "keyUp",
+      "key": "KeyW",
+      "wall_ms": 1784325627820,
+      "offset_ms": 14210
+    },
+    {
+      "t_ms": 14290,
+      "type": "keyPress",
+      "key": "Space",
+      "wall_ms": 1784325627900,
+      "offset_ms": 14290
+    },
+    {
+      "t_ms": 14420,
+      "type": "keyDown",
+      "key": "KeyD",
+      "wall_ms": 1784325628031,
+      "offset_ms": 14421
+    },
+    {
+      "t_ms": 14920,
+      "type": "keyUp",
+      "key": "KeyD",
+      "wall_ms": 1784325628531,
+      "offset_ms": 14921
+    },
+    {
+      "t_ms": 15000,
+      "type": "keyDown",
+      "key": "KeyS",
+      "wall_ms": 1784325628611,
+      "offset_ms": 15001
+    },
+    {
+      "t_ms": 15450,
+      "type": "keyUp",
+      "key": "KeyS",
+      "wall_ms": 1784325629061,
+      "offset_ms": 15451
+    },
+    {
+      "t_ms": 15530,
+      "type": "keyDown",
+      "key": "KeyA",
+      "wall_ms": 1784325629141,
+      "offset_ms": 15531
+    },
+    {
+      "t_ms": 16030,
+      "type": "keyUp",
+      "key": "KeyA",
+      "wall_ms": 1784325629640,
+      "offset_ms": 16030
+    },
+    {
+      "t_ms": 16110,
+      "type": "keyPress",
+      "key": "Space",
+      "wall_ms": 1784325629720,
+      "offset_ms": 16110
+    },
+    {
+      "t_ms": 16240,
+      "type": "keyDown",
+      "key": "ArrowUp",
+      "wall_ms": 1784325629850,
+      "offset_ms": 16240
+    },
+    {
+      "t_ms": 16640,
+      "type": "keyUp",
+      "key": "ArrowUp",
+      "wall_ms": 1784325630251,
+      "offset_ms": 16641
+    },
+    {
+      "t_ms": 16720,
+      "type": "keyDown",
+      "key": "ArrowRight",
+      "wall_ms": 1784325630330,
+      "offset_ms": 16720
+    },
+    {
+      "t_ms": 17170,
+      "type": "keyUp",
+      "key": "ArrowRight",
+      "wall_ms": 1784325630780,
+      "offset_ms": 17170
+    },
+    {
+      "t_ms": 17250,
+      "type": "keyDown",
+      "key": "ArrowDown",
+      "wall_ms": 1784325630860,
+      "offset_ms": 17250
+    },
+    {
+      "t_ms": 17650,
+      "type": "keyUp",
+      "key": "ArrowDown",
+      "wall_ms": 1784325631261,
+      "offset_ms": 17651
+    },
+    {
+      "t_ms": 17730,
+      "type": "keyPress",
+      "key": "Space",
+      "wall_ms": 1784325631342,
+      "offset_ms": 17732
+    },
+    {
+      "t_ms": 17860,
+      "type": "keyDown",
+      "key": "ArrowLeft",
+      "wall_ms": 1784325631470,
+      "offset_ms": 17860
+    },
+    {
+      "t_ms": 18310,
+      "type": "keyUp",
+      "key": "ArrowLeft",
+      "wall_ms": 1784325631921,
+      "offset_ms": 18311
+    },
+    {
+      "t_ms": 18390,
+      "type": "keyDown",
+      "key": "KeyW",
+      "wall_ms": 1784325632000,
+      "offset_ms": 18390
+    },
+    {
+      "t_ms": 18840,
+      "type": "keyUp",
+      "key": "KeyW",
+      "wall_ms": 1784325632450,
+      "offset_ms": 18840
+    },
+    {
+      "t_ms": 18920,
+      "type": "keyDown",
+      "key": "KeyD",
+      "wall_ms": 1784325632531,
+      "offset_ms": 18921
+    },
+    {
+      "t_ms": 19420,
+      "type": "keyUp",
+      "key": "KeyD",
+      "wall_ms": 1784325633030,
+      "offset_ms": 19420
+    },
+    {
+      "t_ms": 19500,
+      "type": "keyPress",
+      "key": "Space",
+      "wall_ms": 1784325633111,
+      "offset_ms": 19501
+    },
+    {
+      "t_ms": 19630,
+      "type": "keyDown",
+      "key": "KeyS",
+      "wall_ms": 1784325633241,
+      "offset_ms": 19631
+    },
+    {
+      "t_ms": 20080,
+      "type": "keyUp",
+      "key": "KeyS",
+      "wall_ms": 1784325633690,
+      "offset_ms": 20080
+    },
+    {
+      "t_ms": 20160,
+      "type": "keyDown",
+      "key": "KeyA",
+      "wall_ms": 1784325633770,
+      "offset_ms": 20160
+    },
+    {
+      "t_ms": 20660,
+      "type": "keyUp",
+      "key": "KeyA",
+      "wall_ms": 1784325634270,
+      "offset_ms": 20660
+    },
+    {
+      "t_ms": 20740,
+      "type": "keyDown",
+      "key": "ArrowUp",
+      "wall_ms": 1784325634350,
+      "offset_ms": 20740
+    },
+    {
+      "t_ms": 21140,
+      "type": "keyUp",
+      "key": "ArrowUp",
+      "wall_ms": 1784325634750,
+      "offset_ms": 21140
+    },
+    {
+      "t_ms": 21960,
+      "type": "keyUp",
+      "key": "KeyW",
+      "wall_ms": 1784325635570,
+      "offset_ms": 21960
+    },
+    {
+      "t_ms": 21960,
+      "type": "keyUp",
+      "key": "KeyA",
+      "wall_ms": 1784325635574,
+      "offset_ms": 21964
+    },
+    {
+      "t_ms": 21960,
+      "type": "keyUp",
+      "key": "KeyS",
+      "wall_ms": 1784325635575,
+      "offset_ms": 21965
+    },
+    {
+      "t_ms": 21960,
+      "type": "keyUp",
+      "key": "KeyD",
+      "wall_ms": 1784325635575,
+      "offset_ms": 21965
+    },
+    {
+      "t_ms": 21960,
+      "type": "keyUp",
+      "key": "ArrowUp",
+      "wall_ms": 1784325635576,
+      "offset_ms": 21966
+    },
+    {
+      "t_ms": 21960,
+      "type": "keyUp",
+      "key": "ArrowLeft",
+      "wall_ms": 1784325635576,
+      "offset_ms": 21966
+    },
+    {
+      "t_ms": 21960,
+      "type": "keyUp",
+      "key": "ArrowDown",
+      "wall_ms": 1784325635577,
+      "offset_ms": 21967
+    },
+    {
+      "t_ms": 21960,
+      "type": "keyUp",
+      "key": "ArrowRight",
+      "wall_ms": 1784325635577,
+      "offset_ms": 21967
+    },
+    {
+      "t_ms": 21960,
+      "type": "keyUp",
+      "key": "Space",
+      "wall_ms": 1784325635577,
+      "offset_ms": 21967
+    }
+  ],
+  "replay_instructions": "Apply menu_script timed from session start after ready; then play_script timed from play_t0. Prefer scripts over executed[]."
+}

@@ -295,28 +295,32 @@ pub fn spawn_hazards(
 
     let side = (rand_f32() * 4.0).floor() as i32;
     let base_speed = (95.0 + stats.difficulty * 60.0 + rand_f32() * 45.0) * stats.speed_mult();
-    // Spawn just past the play border (not deep into PSP grip chrome) so hazards
-    // never free-float under the stick/DASH slabs (V-PLAY-ENTITIES-IN-BOUNDS).
-    let edge = HAZARD_RADIUS + 4.0;
-    let y_lo = bounds.bottom() + HAZARD_RADIUS;
-    let y_hi = bounds.top() - HAZARD_RADIUS;
-    let x_lo = bounds.left() + HAZARD_RADIUS;
-    let x_hi = bounds.right() - HAZARD_RADIUS;
+    // Spawn *inside* the play border (not past it into Game Boy deck / PSP grips).
+    // Prior OOB spawns made hazards free-float over chrome (V-PLAY-ENTITIES-IN-BOUNDS).
+    // Reserve a top band so hazards don't birth on the in-field level HUD line
+    // (V-PLAY-HUD-CLEAR / V-PLAY-HAZARD-NOT-ON-HUD).
+    let hud_band = if bounds.chrome { 34.0 } else { 14.0 };
+    let inset = HAZARD_RADIUS + 2.0;
+    let y_lo = bounds.bottom() + inset;
+    let y_hi = (bounds.top() - inset - hud_band).max(y_lo + 8.0);
+    let x_lo = bounds.left() + inset;
+    let x_hi = bounds.right() - inset;
     let (pos, mut vel) = match side {
         0 => (
-            Vec2::new(bounds.left() - edge, rand_range(y_lo, y_hi)),
+            Vec2::new(x_lo, rand_range(y_lo, y_hi)),
             Vec2::new(base_speed, rand_range(-55.0, 55.0)),
         ),
         1 => (
-            Vec2::new(bounds.right() + edge, rand_range(y_lo, y_hi)),
+            Vec2::new(x_hi, rand_range(y_lo, y_hi)),
             Vec2::new(-base_speed, rand_range(-55.0, 55.0)),
         ),
         2 => (
-            Vec2::new(rand_range(x_lo, x_hi), bounds.bottom() - edge),
+            Vec2::new(rand_range(x_lo, x_hi), y_lo),
             Vec2::new(rand_range(-55.0, 55.0), base_speed),
         ),
         _ => (
-            Vec2::new(rand_range(x_lo, x_hi), bounds.top() + edge),
+            // Enter from below the HUD band, not on top of SURVIVAL|DIFF text.
+            Vec2::new(rand_range(x_lo, x_hi), y_hi),
             Vec2::new(rand_range(-55.0, 55.0), -base_speed),
         ),
     };
@@ -399,9 +403,10 @@ pub fn move_hazards(
     mut query: Query<(Entity, &Hazard, &mut Transform)>,
 ) {
     let dt = time.delta_secs();
-    // Despawn once clearly past the play rect (small grace for edge transit).
-    // Keeps hazards out of grip chrome / beyond the blue border for long.
-    let grace = HAZARD_RADIUS + 28.0;
+    // Tight despawn: once the hazard center clears the play border by a fraction
+    // of its radius it is gone — no free-float over deck/grips
+    // (V-PLAY-ENTITIES-IN-BOUNDS). A tiny grace allows a single-frame edge clip.
+    let grace = HAZARD_RADIUS * 0.35;
     let left = bounds.left() - grace;
     let right = bounds.right() + grace;
     let bottom = bounds.bottom() - grace;

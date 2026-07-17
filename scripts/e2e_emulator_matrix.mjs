@@ -3,7 +3,7 @@
  *
  * For each touch format in qa_matrix.json:
  *   - AVD via adb (prefer serial emulator-*)
- *   - adb reverse → local dist http://127.0.0.1:8080/
+ *   - adb reverse → local dist http://127.0.0.1:17880/ (RUSTY_PORT / EMU_URL)
  *   - Full-display adb shell screenrecord
  *   - OS-level touches via adb shell input (NOT CDP/Puppeteer touch)
  *   - CDP for navigate / evaluate; matrix PNGs via adb screencap (full-display)
@@ -56,7 +56,8 @@ const FORCE_GO_MS = Number(
 );
 // Extra wall time after force deadline before giving up on GAME OVER.
 const GO_GRACE_MS = Number(process.env.E2E_GO_GRACE_MS || 20000);
-const BASE_URL = process.env.EMU_URL || 'http://127.0.0.1:8080/';
+const PORT = process.env.PORT || process.env.RUSTY_PORT || '17880';
+const BASE_URL = (process.env.EMU_URL || `http://127.0.0.1:${PORT}/`).replace(/\/?$/, '/');
 const GAME_URL = `${BASE_URL}${BASE_URL.includes('?') ? '&' : '?'}e2e=1&qa_matrix=1&qa_go_ms=${FORCE_GO_MS}`;
 
 /**
@@ -149,7 +150,8 @@ function pickSerial() {
 }
 
 function setupReverse(serial) {
-  adb(serial, ['reverse', 'tcp:8080', 'tcp:8080']);
+  // Device localhost:PORT → host PORT (must match web-serve-dist / EMU_URL).
+  adb(serial, ['reverse', `tcp:${PORT}`, `tcp:${PORT}`]);
   adb(serial, ['forward', `tcp:${CDP_PORT}`, 'localabstract:chrome_devtools_remote']);
 }
 
@@ -302,7 +304,9 @@ async function findGamePage() {
   const tabs = await listPages(CDP_PORT);
   const pages = tabs.filter((t) => t.type === 'page');
   return (
-    pages.find((t) => /rusty|127\.0\.0\.1:8080|localhost:8080/i.test(t.url || '')) ||
+    pages.find((t) =>
+      new RegExp(`rusty|127\\.0\\.0\\.1:${PORT}|localhost:${PORT}`, 'i').test(t.url || '')
+    ) ||
     pages.find((t) => /about:blank|chrome:\/\/new/i.test(t.url || '')) ||
     pages[0]
   );
@@ -330,7 +334,7 @@ function foregroundChrome(serial, url = null) {
 }
 
 /** Close non-game Chrome tabs so CDP + screencap target the same page. */
-async function pruneChromeTabs(keepUrlPart = '8080') {
+async function pruneChromeTabs(keepUrlPart = PORT) {
   try {
     const tabs = await listPages(CDP_PORT);
     const pages = tabs.filter((t) => t.type === 'page');
@@ -922,7 +926,7 @@ async function runFormat(serial, format, savedDisplay) {
     } catch (_) {}
     foregroundChrome(serial, null);
     await sleep(300);
-    await pruneChromeTabs('8080');
+    await pruneChromeTabs(PORT);
     // Reconnect if prune closed our socket target (rare)
     try {
       await ensureQaUrl(cdp, url);
@@ -1135,7 +1139,7 @@ async function runFormat(serial, format, savedDisplay) {
     // on GameOver restarts Playing and poisons the 05 cell + video end.
     // Also re-bind CDP to the live game tab (tab zoo used to leave us on Menu).
     try {
-      await pruneChromeTabs('8080');
+      await pruneChromeTabs(PORT);
       const tabLive = await findGamePage();
       if (tabLive?.webSocketDebuggerUrl) {
         try { cdp.close(); } catch (_) {}

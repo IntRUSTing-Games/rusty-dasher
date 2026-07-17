@@ -46,7 +46,10 @@ const HOLD_MS = Number(process.env.MATRIX_HOLD_MS || 450);
 const FORCE_GO_MS = MATRIX_ONLY
   ? Number(process.env.E2E_FORCE_GO_MS || 2500)
   : Number(process.env.E2E_FORCE_GO_MS || Math.max(PLAY_MS + 2500, 22500));
-const URL = `http://127.0.0.1:8080/?e2e=1&qa_matrix=1&qa_go_ms=${FORCE_GO_MS}`;
+// Default 17880 — shared with web-serve-dist / Trunk (not 8080).
+const PORT = process.env.PORT || process.env.RUSTY_PORT || '17880';
+const BASE = (process.env.E2E_URL || `http://127.0.0.1:${PORT}/`).replace(/\/?$/, '/');
+const URL = `${BASE}?e2e=1&qa_matrix=1&qa_go_ms=${FORCE_GO_MS}`;
 
 const MODES = ['CLASSIC', 'ZEN', 'SURVIVAL', 'TIMED'];
 const DIFFS = ['EASY', 'NORMAL', 'HARD', 'INSANE'];

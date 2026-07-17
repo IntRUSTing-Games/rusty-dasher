@@ -440,12 +440,13 @@ pub fn sync_hud_layout(
     }
     if let Ok(mut tf) = level.single_mut() {
         // Inside the playfield, below the top border — avoids clipping on the blue edge.
+        // z=50: above world hazards (≈1.5) so mode|diff line stays readable (V-PLAY-HUD-CLEAR).
         let level_y = if phone || bounds.chrome {
             bounds.top() - if phone { 18.0 } else { 20.0 }
         } else {
             top - 26.0
         };
-        tf.translation = Vec3::new(bounds.center.x, level_y, 20.0);
+        tf.translation = Vec3::new(bounds.center.x, level_y, 50.0);
     }
     if let Ok(mut tf) = status.single_mut() {
         tf.translation = Vec3::new(bounds.center.x, bot, 20.0);

@@ -938,7 +938,8 @@ pub fn spawn_hud(
         Transform::from_xyz(bounds.center.x, top, 20.0),
     ));
     // Level line sits *inside* the playfield (below the top border) so it never
-    // clips against the blue edge on narrow phones.
+    // clips against the blue edge on narrow phones. z=50 keeps it above world
+    // meshes (hazards ≈1.5) for V-PLAY-HUD-CLEAR / V-PLAY-HAZARD-NOT-ON-HUD.
     let level_px = if phone { 12.0 } else { 17.0 };
     let level_y = if phone || bounds.chrome {
         bounds.top() - if phone { 18.0 } else { 20.0 }
@@ -955,7 +956,7 @@ pub fn spawn_hud(
         Text2d::new(hud_level_line(stats, phone || ui.class.is_compact())),
         font(level_px, scale),
         TextColor(Color::srgb(0.65, 0.75, 0.95)),
-        Transform::from_xyz(bounds.center.x, level_y, 20.0),
+        Transform::from_xyz(bounds.center.x, level_y, 50.0),
     ));
     // Format-specific control hint until power-ups / dash cooldown take over.
     // Handheld chrome already has a DASH button — don't repeat "Dash READY" as clutter.
