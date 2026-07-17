@@ -15,6 +15,11 @@
  *   MATRIX_ONLY=1        only matrix holds + short play (skip 20s / extra input paths)
  *
  * Reviews stay separate: video_critique.md vs matrix_critique.md (see skill).
+ *
+ * CAPTURE vs REVIEW: this script only does CAPTURE. Console CAPTURE_OK / CAPTURE_FAIL
+ * (and results.json ok:true) mean automation wrote the artifact or step succeeded —
+ * NOT visual acceptance. A4b/A6 + A7 in ui-viewport-qa / qa_success_criteria.json
+ * are the review gates. Never treat suite exit 0 as "looks good."
  */
 import puppeteer from 'puppeteer-core';
 import { chromeExecutable, chromeGpuArgs, logChromeGlMode } from './chrome_launch.mjs';
@@ -52,13 +57,15 @@ fs.mkdirSync(STILLS, { recursive: true });
 fs.mkdirSync(MATRIX_OUT, { recursive: true });
 
 const results = [];
+/** Capture-step success only — not visual review / A7. */
 function pass(name, detail = '') {
-  results.push({ name, ok: true, detail });
-  console.log('PASS', name, detail);
+  results.push({ name, ok: true, detail, layer: 'capture' });
+  console.log('CAPTURE_OK', name, detail);
 }
+/** Capture-step failure only — not visual review. */
 function fail(name, detail = '') {
-  results.push({ name, ok: false, detail });
-  console.error('FAIL', name, detail);
+  results.push({ name, ok: false, detail, layer: 'capture' });
+  console.error('CAPTURE_FAIL', name, detail);
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -777,18 +784,23 @@ fs.writeFileSync(
       matrix_out: CAPTURE_MATRIX ? MATRIX_OUT : null,
       matrix_missing: missing,
       at: new Date().toISOString(),
-      note: 'Unified: VIDEO + matrix PNGs (quality holds). Reviews stay separate (video_critique vs matrix_critique).',
+      layer: 'capture_only',
+      note:
+        'CAPTURE only (ok/CAPTURE_OK = automation step succeeded). NOT visual review. A4b/A6 critiques + A7 pre-prod are separate (video_critique vs matrix_critique; qa_success_criteria.json).',
     },
     null,
     2
   )
 );
-console.log('\n=== E2E SUMMARY ===');
-console.log('passed', results.filter((r) => r.ok).length, '/', results.length);
+console.log('\n=== E2E CAPTURE SUMMARY (not visual review) ===');
+console.log('capture_ok', results.filter((r) => r.ok).length, '/', results.length);
 console.log('recordings', recordings.length, 'in', VID);
 if (CAPTURE_MATRIX) console.log('matrix missing', missing.length);
+console.log(
+  'NOTE: CAPTURE_OK ≠ looks good. Run A4b/A6 reviews before A7; suite exit 0 is not PRE-PROD PASS.'
+);
 if (failed.length) {
-  console.error('FAILED:', failed);
+  console.error('CAPTURE_FAILED:', failed);
   process.exit(1);
 }
 process.exit(0);

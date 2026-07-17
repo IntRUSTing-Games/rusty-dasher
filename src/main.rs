@@ -125,6 +125,7 @@ fn main() {
             ui::rebuild_menus_on_layout_change,
             viewport::sync_resolution,
             viewport::sync_play_bounds,
+            viewport::sync_field_overlay_visibility,
             viewport::sync_hud_layout,
             touch_controls::sync_touch_chrome_layout,
             touch_chrome::sync_touch_chrome_presence,

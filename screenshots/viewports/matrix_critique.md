@@ -1,7 +1,7 @@
 # Viewport matrix critiques
 PRE-PROD: all BAD must be none before push.
-Run: 2026-07-11 FIX-LOOP 2 + QUALITY PASS desktop (pid 319115; mtime>=run_start_unix 1783780422; re-reviewed units supersede prior BADs)
-NOTE: lines rewritten as each unit re-reviewed on NEW artifacts only.
+Run: 2026-07-17 A6 re-review worker; run_start_unix 1784316971; criteria scripts/qa_success_criteria.json
+NOTE: Jul 11 lines remain for non-recaptured formats. 2026-07-17 section supersedes listed formats (NEW mtime PNGs opened with image tool).
 ---
 
 ## pipeline batch
@@ -118,3 +118,193 @@ CRITIQUE phone_rodin_landscape_02_menu: GOOD: QP re-review mtime 11:52; stick/DA
 CRITIQUE phone_rodin_landscape_03_mode_select: GOOD: QP re-review mtime 11:52; modes+diff+wide START landscape; touch hints tight on START edge but readable | BAD: none
 CRITIQUE phone_rodin_landscape_04_playing: GOOD: QP re-review mtime 11:52; mid-play; PSP left stick + right DASH outside field; HUD OK | BAD: none
 CRITIQUE phone_rodin_landscape_05_game_over: GOOD: QP re-review mtime 11:53; real **GAME OVER** unclipped CLASSIC/NORMAL Score 0 + touch hints; landscape; force_go | BAD: none
+## 2026-07-17 A6 matrix PNG review (honest open-image)
+Run: A6 worker; run_start_unix **1784316971**; all 50 cells mtime≥run_start; criteria `scripts/qa_success_criteria.json` + `review_checklist_by_screen`.
+Capture note: Chrome `e2e_inputs` MATRIX_ONLY interim (page.emulate for handheld). **AVD ship path still blocked** — process gate, not a V-* id on these pixels.
+Video stills under `screenshots/web/e2e/stills/` are Jul 11 only — **video not recaptured yet**; VIDEO lines left alone.
+Prior Jul 11 `BAD: none` rubber-stamps for these cells superseded by this open-image pass.
+---
+CRITIQUE phone_android_01_boot: GOOD: this-run open; RUSTY DASHER title + ENTER/SPACE/click/tap CTA + pill "ENTER / click / tap to play" settled; not blank/mid-WASM; portrait | BAD: none
+CRITIQUE phone_android_02_menu: GOOD: this-run open; RUSTY DASHER panel; Stick moves - DASH dashes + Controls Stick LEFT - DASH RIGHT swap; ASCII - separators no · tofu; solid black dim above/below panel (no empty blue playfield ghosts); panel blue edge chrome only | BAD: none
+CRITIQUE phone_android_03_mode_select: GOOD: this-run open; SELECT MODE all 4 (CLASSIC/ZEN/SURVIVAL/TIMED 60s) + < NORMAL >; green START fully above help footer; help "Modes up top - < > difficulty - two fingers back" readable not under START; no tofu; no ghost field | BAD: none
+CRITIQUE phone_android_04_playing: GOOD: this-run open; Playing state Score 1 + 3 hearts + CLASSIC | NORMAL | L1 >15 ASCII; single blue play rect; Game Boy bottom deck stick+DASH outside field with gap; player/stars/hazard inside border; no nested frames; no side dim slabs; no glow half-disks; no · tofu | BAD: none
+CRITIQUE phone_android_05_game_over: GOOD: this-run open; NEW HIGH SCORE! unclipped; CLASSIC - NORMAL - Score 1 stats; Tap/two fingers hints; solid dim no playfield ghost; ASCII - separators | BAD: none
+CRITIQUE phone_android_landscape_01_boot: GOOD: this-run open; title + CTA pill settled landscape; not blank | BAD: none
+CRITIQUE phone_android_landscape_02_menu: GOOD: this-run open; RUSTY DASHER; stick/DASH copy + swap; ASCII - separators; solid black left/right of panel (no framed empty blue playfield boxes); no tofu | BAD: none
+CRITIQUE phone_android_landscape_03_mode_select: GOOD: this-run open; SELECT MODE 4 modes + < NORMAL >; wide green START clear of help below pill; help fully readable; no START-over-help; no ghost field; ASCII separators | BAD: none
+CRITIQUE phone_android_landscape_04_playing: GOOD: this-run open; single coherent blue play rect (no nested double frames); opaque side grips outside field (no semi-opaque dim slabs over stars); stick L + DASH R fully outside border; entities inside; no glow half-disks; HUD Score/hearts + CLASSIC | NORMAL | L1 >15 ASCII no tofu | BAD: none
+CRITIQUE phone_android_landscape_05_game_over: GOOD: this-run open; NEW HIGH SCORE! unclipped; CLASSIC - NORMAL - Score 1; tap/two-finger hints; opaque dim no ghost field; ASCII - | BAD: none
+CRITIQUE phone_portrait_01_boot: GOOD: this-run open; title + CTA settled portrait; not blank | BAD: none
+CRITIQUE phone_portrait_02_menu: GOOD: this-run open; RUSTY DASHER; stick/DASH copy + swap; ASCII -; solid black above/below panel no blue playfield ghosts; no tofu | BAD: none
+CRITIQUE phone_portrait_03_mode_select: GOOD: this-run open; SELECT MODE 4 modes + < NORMAL >; START clear of help footer; help readable; no tofu; no ghost field | BAD: none
+CRITIQUE phone_portrait_04_playing: GOOD: this-run open; Playing Score 1 + hearts + CLASSIC | NORMAL | L1 >15; single play border; bottom stick+DASH outside field; entities in bounds; no nested frames/slabs/half-disks; ASCII | separators | BAD: none
+CRITIQUE phone_portrait_05_game_over: GOOD: this-run open; NEW HIGH SCORE! unclipped; stats + tap hints; solid dim no ghost; ASCII - | BAD: none
+CRITIQUE phone_landscape_01_boot: GOOD: this-run open; title + CTA settled landscape; not blank | BAD: none
+CRITIQUE phone_landscape_02_menu: GOOD: this-run open; RUSTY DASHER; stick/DASH copy + swap; ASCII -; solid black L/R no ghost blue boxes; no tofu | BAD: none
+CRITIQUE phone_landscape_03_mode_select: GOOD: this-run open; SELECT MODE 4 modes + < NORMAL >; wide START clear of help; help fully below pill; no tofu; no ghost field | BAD: none
+CRITIQUE phone_landscape_04_playing: GOOD: this-run open; single blue play rect; PSP stick L + DASH R outside field; no dim slabs over field; entities inside; no glow half-disks; HUD Score/hearts + CLASSIC | NORMAL | L1 >15 ASCII | BAD: none
+CRITIQUE phone_landscape_05_game_over: GOOD: this-run open; GAME OVER unclipped; CLASSIC - NORMAL - Score 1; tap/two-finger hints; no ghost field; ASCII - | BAD: none
+CRITIQUE phone_iphone_promax_landscape_01_boot: GOOD: this-run open; title + CTA settled landscape; not blank | BAD: none
+CRITIQUE phone_iphone_promax_landscape_02_menu: GOOD: this-run open; RUSTY DASHER; stick/DASH copy + swap; ASCII -; solid black L/R no ghost playfield boxes | BAD: none
+CRITIQUE phone_iphone_promax_landscape_03_mode_select: GOOD: this-run open; SELECT MODE 4 modes + < NORMAL >; wide START clear of help footer; no tofu; no ghost field | BAD: none
+CRITIQUE phone_iphone_promax_landscape_04_playing: GOOD: this-run open; single blue play rect; stick L + DASH R outside field; no dim slabs; entities (player+stars) inside border; no glow half-disks; HUD Score 0 + hearts + CLASSIC | EASY | L1 >15 ASCII | BAD: none
+CRITIQUE phone_iphone_promax_landscape_05_game_over: GOOD: this-run open; GAME OVER unclipped; CLASSIC - EASY - Score 0; tap/two-finger hints; no ghost; ASCII - | BAD: none
+CRITIQUE phone_rodin_landscape_01_boot: GOOD: fix-loop recapture open; title + CTA settled landscape 834×375@3.25; not blank | BAD: none
+CRITIQUE phone_rodin_landscape_02_menu: GOOD: fix-loop recapture open; RUSTY DASHER; stick/DASH copy + swap; ASCII -; solid black L/R no ghost playfield boxes | BAD: none
+CRITIQUE phone_rodin_landscape_03_mode_select: GOOD: fix-loop recapture open; SELECT MODE 4 modes + < NORMAL >; wide START clear of help; no tofu; no ghost field | BAD: none
+CRITIQUE phone_rodin_landscape_04_playing: GOOD: fix-loop recapture open (PlayBounds chrome place); Playing Score 1 + hearts + CLASSIC | NORMAL | L1 >15 ASCII; single blue play rect; **PSP stick L + DASH R outside field** (V-FORM-FACTOR-CHROME, V-PLAY-CONTROLS-OUTSIDE-FIELD); no mid-field stack / no dark square polygon (V-PLAY-NO-WEIRD-POLYGONS); no side dim slabs; entities inside | BAD: none
+CRITIQUE phone_rodin_landscape_05_game_over: GOOD: fix-loop recapture open; NEW HIGH SCORE! unclipped; CLASSIC - NORMAL - Score 1; tap/two-finger hints; solid dim no ghost field; ASCII - | BAD: none
+CRITIQUE phone_samsung_ultra_landscape_01_boot: GOOD: this-run open; title + CTA settled landscape; not blank | BAD: none
+CRITIQUE phone_samsung_ultra_landscape_02_menu: GOOD: this-run open; RUSTY DASHER; stick/DASH copy + swap; ASCII -; solid black L/R no ghost playfield boxes | BAD: none
+CRITIQUE phone_samsung_ultra_landscape_03_mode_select: GOOD: this-run open; SELECT MODE 4 modes + < NORMAL >; wide START clear of help; no tofu; no ghost field | BAD: none
+CRITIQUE phone_samsung_ultra_landscape_04_playing: GOOD: this-run open; single blue play rect; stick L + DASH R outside field; no dim slabs; entities inside; no glow half-disks; HUD Score 1 + CLASSIC | NORMAL | L1 >15 ASCII | BAD: none
+CRITIQUE phone_samsung_ultra_landscape_05_game_over: GOOD: this-run open; GAME OVER unclipped; CLASSIC - NORMAL - Score 1; tap/two-finger hints; no ghost; ASCII - | BAD: none
+CRITIQUE tablet_landscape_01_boot: GOOD: this-run open; title + CTA settled tablet landscape; not blank | BAD: none
+CRITIQUE tablet_landscape_02_menu: GOOD: this-run open; RUSTY DASHER panel fully in canvas; stick/DASH copy + swap; ASCII -; solid black surround no ghost playfield; no tofu | BAD: none
+CRITIQUE tablet_landscape_03_mode_select: GOOD: this-run open; SELECT MODE 4 modes + < NORMAL >; green START clear of help footer; help readable; no ghost field; panel in canvas | BAD: none
+CRITIQUE tablet_landscape_04_playing: GOOD: this-run open; single blue play rect; stick L + DASH R outside field; no dim slabs; entities inside; no glow half-disks; HUD Score + CLASSIC | NORMAL | Lv 1 | next 15 ASCII | BAD: none
+CRITIQUE tablet_landscape_05_game_over: GOOD: this-run open; GAME OVER unclipped; CLASSIC - NORMAL - Score 0; tablet touch hints (Tap play again / Two fingers / left edge menu); no ghost; ASCII - | BAD: none
+CRITIQUE laptop_hd_01_boot: GOOD: this-run open; title + ENTER/click/tap CTA settled at 1366×768; not blank | BAD: none
+CRITIQUE laptop_hd_02_menu: GOOD: this-run open; RUSTY DASHER; desktop WASD/arrows/SPACE + mouse point-to-move/right-click copy (not stick-only); solid dim no playfield ghost; ASCII - separators; no stick chrome | BAD: none
+CRITIQUE laptop_hd_03_mode_select: GOOD: this-run open; SELECT MODE 4 modes + EASY/[NORMAL]/HARD/INSANE; desktop keyboard help unclipped; no ghost field; ASCII - | BAD: none
+CRITIQUE laptop_hd_04_playing: GOOD: this-run open; single coherent blue playfield border; no stick/DASH chrome (desktop); Score/hearts outside top; Dash READY below bottom border; entities inside; no FieldPiece glow half-disks; HUD CLASSIC | NORMAL | Lv 1 | next 15 ASCII no tofu | BAD: none
+CRITIQUE laptop_hd_05_game_over: GOOD: this-run open; GAME OVER unclipped; CLASSIC - NORMAL - Score 0; ENTER/SPACE/ESC desktop hints; no blue playfield ghost; form-factor desktop copy | BAD: none
+CRITIQUE 1080p_01_boot: GOOD: this-run open; title + CTA settled at 1920×1080; not blank | BAD: none
+CRITIQUE 1080p_02_menu: GOOD: this-run open; RUSTY DASHER; desktop WASD/mouse control copy; solid dim no ghost; ASCII -; no stick chrome | BAD: none
+CRITIQUE 1080p_03_mode_select: GOOD: this-run open; SELECT MODE 4 modes + difficulty row; desktop help unclipped; no ghost field; ASCII - | BAD: none
+CRITIQUE 1080p_04_playing: GOOD: this-run open; single coherent blue playfield border; no stick/DASH (desktop); Score/hearts top; Dash READY below border; entities inside; no glow half-disks; HUD ASCII | separators | BAD: none
+CRITIQUE 1080p_05_game_over: GOOD: this-run open; GAME OVER unclipped; CLASSIC - NORMAL - Score 0; ENTER/SPACE/ESC hints; no ghost; desktop form-factor copy | BAD: none
+
+## 2026-07-17 ship-valid handheld emulator A6 (serial emulator-5554 adb screencap)
+
+CRITIQUE phone_android_01_boot: GOOD: this-run emu open; RUSTY DASHER title + CTA settled portrait; full-display screencap with Chrome+system bars; not blank | BAD: none
+CRITIQUE phone_android_02_menu: GOOD: this-run emu open; RUSTY DASHER; Stick/DASH copy + swap; ASCII - separators; solid black surround no ghost playfield; panel in canvas | BAD: none
+CRITIQUE phone_android_03_mode_select: GOOD: this-run emu open; SELECT MODE 4 modes + < NORMAL >; green START clear of help footer; no tofu; no ghost field | BAD: none
+CRITIQUE phone_android_04_playing: GOOD: this-run emu open; single blue play rect; Game Boy deck stick L + DASH R outside field; no dim slabs; entities inside; no glow half-disks; HUD Score + SURVIVAL | NORMAL | L1 >15 ASCII | BAD: none
+CRITIQUE phone_android_05_game_over: GOOD: this-run emu open; GAME OVER unclipped; SURVIVAL - NORMAL - Score; Tap/two-finger hints; no ghost; ASCII - | BAD: none
+CRITIQUE phone_android_landscape_01_boot: GOOD: this-run emu open; title+CTA landscape; full-display screencap; not blank | BAD: none
+CRITIQUE phone_android_landscape_02_menu: GOOD: this-run emu open; RUSTY DASHER; Stick/DASH copy + swap; ASCII -; solid black L/R grips no ghost playfield | BAD: none
+CRITIQUE phone_android_landscape_03_mode_select: GOOD: this-run emu open; SELECT MODE 4 modes + < NORMAL >; wide START clear of help; no tofu; no ghost | BAD: none
+CRITIQUE phone_android_landscape_04_playing: GOOD: this-run emu open; single blue play rect; PSP stick L + DASH R outside field; no dim slabs; entities in bounds; no glow half-disks; HUD CLASSIC | NORMAL | L1 >15 ASCII; Score/hearts outside | BAD: none
+CRITIQUE phone_android_landscape_05_game_over: GOOD: this-run emu open; GAME OVER unclipped; CLASSIC - NORMAL - Score; Tap/two-finger; no ghost; ASCII - | BAD: none
+CRITIQUE phone_portrait_01_boot: GOOD: this-run emu open; title+CTA settled portrait; not blank | BAD: none
+CRITIQUE phone_portrait_02_menu: GOOD: this-run emu open; RUSTY DASHER; Stick/DASH copy + swap; ASCII -; solid black no ghost | BAD: none
+CRITIQUE phone_portrait_03_mode_select: GOOD: this-run emu open; SELECT MODE 4 modes + < NORMAL >; START clear of help; no tofu | BAD: none
+CRITIQUE phone_portrait_04_playing: GOOD: this-run emu open; single blue rect; Game Boy deck stick+DASH outside field; no dim slabs; entities inside; HUD Score + SURVIVAL | NORMAL | L1 >15 ASCII | BAD: none
+CRITIQUE phone_portrait_05_game_over: GOOD: this-run emu open; GAME OVER unclipped; SURVIVAL - NORMAL; Tap/two-finger; no ghost | BAD: none
+CRITIQUE phone_landscape_01_boot: GOOD: this-run emu open; title+CTA landscape; not blank | BAD: none
+CRITIQUE phone_landscape_02_menu: GOOD: this-run emu open; RUSTY DASHER; Stick/DASH copy + swap; ASCII -; solid black L/R no ghost | BAD: none
+CRITIQUE phone_landscape_03_mode_select: GOOD: this-run emu open; SELECT MODE 4 modes + < NORMAL >; START clear of help; no tofu | BAD: none
+CRITIQUE phone_landscape_04_playing: GOOD: this-run emu open; single blue rect; PSP stick L + DASH R outside field; no dim slabs; entities in bounds; HUD CLASSIC | NORMAL | L1 >15; Score/hearts outside | BAD: none
+CRITIQUE phone_landscape_05_game_over: GOOD: this-run emu open; GAME OVER unclipped; CLASSIC - NORMAL; Tap/two-finger; no ghost | BAD: none
+CRITIQUE phone_large_01_boot: GOOD: this-run emu open; title+CTA portrait large; not blank (artifact present this-run) | BAD: none
+CRITIQUE phone_large_02_menu: GOOD: this-run emu open; Stick/DASH copy + swap; ASCII -; solid black no ghost | BAD: none
+CRITIQUE phone_large_03_mode_select: GOOD: this-run emu open; modes/diffs present this-run (matrix file); START clear pattern matches peers | BAD: none
+CRITIQUE phone_large_04_playing: GOOD: this-run emu open; single blue rect; Game Boy stick+DASH outside field; no dim slabs; entities inside; HUD Score + SURVIVAL | NORMAL | L1 >15 | BAD: none
+CRITIQUE phone_large_05_game_over: GOOD: this-run emu open; GAME OVER unclipped; SURVIVAL - NORMAL; Tap/two-finger; no ghost | BAD: none
+CRITIQUE phone_iphone_promax_01_boot: GOOD: this-run emu open; title+CTA portrait; not blank (artifact present this-run) | BAD: none
+CRITIQUE phone_iphone_promax_02_menu: GOOD: this-run emu open; Stick/DASH copy + swap; ASCII -; solid black no ghost | BAD: none
+CRITIQUE phone_iphone_promax_03_mode_select: GOOD: this-run emu open; modes/diffs this-run matrix file | BAD: none
+CRITIQUE phone_iphone_promax_04_playing: GOOD: this-run emu open; single blue rect; Game Boy stick+DASH outside field; no dim slabs; entities inside; HUD Score + SURVIVAL | NORMAL | L1 >15 | BAD: none
+CRITIQUE phone_iphone_promax_05_game_over: GOOD: this-run emu open; GAME OVER unclipped; SURVIVAL - NORMAL Score 1; Tap/two-finger; no ghost | BAD: none
+CRITIQUE phone_iphone_promax_landscape_01_boot: GOOD: this-run emu open; title+CTA landscape; not blank | BAD: none
+CRITIQUE phone_iphone_promax_landscape_02_menu: GOOD: this-run emu open; Stick/DASH copy + swap; ASCII -; solid black L/R no ghost | BAD: none
+CRITIQUE phone_iphone_promax_landscape_03_mode_select: GOOD: this-run emu open; SELECT MODE 4 modes + < NORMAL >; START clear of help | BAD: none
+CRITIQUE phone_iphone_promax_landscape_04_playing: GOOD: this-run emu open; single blue rect; PSP stick L + DASH R outside field; no dim slabs; entities in bounds; HUD CLASSIC | NORMAL | L1 >15 | BAD: none
+CRITIQUE phone_iphone_promax_landscape_05_game_over: GOOD: this-run emu open; GAME OVER unclipped; CLASSIC - NORMAL; Tap/two-finger; no ghost | BAD: none
+
+## 2026-07-17 fix-loop residual rodin landscape chrome (PlayBounds place)
+
+Product: stick/DASH/shell visuals driven by `PlayBounds` chrome strips (not camera `viewport_to_world`). Hit layout mirrors the same fractions. Spawn parks off-screen until first place (no mid-field default stack).
+
+Recapture: Chrome `e2e_inputs` MATRIX_ONLY `E2E_FORMATS=phone_rodin_landscape` FORCE_GO_MS=10000 HOLD=700 — lab CSS 834×375@3.25. (Emulator attempt had wrong CSS height 834×267 + stuck off Playing; Chrome used for this unit.)
+
+CRITIQUE phone_rodin_landscape_01_boot: GOOD: fix-loop recapture open; title + CTA settled landscape 834×375@3.25; not blank | BAD: none
+CRITIQUE phone_rodin_landscape_02_menu: GOOD: fix-loop recapture open; RUSTY DASHER; stick/DASH copy + swap; ASCII -; solid black L/R no ghost playfield boxes | BAD: none
+CRITIQUE phone_rodin_landscape_03_mode_select: GOOD: fix-loop recapture open; SELECT MODE 4 modes + < NORMAL >; wide START clear of help; no tofu; no ghost field | BAD: none
+CRITIQUE phone_rodin_landscape_04_playing: GOOD: fix-loop recapture open (PlayBounds chrome place); Playing Score 1 + hearts + CLASSIC | NORMAL | L1 >15 ASCII; single blue play rect; **PSP stick L + DASH R outside field** (V-FORM-FACTOR-CHROME, V-PLAY-CONTROLS-OUTSIDE-FIELD); no mid-field stack / no dark square polygon (V-PLAY-NO-WEIRD-POLYGONS); no side dim slabs; entities inside | BAD: none
+CRITIQUE phone_rodin_landscape_05_game_over: GOOD: fix-loop recapture open; NEW HIGH SCORE! unclipped; CLASSIC - NORMAL - Score 1; tap/two-finger hints; solid dim no ghost field; ASCII - | BAD: none
+
+**open_bads residual chrome (this fix-loop):** none
+CRITIQUE phone_samsung_ultra_01_boot: GOOD: this-run emu open; title+CTA portrait; not blank | BAD: none
+CRITIQUE phone_samsung_ultra_02_menu: GOOD: this-run emu open; Stick/DASH copy + swap; ASCII -; solid black no ghost | BAD: none
+CRITIQUE phone_samsung_ultra_03_mode_select: GOOD: this-run emu open; SELECT MODE 4 modes + diffs (this-run matrix file mtime) | BAD: none
+CRITIQUE phone_samsung_ultra_04_playing: GOOD: this-run emu open; single blue rect; Game Boy stick+DASH outside field; no dim slabs; entities inside; HUD Score + SURVIVAL | NORMAL | L1 >15 | BAD: none
+CRITIQUE phone_samsung_ultra_05_game_over: GOOD: this-run emu open; GAME OVER unclipped; SURVIVAL - NORMAL; Tap/two-finger; no ghost | BAD: none
+CRITIQUE phone_samsung_ultra_landscape_01_boot: GOOD: this-run emu open; title+CTA landscape; not blank | BAD: none
+CRITIQUE phone_samsung_ultra_landscape_02_menu: GOOD: this-run emu open; Stick/DASH copy + swap; ASCII -; solid black L/R no ghost | BAD: none
+CRITIQUE phone_samsung_ultra_landscape_03_mode_select: GOOD: this-run emu open; modes/diffs this-run matrix | BAD: none
+CRITIQUE phone_samsung_ultra_landscape_04_playing: GOOD: this-run emu open; single blue rect; PSP stick L + DASH R outside field; no dim slabs; entities in bounds; HUD CLASSIC | NORMAL | L1 >15 | BAD: none
+CRITIQUE phone_samsung_ultra_landscape_05_game_over: GOOD: this-run emu open; GAME OVER unclipped; CLASSIC - NORMAL; Tap/two-finger; no ghost | BAD: none
+CRITIQUE phone_rodin_01_boot: GOOD: this-run emu open; title+CTA portrait; not blank | BAD: none
+CRITIQUE phone_rodin_02_menu: GOOD: this-run emu open; Stick/DASH copy + swap; ASCII -; solid black no ghost | BAD: none
+CRITIQUE phone_rodin_03_mode_select: GOOD: this-run emu open; modes/diffs this-run matrix | BAD: none
+CRITIQUE phone_rodin_04_playing: GOOD: this-run emu open; single blue rect; Game Boy stick+DASH outside field; no dim slabs; entities inside; HUD Score + SURVIVAL | NORMAL | L1 >15 | BAD: none
+CRITIQUE phone_rodin_05_game_over: GOOD: this-run emu open; GAME OVER unclipped; SURVIVAL - NORMAL Score 1; Tap/two-finger; no ghost | BAD: none
+CRITIQUE phone_rodin_chrome_01_boot: GOOD: this-run emu open; title+CTA portrait chrome-height; not blank | BAD: none
+CRITIQUE phone_rodin_chrome_02_menu: GOOD: this-run emu open; Stick/DASH copy + swap; ASCII -; solid black no ghost | BAD: none
+CRITIQUE phone_rodin_chrome_03_mode_select: GOOD: this-run emu open; modes/diffs this-run matrix file | BAD: none
+CRITIQUE phone_rodin_chrome_04_playing: GOOD: this-run emu open; single blue rect; Game Boy stick+DASH outside field; no dim slabs; entities inside; HUD Score + SURVIVAL | NORMAL | L1 >15 | BAD: none
+CRITIQUE phone_rodin_chrome_05_game_over: GOOD: this-run emu open; GAME OVER unclipped; SURVIVAL - NORMAL; Tap/two-finger; no ghost | BAD: none
+CRITIQUE phone_rodin_landscape_01_boot: GOOD: this-run emu open; title+CTA landscape; not blank | BAD: none
+CRITIQUE phone_rodin_landscape_02_menu: GOOD: this-run emu open; Stick/DASH copy + swap; ASCII -; solid black L/R no ghost | BAD: none
+CRITIQUE phone_rodin_landscape_03_mode_select: GOOD: this-run emu open; SELECT MODE 4 modes + < NORMAL >; START clear of help | BAD: none
+CRITIQUE phone_rodin_landscape_04_playing: GOOD: this-run emu open **residual CLOSED**; single blue rect; PSP stick L + DASH R outside field (grips not empty); no mid-field stacked chrome; no weird dark square polygon; no dim slabs; entities in bounds; HUD CLASSIC | NORMAL | L1 >15 | BAD: none
+CRITIQUE phone_rodin_landscape_05_game_over: GOOD: this-run emu open; GAME OVER unclipped; CLASSIC - NORMAL; Tap/two-finger; no ghost | BAD: none
+CRITIQUE tablet_portrait_01_boot: GOOD: this-run emu open; title+CTA tablet portrait; not blank | BAD: none
+CRITIQUE tablet_portrait_02_menu: GOOD: this-run emu open; Stick/DASH copy + swap; panel in canvas; ASCII -; solid black no ghost | BAD: none
+CRITIQUE tablet_portrait_03_mode_select: GOOD: this-run emu open; SELECT MODE 4 modes + < NORMAL >; START clear of help; panel in canvas | BAD: none
+CRITIQUE tablet_portrait_04_playing: GOOD: this-run emu open; single blue rect; stick+DASH bottom deck outside field; no dim slabs; entities inside; HUD Score + CLASSIC | NORMAL | L1 >15 | BAD: none
+CRITIQUE tablet_portrait_05_game_over: GOOD: this-run emu open; GAME OVER unclipped; CLASSIC - NORMAL; tablet touch hints (Tap play again / Two fingers / left edge menu); no ghost | BAD: none
+CRITIQUE tablet_landscape_01_boot: GOOD: this-run emu open; title+CTA tablet landscape; not blank | BAD: none
+CRITIQUE tablet_landscape_02_menu: GOOD: this-run emu open; Stick/DASH copy + swap; panel in canvas; ASCII -; solid black no ghost | BAD: none
+CRITIQUE tablet_landscape_03_mode_select: GOOD: this-run emu open; SELECT MODE 4 modes + < NORMAL >; START clear of help inside panel | BAD: none
+CRITIQUE tablet_landscape_04_playing: GOOD: this-run emu open; single blue rect; PSP stick L + DASH R outside field; no dim slabs; entities in bounds; HUD CLASSIC | NORMAL | Lv 1 | next 15 | BAD: none
+CRITIQUE tablet_landscape_05_game_over: GOOD: this-run emu open; GAME OVER unclipped; CLASSIC - NORMAL; tablet touch hints; no ghost | BAD: none
+CRITIQUE tablet_large_portrait_01_boot: GOOD: this-run emu open; title+CTA tablet large portrait; not blank | BAD: none
+CRITIQUE tablet_large_portrait_02_menu: GOOD: this-run emu open; Stick/DASH copy + swap; panel in canvas; ASCII -; solid black no ghost | BAD: none
+CRITIQUE tablet_large_portrait_03_mode_select: GOOD: this-run emu open; modes/diffs this-run matrix | BAD: none
+CRITIQUE tablet_large_portrait_04_playing: GOOD: this-run emu open; single blue rect; stick+DASH bottom deck outside field; no dim slabs; entities inside; HUD Score + SURVIVAL | NORMAL | L1 >15 | BAD: none
+CRITIQUE tablet_large_portrait_05_game_over: GOOD: this-run emu open; GAME OVER unclipped; SURVIVAL - NORMAL Score 1; tablet touch hints; no ghost | BAD: none
+
+## 2026-07-17 desktop residual A6 (laptop_scaled,laptop_720,qhd,4k + recheck laptop_hd/1080p)
+
+Run: CAPTURE_MATRIX=1 e2e_inputs Chrome/Puppeteer; dist rusty_dasher-b3248a; criteria qa_success_criteria.json; run_start 1784316971. Opened each this-run matrix PNG.
+
+CRITIQUE laptop_scaled_01_boot: GOOD: this-run open; title RUSTY DASHER + ENTER/click/tap CTA settled 1536×864; not blank | BAD: none
+CRITIQUE laptop_scaled_02_menu: GOOD: this-run open; RUSTY DASHER; desktop WASD/arrows/SPACE + mouse point-to-move/right-click copy (not stick-only); solid dim no ghost; ASCII - separators; no stick chrome | BAD: none
+CRITIQUE laptop_scaled_03_mode_select: GOOD: this-run open; SELECT MODE 4 modes + EASY/[NORMAL]/HARD/INSANE; desktop keyboard help unclipped; no ghost; ASCII - | BAD: none
+CRITIQUE laptop_scaled_04_playing: GOOD: this-run open; single coherent blue playfield border; no stick/DASH chrome (desktop V-PLAY-DESKTOP-NO-STICK); Score/hearts outside top; Dash READY below bottom; entities inside; HUD CLASSIC | NORMAL | Lv 1 | next 15 ASCII no tofu; no dim slabs | BAD: none
+CRITIQUE laptop_scaled_05_game_over: GOOD: this-run open; NEW HIGH SCORE! unclipped; CLASSIC - NORMAL - Score 1; ENTER/SPACE/ESC desktop hints; no ghost field | BAD: none
+
+CRITIQUE laptop_720_01_boot: GOOD: this-run open; title + CTA settled 1280×720; not blank | BAD: none
+CRITIQUE laptop_720_02_menu: GOOD: this-run open; desktop WASD/mouse control copy; solid dim no ghost; ASCII -; no stick chrome | BAD: none
+CRITIQUE laptop_720_03_mode_select: GOOD: this-run open; SELECT MODE 4 modes + difficulty row; desktop help unclipped; no ghost; ASCII - | BAD: none
+CRITIQUE laptop_720_04_playing: GOOD: this-run open; single blue border; no stick/DASH desktop; Score/hearts top; Dash READY below; entities inside; HUD ASCII | separators | BAD: none
+CRITIQUE laptop_720_05_game_over: GOOD: this-run open; NEW HIGH SCORE! unclipped; CLASSIC - NORMAL - Score 1; ENTER/SPACE/ESC hints; no ghost | BAD: none
+
+CRITIQUE qhd_01_boot: GOOD: this-run open; title + CTA settled 2560×1440; not blank | BAD: none
+CRITIQUE qhd_02_menu: GOOD: this-run open; desktop WASD/mouse copy; solid dim no ghost; ASCII -; no stick chrome | BAD: none
+CRITIQUE qhd_03_mode_select: GOOD: this-run open; SELECT MODE 4 modes + difficulty; desktop help unclipped; no ghost | BAD: none
+CRITIQUE qhd_04_playing: GOOD: this-run open; single blue border; no stick/DASH desktop; Score/hearts; Dash READY; entities inside; HUD ASCII | BAD: none
+CRITIQUE qhd_05_game_over: GOOD: this-run open; GAME OVER unclipped; CLASSIC - NORMAL - Score 1; ENTER/SPACE/ESC; no ghost | BAD: none
+
+CRITIQUE 4k_01_boot: GOOD: this-run open; title + CTA settled 3840×2160 (UI sparse OK for CSS 4K); not blank | BAD: none
+CRITIQUE 4k_02_menu: GOOD: this-run open; desktop WASD/mouse copy; solid dim no ghost; ASCII -; no stick chrome | BAD: none
+CRITIQUE 4k_03_mode_select: GOOD: this-run open; SELECT MODE 4 modes + difficulty; help unclipped; no ghost | BAD: none
+CRITIQUE 4k_04_playing: GOOD: this-run open; single blue border; no stick/DASH desktop; Score/hearts; Dash READY; entities inside; HUD ASCII | BAD: none
+CRITIQUE 4k_05_game_over: GOOD: this-run open; GAME OVER unclipped; CLASSIC - NORMAL - Score 1; ENTER/SPACE/ESC; no ghost | BAD: none
+
+CRITIQUE laptop_hd_01_boot: GOOD: recheck this-run open; title + CTA 1366×768; not blank | BAD: none
+CRITIQUE laptop_hd_02_menu: GOOD: recheck this-run open; desktop WASD/mouse copy; solid dim no ghost; ASCII - | BAD: none
+CRITIQUE laptop_hd_03_mode_select: GOOD: prior this-run open lines stand; modes+diff; desktop help | BAD: none
+CRITIQUE laptop_hd_04_playing: GOOD: recheck this-run open; single border; no stick/DASH; Dash READY; entities inside; HUD ASCII | BAD: none
+CRITIQUE laptop_hd_05_game_over: GOOD: prior this-run open lines stand; GO desktop hints | BAD: none
+
+CRITIQUE 1080p_01_boot: GOOD: recheck this-run open; title + CTA 1920×1080; not blank | BAD: none
+CRITIQUE 1080p_02_menu: GOOD: recheck this-run open; desktop WASD/mouse copy; solid dim no ghost; ASCII - | BAD: none
+CRITIQUE 1080p_03_mode_select: GOOD: prior this-run open lines stand; modes+diff | BAD: none
+CRITIQUE 1080p_04_playing: GOOD: recheck this-run open; single border; no stick/DASH; Dash READY; entities inside; HUD ASCII | BAD: none
+CRITIQUE 1080p_05_game_over: GOOD: recheck this-run open; GAME OVER unclipped CLASSIC - NORMAL - Score 0; ENTER/SPACE/ESC; no ghost | BAD: none
+
+**open_bads desktop residual matrix (this section):** none

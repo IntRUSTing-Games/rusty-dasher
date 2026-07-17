@@ -21,10 +21,11 @@ pub fn spawn_menu(mut commands: Commands, save: Res<SaveData>, scale: Res<UiScal
 }
 
 fn controls_swap_label(swapped: bool) -> String {
+    // ASCII separators only — default font lacks U+00B7 middle-dot (V-GLYPH-TOFU).
     if swapped {
-        "Controls: Stick RIGHT · DASH LEFT\n(tap here to swap)".into()
+        "Controls: Stick RIGHT - DASH LEFT\n(tap here to swap)".into()
     } else {
-        "Controls: Stick LEFT · DASH RIGHT\n(tap here to swap)".into()
+        "Controls: Stick LEFT - DASH RIGHT\n(tap here to swap)".into()
     }
 }
 
@@ -75,19 +76,19 @@ fn spawn_menu_with(commands: &mut Commands, save: &SaveData, scale: &UiScale) {
     // Copy is format-specific: touch on phone/tablet, keyboard on PC.
     let body = if handheld {
         format!(
-            "Collect stars · dodge hazards\n\
-             Stick moves · DASH dashes\n\
+            "Collect stars - dodge hazards\n\
+             Stick moves - DASH dashes\n\
              Best {best}\n\
              Tap panel to choose mode"
         )
     } else {
         format!(
-            "Collect yellow stars · dodge red hazards\n\
-             WASD / arrows move · SPACE dash\n\
-             Mouse: hold to point-to-move · right-click dash\n\n\
+            "Collect yellow stars - dodge red hazards\n\
+             WASD / arrows move - SPACE dash\n\
+             Mouse: hold to point-to-move - right-click dash\n\n\
              Best score: {best}\n\n\
-             ENTER / SPACE — choose mode\n\
-             ESC — quit"
+             ENTER / SPACE - choose mode\n\
+             ESC - quit"
         )
     };
 
@@ -190,11 +191,11 @@ fn spawn_panel_frame<M: Component + Copy>(
     panel: Vec2,
     s: f32,
 ) {
-    // Near-opaque full-view dim so the playfield border doesn't fight the menu
-    // (especially ugly on phone portrait).
+    // Fully opaque full-view dim so the playfield border/glow never ghost
+    // through menu / mode_select / game_over panels (V-GHOST-FIELD).
     commands.spawn((
         marker,
-        Sprite::from_color(Color::srgba(0.02, 0.03, 0.06, 0.92), Vec2::new(5000.0, 5000.0)),
+        Sprite::from_color(Color::srgb(0.02, 0.03, 0.06), Vec2::new(5000.0, 5000.0)),
         Transform::from_xyz(0.0, 0.0, 12.0),
     ));
     let border = panel_border(panel);
@@ -355,9 +356,27 @@ fn spawn_mode_select_with(
     refresh_mode_list(commands, save, selected, difficulty, scale, panel);
 
     if scale.class.is_handheld() {
-        // Explicit START button (hit band y≈0.58–0.78 of window)
-        let start_y = -panel.y * 0.30;
-        let start_pill = Vec2::new(panel.x * 0.72, 48.0);
+        // START above help with clear gap (V-MODE-START-CLEAR). Landscape
+        // phones are short — pack START higher and keep help below the pill.
+        let landscape = matches!(
+            scale.class,
+            ViewportClass::PhoneLandscape | ViewportClass::TabletLandscape
+        ) || scale.aspect > 1.2;
+        let start_h = if landscape { 40.0 } else { 48.0 };
+        let start_y = if landscape {
+            -panel.y * 0.24
+        } else {
+            -panel.y * 0.28
+        };
+        let help_y = if landscape {
+            -panel.y * 0.42
+        } else {
+            -panel.y * 0.40
+        };
+        // Ensure help sits fully below the START pill bottom edge (base units).
+        let start_bottom = start_y - start_h * 0.5;
+        let help_y = help_y.min(start_bottom - 16.0);
+        let start_pill = Vec2::new(panel.x * 0.72, start_h);
         commands.spawn((
             ModeUi,
             ModeStartButton,
@@ -387,7 +406,6 @@ fn spawn_mode_select_with(
             Transform::from_xyz(0.0, start_y * s, 17.0),
         ));
         let help_px = if phone { 10.0 } else { 11.0 };
-        let help_y = -panel.y * 0.40;
         commands.spawn((
             ModeUi,
             ScaledText {
@@ -398,14 +416,14 @@ fn spawn_mode_select_with(
                 base: Vec2::new(0.0, help_y),
                 menu: true,
             },
-            Text2d::new("Modes up top · < > difficulty · two fingers back"),
+            Text2d::new("Modes up top - < > difficulty - two fingers back"),
             font(help_px, s),
             TextColor(Color::srgb(0.6, 0.68, 0.85)),
             TextLayout::justify(Justify::Center),
             Transform::from_xyz(0.0, help_y * s, 20.0),
         ));
     } else {
-        let help = "Up/Down or W/S: mode · Left/Right or A/D: difficulty\nENTER / SPACE: start · ESC: back";
+        let help = "Up/Down or W/S: mode - Left/Right or A/D: difficulty\nENTER / SPACE: start - ESC: back";
         let help_px = 13.0;
         let help_y = -0.38;
         commands.spawn((
@@ -588,7 +606,7 @@ fn refresh_mode_list(
 
     let stats_y = diff_row_y - if phone { 26.0 } else if compact { 30.0 } else { 36.0 };
     let stats = format!(
-        "score x{:.1} · speed x{:.1}",
+        "score x{:.1} - speed x{:.1}",
         difficulty.score_mult(),
         difficulty.speed_mult()
     );
@@ -997,10 +1015,11 @@ pub fn tick_level_banners(
 /// Mode / difficulty / level line for the HUD.
 /// Compact form stays inside the play border on phone widths.
 fn hud_level_line(stats: &GameStats, compact: bool) -> String {
+    // ASCII separators only (V-GLYPH-TOFU — no U+00B7 middle-dot).
     if compact {
         if stats.mode == GameMode::Timed {
             return format!(
-                "{} · {} · {:.0}s",
+                "{} | {} | {:.0}s",
                 stats.mode.label(),
                 stats.chosen_difficulty.label(),
                 stats.time_left.ceil()
@@ -1008,7 +1027,7 @@ fn hud_level_line(stats: &GameStats, compact: bool) -> String {
         }
         if matches!(stats.mode, GameMode::Classic | GameMode::Survival) {
             return format!(
-                "{} · {} · L{} →{}",
+                "{} | {} | L{} >{}",
                 stats.mode.label(),
                 stats.chosen_difficulty.label(),
                 stats.level,
@@ -1016,7 +1035,7 @@ fn hud_level_line(stats: &GameStats, compact: bool) -> String {
             );
         }
         return format!(
-            "{} · {} · chill",
+            "{} | {} | chill",
             stats.mode.label(),
             stats.chosen_difficulty.label()
         );

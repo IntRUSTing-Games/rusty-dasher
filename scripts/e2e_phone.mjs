@@ -61,21 +61,23 @@ const inventory = [];
 let savedAccel = null;
 let savedUserRot = null;
 
+/** Capture/automation step only — not visual review. */
 function pass(name, detail = '') {
-  results.push({ name, ok: true, detail });
-  console.log('PASS', name, detail);
+  results.push({ name, ok: true, detail, layer: 'capture' });
+  console.log('CAPTURE_OK', name, detail);
 }
 function fail(name, detail = '') {
-  results.push({ name, ok: false, detail });
-  console.error('FAIL', name, detail);
+  results.push({ name, ok: false, detail, layer: 'capture' });
+  console.error('CAPTURE_FAIL', name, detail);
 }
 function info(...a) {
   console.log('[phone]', ...a);
 }
 function inv(row) {
   inventory.push(row);
+  // Inventory ok is instrumented/geometry CAPTURE evidence, not A4b video review.
   console.log(
-    `INVENTORY ${row.ok ? 'PASS' : 'FAIL'} [${row.cell}][${row.screen}] ${row.control}: ${row.worked} | fatty=${row.fatty}`
+    `INVENTORY ${row.ok ? 'CAPTURE_OK' : 'CAPTURE_FAIL'} [${row.cell}][${row.screen}] ${row.control}: ${row.worked} | fatty=${row.fatty}`
   );
 }
 
@@ -621,11 +623,15 @@ function writeReport(extra) {
   }
   lines.push('', '## Results', '');
   for (const r of results) {
-    lines.push(`- ${r.ok ? 'PASS' : 'FAIL'} **${r.name}**: ${r.detail || ''}`);
+    lines.push(
+      `- ${r.ok ? 'CAPTURE_OK' : 'CAPTURE_FAIL'} **${r.name}**: ${r.detail || ''}`
+    );
   }
   lines.push(
     '',
-    `## Summary: results ${results.filter((r) => r.ok).length}/${results.length}, inventory ${inventory.filter((r) => r.ok).length}/${inventory.length}, open_bads ${failed.length + invFailed.length}`,
+    `## Summary (CAPTURE layer only — not visual review): results ${results.filter((r) => r.ok).length}/${results.length}, inventory ${inventory.filter((r) => r.ok).length}/${inventory.length}, open_capture_fails ${failed.length + invFailed.length}`,
+    '',
+    'NOTE: CAPTURE_OK ≠ looks good. Phase C still requires video review of each cell recording.',
     ''
   );
   fs.writeFileSync(REPORT, lines.join('\n'));
@@ -640,7 +646,9 @@ function writeReport(extra) {
         inventory,
         failed: failed.length + invFailed.length,
         recordings_dir: VID,
+        layer: 'capture_only',
         at: new Date().toISOString(),
+        note: 'CAPTURE only. Review cell videos separately for ship; do not treat open_bads=0 alone as visual A7.',
         ...extra,
       },
       null,
@@ -695,10 +703,13 @@ async function main() {
   writeReport({ model, browser: version.Browser });
   const failed = results.filter((r) => !r.ok);
   const invFailed = inventory.filter((r) => !r.ok);
-  console.log('\n=== PHONE 2×2 VIDEO E2E ===');
-  console.log('passed', results.filter((r) => r.ok).length, '/', results.length);
+  console.log('\n=== PHONE 2×2 CAPTURE SUMMARY (not visual review) ===');
+  console.log('capture_ok', results.filter((r) => r.ok).length, '/', results.length);
+  console.log(
+    'NOTE: CAPTURE_OK ≠ looks good. Review each cell video; suite exit 0 is not PRE-PROD PASS.'
+  );
   if (failed.length || invFailed.length) {
-    console.error('FAILED', failed);
+    console.error('CAPTURE_FAILED', failed);
     process.exit(1);
   }
   process.exit(0);

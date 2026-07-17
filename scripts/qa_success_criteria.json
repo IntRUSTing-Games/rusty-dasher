@@ -1,0 +1,612 @@
+{
+  "description": "Authoritative PASS/FAIL criteria for Rusty Dasher visual + input QA. Pair with scripts/qa_matrix.json (screens \u00d7 formats). Agents MUST open this file before writing matrix_critique.md or video_critique.md. A cell may only use BAD: none when every applicable criterion here is satisfied. Rubber-stamping GOOD without opening each artifact is a process failure.",
+  "version": 2,
+  "updated": "2026-07-17",
+  "related": {
+    "matrix": "scripts/qa_matrix.json",
+    "matrix_critique": "screenshots/viewports/matrix_critique.md",
+    "video_critique": "screenshots/web/e2e/video_critique.md",
+    "phone_inventory": "screenshots/web/phone/touch_inventory.md",
+    "process_skill": ".grok/skills/ui-viewport-qa/SKILL.md",
+    "input_skill": ".grok/skills/game-input-e2e/SKILL.md"
+  },
+  "vocabulary": {
+    "description": "Two different meanings of PASS. Never conflate them.",
+    "CAPTURE_OK": {
+      "aka": [
+        "script PASS (legacy log)",
+        "results.json ok:true",
+        "suite N/N",
+        "exit 0",
+        "A5 files present"
+      ],
+      "means": "Automation step succeeded: artifact written, state reached, steps counted, HTTP 200, matrix cell non-empty.",
+      "does_not_mean": "Looks good, criteria passed, ship ready, A7 PASS.",
+      "producers": [
+        "e2e_inputs.mjs",
+        "e2e_emulator_matrix.mjs",
+        "e2e_phone.mjs",
+        "viewport_shots.mjs VERIFY"
+      ]
+    },
+    "REVIEW_PASS": {
+      "aka": [
+        "CRITIQUE BAD: none",
+        "VIDEO BAD: none",
+        "A4b/A6 clean",
+        "A7 PRE-PROD PASS"
+      ],
+      "means": "Agent opened this-run artifacts, walked criteria, and recorded GOOD/BAD with evidence.",
+      "does_not_mean": "Capture suite exited 0.",
+      "producers": [
+        "human/agent image-tool review writing matrix_critique.md / video_critique.md"
+      ]
+    },
+    "status_language": [
+      "Say 'capture complete (CAPTURE_OK)' for runners \u2014 never 'A4 PASS' alone.",
+      "Say 'A4b/A6 reviewed; BAD: none' only after critique lines with opened-image evidence.",
+      "A7 is REVIEW only; CAPTURE_OK is a prerequisite, not the gate."
+    ]
+  },
+  "gate_rules": {
+    "pre_prod_pass_requires": [
+      "Every expected matrix cell has a CRITIQUE line",
+      "Every e2e recording has a VIDEO line",
+      "No open BAD where severity is blocker (or user accepted residual BADs in writing with IDs listed)",
+      "Artifact labels match actual GameState on the image/frame",
+      "Phase A handhelds used Android emulator + adb screenrecord + adb shell input (not Chrome emulate alone)"
+    ],
+    "critique_format": {
+      "matrix_line": "CRITIQUE {format_id}_{shot_suffix}: GOOD: <evidence> | BAD: none | BAD: {criterion_id}: <what fails> [; {criterion_id}: ...]",
+      "video_line": "VIDEO {format_id}_{keyboard|mouse|touch}: GOOD: <evidence> | BAD: none | BAD: {criterion_id}: <what fails>",
+      "rules": [
+        "GOOD and BAD both required on every line",
+        "BAD: none only after opening the artifact(s) and checking every applicable criterion in this file",
+        "When failing, cite criterion id(s) from this file (e.g. V-PLAY-NESTED-BORDER)",
+        "Listing a directory or trusting a prior agent PASS is not review",
+        "Filename alone is not proof of screen state \u2014 verify GameState from pixels/text"
+      ]
+    },
+    "severity": {
+      "blocker": "Must be fixed or user-accepted in writing before push (Phase B) or claim ship",
+      "major": "Ship blocker unless user accepts residual in writing with criterion IDs",
+      "minor": "Should fix; may ship only if user accepts residual in writing"
+    },
+    "anti_patterns": [
+      "Marking BAD: none because a previous critique said so without re-opening THIS run's artifacts",
+      "Accepting *_04_playing.png that shows Menu / ModeSelect / GameOver",
+      "Ignoring Phase C open_bads / events=0 because Phase A critiques were green",
+      "Treating Chrome page.emulate handhelds as ship-valid Phase A",
+      "Reviewing only boot/menu and skipping playing + landscape",
+      "Calling double blue frames or OOB stars 'intentional' without code proof + product sign-off",
+      "Treating suite CAPTURE_OK / exit 0 / N/N as A7 or as permission to write BAD: none",
+      "Status line '15/15 PASS open_bads none' without opened CRITIQUE/VIDEO evidence for this run",
+      "Calling A5 VERIFY (files present) a visual review"
+    ]
+  },
+  "form_factor": {
+    "description": "How chrome and copy must match UiScale / ViewportClass (src/ui_scale.rs).",
+    "desktop": {
+      "classes": [
+        "Desktop1080",
+        "Desktop4k"
+      ],
+      "formats_note": "All qa_matrix formats with touch:false (laptop_*, 1080p, qhd, 4k)",
+      "while_playing": {
+        "must": [
+          "No virtual stick",
+          "No DASH on-screen button",
+          "Full playfield (no Game Boy bottom deck / PSP side grips)"
+        ],
+        "menu_copy_must": [
+          "WASD / arrows / SPACE (or mouse point-to-move + right-click) language",
+          "Must not lead with stick-only / DASH-button-only copy"
+        ]
+      }
+    },
+    "handheld": {
+      "classes": [
+        "PhonePortrait",
+        "PhoneLandscape",
+        "Tablet"
+      ],
+      "formats_note": "All qa_matrix formats with touch:true",
+      "while_playing": {
+        "portrait": "Game Boy: playfield top; stick + DASH on bottom deck outside field",
+        "landscape": "PSP: stick left grip, DASH right grip, playfield center; controls outside field",
+        "must": [
+          "Virtual stick visible and outside playfield rect",
+          "DASH button visible and outside playfield rect",
+          "Stick\u2194DASH gap \u2265 12 CSS px",
+          "Hit target diameter \u2265 48 CSS px (fatty-finger)"
+        ],
+        "menu_copy_must": [
+          "Stick + DASH language",
+          "Must not lead with WASD-only desktop copy"
+        ]
+      }
+    }
+  },
+  "visual_criteria": {
+    "description": "Apply on every matrix PNG (A6) and relevant video stills (A4b). Any FAIL on a cell \u2192 that cell's BAD must list criterion ids.",
+    "global": [
+      {
+        "id": "V-CLIP-TEXT",
+        "severity": "blocker",
+        "check": "No text clipped by panel edge, canvas edge, safe area, or another control",
+        "applies": [
+          "boot",
+          "menu",
+          "mode_select",
+          "playing",
+          "game_over"
+        ]
+      },
+      {
+        "id": "V-READABLE",
+        "severity": "blocker",
+        "check": "All primary labels readable at native capture size without guessing (title, CTAs, mode names, difficulty, score, lives, game-over stats, control hints)",
+        "applies": [
+          "boot",
+          "menu",
+          "mode_select",
+          "playing",
+          "game_over"
+        ],
+        "notes": "Phone landscape and laptop_hd are high-risk; zoom stills if needed"
+      },
+      {
+        "id": "V-OVERLAP",
+        "severity": "blocker",
+        "check": "No unintended overlap of interactive controls or of status text by other UI chrome (START must not cover help; stick must not cover score)",
+        "applies": [
+          "menu",
+          "mode_select",
+          "playing",
+          "game_over"
+        ]
+      },
+      {
+        "id": "V-GLYPH-TOFU",
+        "severity": "blocker",
+        "check": "No missing-glyph boxes, tofu rectangles, or broken substitute characters in UI strings. Prefer ASCII separators (- | /) if font lacks \u00b7 \u2022 \u2014",
+        "applies": [
+          "menu",
+          "mode_select",
+          "playing",
+          "game_over"
+        ],
+        "known_risk": "ui.rs uses U+00B7 middle-dot (\u00b7) widely; default font often renders as empty boxes between words"
+      },
+      {
+        "id": "V-LINES-OVER-TEXT",
+        "severity": "blocker",
+        "check": "No borders, field edges, dim slabs, or other sprites drawn through label glyphs",
+        "applies": [
+          "menu",
+          "mode_select",
+          "playing",
+          "game_over"
+        ]
+      },
+      {
+        "id": "V-BLANK-PANIC",
+        "severity": "blocker",
+        "check": "Not a panic screen, solid black/white empty frame, frozen boot mid-WASM with no CTA, or half-loaded layout",
+        "applies": [
+          "boot",
+          "menu",
+          "mode_select",
+          "playing",
+          "game_over"
+        ]
+      },
+      {
+        "id": "V-STATE-MATCH",
+        "severity": "blocker",
+        "check": "Artifact content matches claimed screen: boot shows boot CTA; menu shows RUSTY DASHER panel; mode_select shows SELECT MODE; playing shows Score/lives + field entities; game_over shows GAME OVER / NEW HIGH SCORE. Wrong state with right filename = FAIL",
+        "applies": [
+          "boot",
+          "menu",
+          "mode_select",
+          "playing",
+          "game_over"
+        ]
+      },
+      {
+        "id": "V-PANEL-IN-CANVAS",
+        "severity": "blocker",
+        "check": "Menu/mode/game-over panels fully inside the game canvas; not cut by browser chrome in a way that removes required controls (START, swap band, again hints)",
+        "applies": [
+          "menu",
+          "mode_select",
+          "game_over"
+        ]
+      },
+      {
+        "id": "V-GHOST-FIELD",
+        "severity": "blocker",
+        "check": "While menu / mode_select / game_over is up: no empty blue playfield rectangle ghosts peeking above/below/beside the panel; playfield border must not fight the panel (full dim or hide FieldPiece border/glow under overlays)",
+        "applies": [
+          "menu",
+          "mode_select",
+          "game_over"
+        ],
+        "known_fail_examples": [
+          "phone_portrait_02_menu.png \u2014 blue rects above and below panel",
+          "phone_landscape_02_menu.png \u2014 framed empty boxes left and right of panel"
+        ]
+      },
+      {
+        "id": "V-FORM-FACTOR-COPY",
+        "severity": "blocker",
+        "check": "On-screen control copy matches form_factor (desktop vs handheld) for this matrix unit",
+        "applies": [
+          "menu",
+          "mode_select",
+          "playing",
+          "game_over"
+        ]
+      },
+      {
+        "id": "V-FORM-FACTOR-CHROME",
+        "severity": "blocker",
+        "check": "While playing: handheld shows stick+DASH outside field; desktop shows neither stick nor DASH button",
+        "applies": [
+          "playing"
+        ]
+      }
+    ],
+    "playing": [
+      {
+        "id": "V-PLAY-SINGLE-BORDER",
+        "severity": "blocker",
+        "check": "Exactly one coherent playfield border rect. No nested double/triple blue frames (outer + inner misaligned polygons)",
+        "applies": [
+          "playing"
+        ],
+        "known_fail_examples": [
+          "phone_landscape_04_playing.png and all phone_*_landscape_04_playing.png"
+        ]
+      },
+      {
+        "id": "V-PLAY-NO-SIDE-DIM-SLABS",
+        "severity": "blocker",
+        "check": "No semi-opaque dark vertical (or horizontal) slabs covering the left/right (or top/bottom) interior of the playfield, dimming stars/hazards under chrome",
+        "applies": [
+          "playing"
+        ],
+        "notes": "PSP grips and Game Boy deck must sit OUTSIDE the play rect, not as translucent overlays on field content"
+      },
+      {
+        "id": "V-PLAY-ENTITIES-IN-BOUNDS",
+        "severity": "blocker",
+        "check": "Player, stars, hazards, powerups render inside the playfield border (or intentionally clipped at the border edge). Not free-floating in grip chrome, under stick, or outside the outer blue rect",
+        "applies": [
+          "playing"
+        ]
+      },
+      {
+        "id": "V-PLAY-NO-WEIRD-POLYGONS",
+        "severity": "blocker",
+        "check": "No unexplained geometry: double frames, stray blue half-disks cutting the border, random rectangles, mesh tears, or debug-looking shapes. FieldPiece::Glow must not read as a glitch half-circle outside the border",
+        "applies": [
+          "playing"
+        ],
+        "notes": "If glow is intentional VFX it must stay aesthetically inside design intent and not break border readability; otherwise clip/hide"
+      },
+      {
+        "id": "V-PLAY-HUD-CLEAR",
+        "severity": "blocker",
+        "check": "Score, hearts, status/level line, Dash READY/cooldown remain legible and not covered by stick/DASH or cut by field border mid-glyph",
+        "applies": [
+          "playing"
+        ]
+      },
+      {
+        "id": "V-PLAY-HAZARD-NOT-ON-HUD",
+        "severity": "major",
+        "check": "Hazards/player should not persistently sit on top of the status line as if HUD and world share broken z/layout (occasional transit OK; stuck-on-label is BAD)",
+        "applies": [
+          "playing"
+        ]
+      },
+      {
+        "id": "V-PLAY-CONTROLS-OUTSIDE-FIELD",
+        "severity": "blocker",
+        "check": "Handheld: stick base and DASH circle fully outside the blue playfield rect with clear separation (not overlapping field interior)",
+        "applies": [
+          "playing"
+        ],
+        "when": "handheld"
+      },
+      {
+        "id": "V-PLAY-DESKTOP-NO-STICK",
+        "severity": "blocker",
+        "check": "Desktop/laptop formats: no stick, no DASH button while playing",
+        "applies": [
+          "playing"
+        ],
+        "when": "desktop"
+      }
+    ],
+    "mode_select": [
+      {
+        "id": "V-MODE-ALL-OPTIONS",
+        "severity": "blocker",
+        "check": "All four modes visible or navigable (Classic, Zen, Survival, Timed) and difficulty control readable (EASY\u2026INSANE or compact chevrons)",
+        "applies": [
+          "mode_select"
+        ]
+      },
+      {
+        "id": "V-MODE-START-CLEAR",
+        "severity": "blocker",
+        "check": "START control fully visible and not covering help/footer text; help text not clipped under START",
+        "applies": [
+          "mode_select"
+        ],
+        "known_fail_examples": [
+          "phone_landscape_03_mode_select.png \u2014 START over 'Modes up top\u2026'"
+        ]
+      }
+    ],
+    "game_over": [
+      {
+        "id": "V-GO-UNCLIPPED",
+        "severity": "blocker",
+        "check": "GAME OVER or NEW HIGH SCORE title fully unclipped; stats and again/menu hints readable and form-factor-correct",
+        "applies": [
+          "game_over"
+        ]
+      }
+    ],
+    "boot": [
+      {
+        "id": "V-BOOT-CTA",
+        "severity": "blocker",
+        "check": "Settled boot: title + dismiss CTA present (not mid-download blank). CTA text may mention ENTER/click/tap",
+        "applies": [
+          "boot"
+        ]
+      }
+    ]
+  },
+  "input_criteria": {
+    "description": "Exhaustive surface required on every e2e path (A4 / Phase C). Failures are ship blockers.",
+    "exhaustive_surface": {
+      "screens": [
+        "boot",
+        "menu",
+        "mode_select",
+        "playing",
+        "game_over_or_exit"
+      ],
+      "modes": [
+        "Classic",
+        "Zen",
+        "Survival",
+        "Timed"
+      ],
+      "difficulties": [
+        "Easy",
+        "Normal",
+        "Hard",
+        "Insane"
+      ],
+      "min_play_ms": 20000,
+      "must_exercise": [
+        "Boot dismiss",
+        "Menu confirm",
+        "Handheld: stick/DASH swap band on menu when present",
+        "Mode select: change mode and difficulty, then START",
+        "Playing: move + dash",
+        "Game over / Esc back when in scope"
+      ]
+    },
+    "per_path": [
+      {
+        "id": "I-BOOT-DISMISS",
+        "severity": "blocker",
+        "check": "Boot CTA dismisses via keyboard, mouse/click, and touch as applicable; canvas receives input after"
+      },
+      {
+        "id": "I-MENU-ADVANCE",
+        "severity": "blocker",
+        "check": "Menu advances to mode select via confirm for the path's input modality"
+      },
+      {
+        "id": "I-MODE-CYCLE",
+        "severity": "blocker",
+        "check": "All modes and difficulties can be selected (not stuck on one option)"
+      },
+      {
+        "id": "I-START-PLAY",
+        "severity": "blocker",
+        "check": "START enters Playing; play is not frozen black"
+      },
+      {
+        "id": "I-MOVE",
+        "severity": "blocker",
+        "check": "Movement works: keys / mouse drag / virtual stick; events non-zero when path claims play input"
+      },
+      {
+        "id": "I-DASH",
+        "severity": "blocker",
+        "check": "Dash works: Space / right-click / DASH button; cooldown or trail evidence acceptable"
+      },
+      {
+        "id": "I-PLAY-DURATION",
+        "severity": "blocker",
+        "check": "\u2265 min_play_ms continuous play visible on recording (not truncated before 20s unless force_go path documents otherwise for matrix GO shot only)"
+      },
+      {
+        "id": "I-EVENTS-NONZERO",
+        "severity": "blocker",
+        "check": "Instrumented touch/pointer paths must not report events=0 for stick and DASH after calibrated input (Phase C inventory and emulator adb paths)",
+        "known_fail_examples": [
+          "screenshots/web/phone/touch_inventory.md 2026-07-11: stick/dash FAIL events=0 on all 2\u00d72 cells"
+        ]
+      },
+      {
+        "id": "I-FATTY-FINGER",
+        "severity": "major",
+        "check": "Hit diameter \u2265 48 CSS px; stick\u2194dash gap \u2265 12 CSS px on handheld play layouts"
+      }
+    ]
+  },
+  "video_criteria": {
+    "description": "A4b \u2014 continuous playthrough review. Stills help but are not a substitute for sampling the recording when available.",
+    "checks": [
+      {
+        "id": "VID-JOURNEY",
+        "severity": "blocker",
+        "check": "Recording shows boot\u2192menu\u2192mode\u2192play\u2192(game over when in scope) without panic/blank/stuck boot"
+      },
+      {
+        "id": "VID-INPUT-WORKS",
+        "severity": "blocker",
+        "check": "Visible response to move and dash; handheld stick thumb moves; desktop no stick chrome"
+      },
+      {
+        "id": "VID-NO-FLICKER",
+        "severity": "major",
+        "check": "No obvious flicker, wrong-screen flash, or control dead-zones mid-run"
+      },
+      {
+        "id": "VID-HUD-USABLE",
+        "severity": "major",
+        "check": "Status/HUD during play not unusable (clipping mid-run is BAD)"
+      },
+      {
+        "id": "VID-VISUAL-SAME-AS-MATRIX",
+        "severity": "blocker",
+        "check": "If matrix PNGs fail a visual criterion, matching video stills must not be marked BAD: none \u2014 same visual rules apply"
+      }
+    ]
+  },
+  "artifact_criteria": {
+    "description": "Integrity of capture outputs \u2014 wrong labels and empty proofs are FAILs even if 'something' was saved.",
+    "checks": [
+      {
+        "id": "A-MATRIX-COMPLETE",
+        "severity": "blocker",
+        "check": "All expected_cells from qa_matrix.json exist, non-empty, under screenshots/viewports/{format}_{shot_suffix}.png"
+      },
+      {
+        "id": "A-RECORDING-PRESENT",
+        "severity": "blocker",
+        "check": "Each required matrix unit \u00d7 input path has a primary recording (webm/mp4) for the ship path under review"
+      },
+      {
+        "id": "A-LABEL-TRUTH",
+        "severity": "blocker",
+        "check": "File names and inventory rows that claim playing|menu|mode|game_over must match the visible state. *_04_playing that shows menu = FAIL"
+      },
+      {
+        "id": "A-PHONE-2X2",
+        "severity": "blocker",
+        "check": "Phase C when device present: portrait|landscape \u00d7 browsing|fullscreen all run; inventory written; open_bads must be 0 or user-accepted by id",
+        "when": "phase_c_device_present"
+      },
+      {
+        "id": "A-CRITIQUE-COVERAGE",
+        "severity": "blocker",
+        "check": "Every matrix cell and every recording has a critique line for THIS run (mtime/run id evidence preferred)"
+      }
+    ]
+  },
+  "phase_gates": {
+    "A7_pre_prod": {
+      "pass_if": [
+        "A-MATRIX-COMPLETE",
+        "A-CRITIQUE-COVERAGE",
+        "All applicable visual_criteria + input_criteria + video_criteria for Phase A have no open blocker/major BADs (unless user-accepted)"
+      ],
+      "fail_if_any": [
+        "Any CRITIQUE/VIDEO line still has unaccepted BAD",
+        "Rubber-stamp evidence (critiques claim GOOD while known_fail_examples still present on this-run artifacts)"
+      ]
+    },
+    "B_push": {
+      "requires": "A7_pre_prod PASS"
+    },
+    "C_physical_phone": {
+      "requires": "B deploy success + physical adb device",
+      "pass_if": [
+        "A-PHONE-2X2",
+        "I-EVENTS-NONZERO",
+        "I-MOVE",
+        "I-DASH",
+        "A-LABEL-TRUTH on phone stills"
+      ],
+      "fail_sends_to": "Phase A fix loop (not phone-only push)"
+    }
+  },
+  "review_checklist_by_screen": {
+    "boot": [
+      "V-BOOT-CTA",
+      "V-BLANK-PANIC",
+      "V-STATE-MATCH",
+      "V-READABLE"
+    ],
+    "menu": [
+      "V-STATE-MATCH",
+      "V-CLIP-TEXT",
+      "V-READABLE",
+      "V-GLYPH-TOFU",
+      "V-GHOST-FIELD",
+      "V-PANEL-IN-CANVAS",
+      "V-FORM-FACTOR-COPY",
+      "V-OVERLAP",
+      "V-LINES-OVER-TEXT"
+    ],
+    "mode_select": [
+      "V-STATE-MATCH",
+      "V-MODE-ALL-OPTIONS",
+      "V-MODE-START-CLEAR",
+      "V-CLIP-TEXT",
+      "V-READABLE",
+      "V-GLYPH-TOFU",
+      "V-GHOST-FIELD",
+      "V-FORM-FACTOR-COPY",
+      "V-OVERLAP"
+    ],
+    "playing": [
+      "V-STATE-MATCH",
+      "V-FORM-FACTOR-CHROME",
+      "V-FORM-FACTOR-COPY",
+      "V-PLAY-SINGLE-BORDER",
+      "V-PLAY-NO-SIDE-DIM-SLABS",
+      "V-PLAY-ENTITIES-IN-BOUNDS",
+      "V-PLAY-NO-WEIRD-POLYGONS",
+      "V-PLAY-HUD-CLEAR",
+      "V-PLAY-HAZARD-NOT-ON-HUD",
+      "V-PLAY-CONTROLS-OUTSIDE-FIELD",
+      "V-PLAY-DESKTOP-NO-STICK",
+      "V-GLYPH-TOFU",
+      "V-CLIP-TEXT",
+      "V-READABLE",
+      "V-LINES-OVER-TEXT"
+    ],
+    "game_over": [
+      "V-STATE-MATCH",
+      "V-GO-UNCLIPPED",
+      "V-GHOST-FIELD",
+      "V-READABLE",
+      "V-CLIP-TEXT",
+      "V-FORM-FACTOR-COPY",
+      "V-GLYPH-TOFU"
+    ]
+  },
+  "agent_instructions": [
+    "In status files, label capture vs review explicitly (CAPTURE_OK vs A4b/A6 reviewed).",
+    "CAPTURE_OK (scripts) \u2260 REVIEW. Never mark BAD: none solely because capture printed PASS/CAPTURE_OK.",
+    "Before any A4b/A6 critique line: open scripts/qa_success_criteria.json and scripts/qa_matrix.json.",
+    "Open each artifact with the image tool (or sample video stills). Directory listing is not review.",
+    "For each screen, walk review_checklist_by_screen and mark FAIL with criterion id if any check fails.",
+    "If unsure whether a shape is intentional VFX, FAIL major and ask \u2014 do not invent BAD: none.",
+    "When this file and a skill text disagree on PASS/FAIL, this file wins for criteria; skills win for process/order.",
+    "Update this file when new regression classes are found (add criterion id + known_fail_examples) \u2014 do not only mention them in chat."
+  ]
+}

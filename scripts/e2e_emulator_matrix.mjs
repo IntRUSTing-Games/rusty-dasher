@@ -22,6 +22,9 @@
  *   PHONE_CDP_PORT=9222
  *   CAPTURE_MATRIX=1
  *   EMU_REQUIRE=1
+ *
+ * CAPTURE vs REVIEW: CAPTURE_OK / results ok:true = automation only, not visual
+ * acceptance. A4b/A6 + A7 (ui-viewport-qa / qa_success_criteria.json) are separate.
  */
 import { execFileSync, spawn } from 'child_process';
 import fs from 'fs';
@@ -87,13 +90,15 @@ fs.mkdirSync(MATRIX_OUT, { recursive: true });
 const results = [];
 const unitMeta = [];
 
+/** Capture-step success only — not visual review / A7. */
 function pass(name, detail = '') {
-  results.push({ name, ok: true, detail });
-  console.log('PASS', name, detail);
+  results.push({ name, ok: true, detail, layer: 'capture' });
+  console.log('CAPTURE_OK', name, detail);
 }
+/** Capture-step failure only — not visual review. */
 function fail(name, detail = '') {
-  results.push({ name, ok: false, detail });
-  console.error('FAIL', name, detail);
+  results.push({ name, ok: false, detail, layer: 'capture' });
+  console.error('CAPTURE_FAIL', name, detail);
 }
 function info(...a) {
   console.log('[emu]', ...a);
@@ -1300,16 +1305,21 @@ async function main() {
     recordings_dir: VID,
     matrix_out: MATRIX_OUT,
     at: new Date().toISOString(),
-    note: 'Phase A handheld: adb screenrecord + adb shell input; CDP navigate/eval/PNG only',
+    layer: 'capture_only',
+    note:
+      'CAPTURE only (ok/CAPTURE_OK = automation). Phase A handheld: adb screenrecord + adb shell input; CDP navigate/eval/PNG only. NOT visual review — A4b/A6 + A7 required separately.',
   };
   fs.writeFileSync(path.join(OUT, 'emulator_results.json'), JSON.stringify(payload, null, 2));
 
   const failed = results.filter((r) => !r.ok);
-  console.log('\n=== EMULATOR MATRIX E2E ===');
-  console.log('passed', results.filter((r) => r.ok).length, '/', results.length);
+  console.log('\n=== EMULATOR MATRIX CAPTURE SUMMARY (not visual review) ===');
+  console.log('capture_ok', results.filter((r) => r.ok).length, '/', results.length);
   console.log('serial', serial, 'formats', FORMATS.map((f) => f.id).join(','));
+  console.log(
+    'NOTE: CAPTURE_OK ≠ looks good. Open PNGs/videos for A4b/A6; suite exit 0 is not PRE-PROD PASS.'
+  );
   if (failed.length) {
-    console.error('FAILED', failed);
+    console.error('CAPTURE_FAILED', failed);
     process.exit(1);
   }
   process.exit(0);

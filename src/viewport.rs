@@ -93,20 +93,23 @@ impl PlayBounds {
 
         let margin = (inset_l + inset_r + inset_t + inset_b) * 0.25;
 
-        // HUD: score/hearts in the top margin band; status clear of the blue border.
-        let hud_top_y = top + (inset_t * 0.45).min(inset_t * 0.9);
+        // HUD: score/hearts in the top margin band; status clear of the blue border
+        // (V-PLAY-HUD-CLEAR — never sit mid-glyph on the field edge).
+        let hud_top_y = top + (inset_t * 0.50).min(inset_t * 0.92).max(16.0);
         let hud_bottom_y = if chrome {
             // Sit well inside the bottom inset (deck / grip gap), not on the play border.
             // Midpoint of the strip between play bottom and view bottom.
             let strip_mid = (bottom + (-view_half.y)) * 0.5;
             // Prefer a bit above mid so text clears the stick deck edge on portrait.
-            (strip_mid + inset_b * 0.12).clamp(-view_half.y + 14.0, bottom - 12.0)
+            (strip_mid + inset_b * 0.12).clamp(-view_half.y + 14.0, bottom - 16.0)
         } else {
-            bottom - (inset_b * 0.45).min(inset_b * 0.9)
+            // At least ~20 world units below the play bottom so "Dash READY" clears.
+            let prefer = bottom - (inset_b * 0.55).clamp(20.0, inset_b * 0.92);
+            prefer.min(bottom - 20.0)
         };
         // Clamp HUD into view
-        let hud_top_y = hud_top_y.min(view_half.y - 8.0);
-        let hud_bottom_y = hud_bottom_y.max(-view_half.y + 8.0);
+        let hud_top_y = hud_top_y.min(view_half.y - 8.0).max(top + 10.0);
+        let hud_bottom_y = hud_bottom_y.max(-view_half.y + 8.0).min(bottom - 14.0);
 
         Self {
             half,
@@ -263,9 +266,10 @@ pub fn apply_bounds_geometry(
                 tf.translation = Vec3::new(0.0, 0.0, -6.0);
             }
             FieldPiece::OuterBorder => {
+                // Single coherent rim: 6 world units outside the play half-extents.
                 sprite.custom_size = Some(Vec2::new(
-                    bounds.half.x * 2.0 + 10.0,
-                    bounds.half.y * 2.0 + 10.0,
+                    bounds.half.x * 2.0 + 12.0,
+                    bounds.half.y * 2.0 + 12.0,
                 ));
                 tf.translation = bounds.center.extend(-4.0);
             }
@@ -277,10 +281,12 @@ pub fn apply_bounds_geometry(
         }
     }
 
+    // Glow is a soft fill *inside* the field only. Scale to the short axis so it
+    // never peeks out as half-disks past the blue border (V-PLAY-NO-WEIRD-POLYGONS).
     for mut tf in glow.iter_mut() {
-        tf.translation = bounds.center.extend(-5.0);
-        let s = bounds.half.length().max(200.0) * 0.55;
-        tf.scale = Vec3::splat(s.clamp(80.0, 900.0));
+        tf.translation = bounds.center.extend(-3.5);
+        let s = bounds.half.x.min(bounds.half.y) * 0.92;
+        tf.scale = Vec3::splat(s.clamp(40.0, 700.0));
     }
 }
 
@@ -333,6 +339,27 @@ pub fn sync_play_bounds(
     }
     *bounds = next;
     apply_bounds_geometry(&bounds, &mut cam_q, &mut pieces, &mut glow);
+}
+
+/// Hide playfield border/glow under menu overlays so empty blue rects do not
+/// ghost through (V-GHOST-FIELD). Backdrop stays as the dim scene base.
+pub fn sync_field_overlay_visibility(
+    state: Res<State<GameState>>,
+    mut pieces: Query<(&FieldPiece, &mut Visibility)>,
+) {
+    let playing = *state.get() == GameState::Playing;
+    for (piece, mut vis) in &mut pieces {
+        let show = match *piece {
+            FieldPiece::Backdrop => true,
+            // Inner field + border + glow only while playing.
+            FieldPiece::OuterBorder | FieldPiece::InnerField | FieldPiece::Glow => playing,
+        };
+        *vis = if show {
+            Visibility::Inherited
+        } else {
+            Visibility::Hidden
+        };
+    }
 }
 
 /// Reposition HUD into the margin bands (outside the play rectangle).

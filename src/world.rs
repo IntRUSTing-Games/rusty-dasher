@@ -39,23 +39,29 @@ pub fn setup_field(
         FieldPiece::Backdrop,
         Sprite::from_color(Color::srgb(0.035, 0.04, 0.07), bounds.view_half * 2.2),
         Transform::from_xyz(0.0, 0.0, -6.0),
+        Visibility::Inherited,
     ));
 
-    // Soft glow: vector circle mesh
-    // Unit circle; scaled in sync_play_bounds for crisp resize.
+    // Soft center glow: stays *inside* the play rect (short-axis scale in
+    // apply_bounds_geometry) so it never reads as half-disks outside the border.
     let (m, mat) = mesh_gfx::circle(
         &mut meshes,
         &mut materials,
         1.0,
-        Color::srgba(0.2, 0.35, 0.75, 0.12),
+        Color::srgba(0.22, 0.38, 0.78, 0.10),
     );
-    let glow_r = bounds.half.length().max(200.0) * 0.55;
+    let glow_r = bounds.half.x.min(bounds.half.y) * 0.92;
     commands.spawn((
         FieldDecor,
         FieldPiece::Glow,
         m,
         mat,
-        Transform::from_xyz(bounds.center.x, bounds.center.y, -5.0).with_scale(Vec3::splat(glow_r)),
+        // Between OuterBorder (-4) and InnerField (-3): visible as a soft tint
+        // under the opaque field only if InnerField is slightly translucent —
+        // keep under InnerField and very subtle so border edges stay clean.
+        Transform::from_xyz(bounds.center.x, bounds.center.y, -3.5)
+            .with_scale(Vec3::splat(glow_r.max(40.0))),
+        Visibility::Hidden, // shown only while Playing (sync_field_overlay_visibility)
     ));
 
     // Sparse ambient dots — cheap, soft backdrop (keep count modest for perf).
@@ -80,15 +86,18 @@ pub fn setup_field(
         FieldPiece::OuterBorder,
         Sprite::from_color(
             Color::srgb(0.35, 0.5, 0.9),
-            Vec2::new(bounds.half.x * 2.0 + 10.0, bounds.half.y * 2.0 + 10.0),
+            Vec2::new(bounds.half.x * 2.0 + 12.0, bounds.half.y * 2.0 + 12.0),
         ),
         Transform::from_translation(bounds.center.extend(-4.0)),
+        // Hidden under menus; revealed while Playing (V-GHOST-FIELD).
+        Visibility::Hidden,
     ));
     commands.spawn((
         FieldDecor,
         FieldPiece::InnerField,
         Sprite::from_color(Color::srgb(0.05, 0.055, 0.09), bounds.half * 2.0),
         Transform::from_translation(bounds.center.extend(-3.0)),
+        Visibility::Hidden,
     ));
 }
 
@@ -286,22 +295,28 @@ pub fn spawn_hazards(
 
     let side = (rand_f32() * 4.0).floor() as i32;
     let base_speed = (95.0 + stats.difficulty * 60.0 + rand_f32() * 45.0) * stats.speed_mult();
-    let m = (bounds.margin * 0.72).clamp(36.0, 100.0);
+    // Spawn just past the play border (not deep into PSP grip chrome) so hazards
+    // never free-float under the stick/DASH slabs (V-PLAY-ENTITIES-IN-BOUNDS).
+    let edge = HAZARD_RADIUS + 4.0;
+    let y_lo = bounds.bottom() + HAZARD_RADIUS;
+    let y_hi = bounds.top() - HAZARD_RADIUS;
+    let x_lo = bounds.left() + HAZARD_RADIUS;
+    let x_hi = bounds.right() - HAZARD_RADIUS;
     let (pos, mut vel) = match side {
         0 => (
-            Vec2::new(bounds.left() - m, rand_range(bounds.bottom(), bounds.top())),
+            Vec2::new(bounds.left() - edge, rand_range(y_lo, y_hi)),
             Vec2::new(base_speed, rand_range(-55.0, 55.0)),
         ),
         1 => (
-            Vec2::new(bounds.right() + m, rand_range(bounds.bottom(), bounds.top())),
+            Vec2::new(bounds.right() + edge, rand_range(y_lo, y_hi)),
             Vec2::new(-base_speed, rand_range(-55.0, 55.0)),
         ),
         2 => (
-            Vec2::new(rand_range(bounds.left(), bounds.right()), bounds.bottom() - m),
+            Vec2::new(rand_range(x_lo, x_hi), bounds.bottom() - edge),
             Vec2::new(rand_range(-55.0, 55.0), base_speed),
         ),
         _ => (
-            Vec2::new(rand_range(bounds.left(), bounds.right()), bounds.top() + m),
+            Vec2::new(rand_range(x_lo, x_hi), bounds.top() + edge),
             Vec2::new(rand_range(-55.0, 55.0), -base_speed),
         ),
     };
@@ -384,13 +399,18 @@ pub fn move_hazards(
     mut query: Query<(Entity, &Hazard, &mut Transform)>,
 ) {
     let dt = time.delta_secs();
-    // Allow travel through the equal margin; only despawn past the view edge.
-    let limit = bounds.view_half + Vec2::splat(40.0);
+    // Despawn once clearly past the play rect (small grace for edge transit).
+    // Keeps hazards out of grip chrome / beyond the blue border for long.
+    let grace = HAZARD_RADIUS + 28.0;
+    let left = bounds.left() - grace;
+    let right = bounds.right() + grace;
+    let bottom = bounds.bottom() - grace;
+    let top = bounds.top() + grace;
     for (entity, hazard, mut transform) in &mut query {
         transform.translation += (hazard.velocity * dt).extend(0.0);
         transform.rotate_z(hazard.spin * dt);
         let p = transform.translation.truncate();
-        if p.x.abs() > limit.x || p.y.abs() > limit.y {
+        if p.x < left || p.x > right || p.y < bottom || p.y > top {
             commands.entity(entity).despawn();
         }
     }
@@ -412,6 +432,7 @@ pub fn animate_pickups(
 
 pub fn magnet_pull(
     time: Res<Time>,
+    bounds: Res<PlayBounds>,
     player_q: Query<(&Transform, &Player)>,
     mut stars: Query<&mut Transform, (With<Star>, Without<Player>)>,
 ) {
@@ -430,6 +451,8 @@ pub fn magnet_pull(
             let dir = (player_pos - pos).normalize();
             let pull = 240.0 * (1.0 - dist / 165.0);
             star_tf.translation += (dir * pull * dt).extend(0.0);
+            // Keep stars inside the play border (V-PLAY-ENTITIES-IN-BOUNDS).
+            star_tf.translation = bounds.clamp(star_tf.translation, STAR_RADIUS);
         }
     }
 }

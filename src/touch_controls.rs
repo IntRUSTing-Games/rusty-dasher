@@ -95,12 +95,17 @@ pub struct TouchControls {
     pub dash_held: bool,
 }
 
-/// Recompute screen-space stick/dash positions from the window + viewport class.
+/// Recompute screen-space stick/dash hit targets.
+///
+/// When [`PlayBounds`] chrome insets are live, map grip/deck fractions from
+/// world → window so hits match bounds-driven visuals (critical on high-DPR
+/// landscape where raw 20%-of-width clamps drifted from chrome_insets).
 pub fn sync_touch_chrome_layout(
     windows: Query<&Window>,
     ui: Res<UiScale>,
     state: Res<State<GameState>>,
     save: Res<SaveData>,
+    bounds: Res<PlayBounds>,
     mut layout: ResMut<TouchChromeLayout>,
 ) {
     let Ok(window) = windows.single() else {
@@ -121,28 +126,79 @@ pub fn sync_touch_chrome_layout(
     let portrait = ui.class.is_portrait() || h >= w;
     layout.portrait = portrait;
 
-    let (mut stick_c, mut dash_c, stick_r, dash_r, deck_min, deck_max) = if portrait {
-        // Game Boy: control deck is the bottom ~34% of the screen.
-        let deck_top = h * 0.66;
-        let deck_min = Vec2::new(0.0, deck_top);
-        let deck_max = Vec2::new(w, h);
-        let deck_cy = (deck_top + h) * 0.5;
-        let stick_r = (w.min(h) * 0.11).clamp(40.0, 64.0);
-        let dash_r = (w.min(h) * 0.08).clamp(30.0, 48.0);
-        let stick_c = Vec2::new(w * 0.28, deck_cy);
-        let dash_c = Vec2::new(w * 0.75, deck_cy);
-        (stick_c, dash_c, stick_r, dash_r, deck_min, deck_max)
-    } else {
-        // PSP: left grip stick, right grip dash, screen in the middle.
-        let grip_w = (w * 0.20).clamp(90.0, 180.0);
-        let deck_min = Vec2::new(0.0, 0.0);
-        let deck_max = Vec2::new(w, h);
-        let stick_r = (h * 0.16).clamp(36.0, 58.0);
-        let dash_r = (h * 0.13).clamp(28.0, 44.0);
-        let stick_c = Vec2::new(grip_w * 0.5, h * 0.52);
-        let dash_c = Vec2::new(w - grip_w * 0.5, h * 0.52);
-        (stick_c, dash_c, stick_r, dash_r, deck_min, deck_max)
-    };
+    let (mut stick_c, mut dash_c, stick_r, dash_r, deck_min, deck_max) =
+        if bounds.chrome && bounds.view_half.x > 1.0 && bounds.view_half.y > 1.0 {
+            // Mirror PlayBounds chrome strips into window space (Y down).
+            let view_w = bounds.view_half.x * 2.0;
+            let to_win = |world: Vec2| -> Vec2 {
+                let nx = (world.x / bounds.view_half.x) * 0.5 + 0.5;
+                let ny = 0.5 - (world.y / bounds.view_half.y) * 0.5;
+                Vec2::new(nx * w, ny * h)
+            };
+            let world_to_win_r = |r: f32| (r / view_w) * w;
+
+            if portrait {
+                let deck_top_w = bounds.bottom();
+                let deck_bot_w = -bounds.view_half.y;
+                let deck_cy_w = (deck_top_w + deck_bot_w) * 0.5;
+                let deck_h_w = (deck_top_w - deck_bot_w).max(24.0);
+                let stick_r_w = (deck_h_w * 0.34).clamp(28.0, 72.0);
+                let dash_r_w = (deck_h_w * 0.28).clamp(22.0, 56.0);
+                let left_w = Vec2::new(-bounds.view_half.x + view_w * 0.28, deck_cy_w);
+                let right_w = Vec2::new(-bounds.view_half.x + view_w * 0.75, deck_cy_w);
+                let deck_min = Vec2::new(0.0, to_win(Vec2::new(0.0, deck_top_w)).y);
+                let deck_max = Vec2::new(w, h);
+                (
+                    to_win(left_w),
+                    to_win(right_w),
+                    world_to_win_r(stick_r_w).clamp(36.0, 72.0),
+                    world_to_win_r(dash_r_w).clamp(28.0, 56.0),
+                    deck_min,
+                    deck_max,
+                )
+            } else {
+                let left_l = -bounds.view_half.x;
+                let left_r = bounds.left() - 2.0;
+                let left_w = (left_r - left_l).max(8.0);
+                let left_cx = left_l + left_w * 0.5;
+                let right_l = bounds.right() + 2.0;
+                let right_r = bounds.view_half.x;
+                let right_w = (right_r - right_l).max(8.0);
+                let right_cx = right_l + right_w * 0.5;
+                let cy = -bounds.view_half.y * 0.04;
+                let stick_r_w = (left_w.min(right_w) * 0.38).clamp(28.0, 90.0);
+                let dash_r_w = (left_w.min(right_w) * 0.32).clamp(22.0, 72.0);
+                (
+                    to_win(Vec2::new(left_cx, cy)),
+                    to_win(Vec2::new(right_cx, cy)),
+                    world_to_win_r(stick_r_w).clamp(32.0, 70.0),
+                    world_to_win_r(dash_r_w).clamp(26.0, 56.0),
+                    Vec2::new(0.0, 0.0),
+                    Vec2::new(w, h),
+                )
+            }
+        } else if portrait {
+            // Fallback before chrome bounds settle: Game Boy bottom deck.
+            let deck_top = h * 0.66;
+            let deck_min = Vec2::new(0.0, deck_top);
+            let deck_max = Vec2::new(w, h);
+            let deck_cy = (deck_top + h) * 0.5;
+            let stick_r = (w.min(h) * 0.11).clamp(40.0, 64.0);
+            let dash_r = (w.min(h) * 0.08).clamp(30.0, 48.0);
+            let stick_c = Vec2::new(w * 0.28, deck_cy);
+            let dash_c = Vec2::new(w * 0.75, deck_cy);
+            (stick_c, dash_c, stick_r, dash_r, deck_min, deck_max)
+        } else {
+            // Fallback: PSP side grips as a fraction of window (matches chrome_insets ~20%).
+            let grip_w = w * 0.20;
+            let deck_min = Vec2::new(0.0, 0.0);
+            let deck_max = Vec2::new(w, h);
+            let stick_r = (h * 0.16).clamp(36.0, 58.0);
+            let dash_r = (h * 0.13).clamp(28.0, 44.0);
+            let stick_c = Vec2::new(grip_w * 0.5, h * 0.52);
+            let dash_c = Vec2::new(w - grip_w * 0.5, h * 0.52);
+            (stick_c, dash_c, stick_r, dash_r, deck_min, deck_max)
+        };
 
     if save.swap_touch_controls {
         std::mem::swap(&mut stick_c, &mut dash_c);
@@ -527,6 +583,7 @@ fn pick_move_pointer(
 }
 
 /// Convert window logical position → world using the live camera (matches playfield).
+#[allow(dead_code)] // kept for input/debug paths; chrome visuals use PlayBounds
 pub fn window_to_world(
     window_pos: Vec2,
     camera: &Camera,
@@ -536,6 +593,7 @@ pub fn window_to_world(
 }
 
 /// Fallback when camera is unavailable (should be rare).
+#[allow(dead_code)]
 pub fn window_to_world_approx(
     window_pos: Vec2,
     window: &Window,
