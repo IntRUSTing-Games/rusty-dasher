@@ -298,9 +298,10 @@ pub fn spawn_hazards(
     // Spawn *inside* the play border (not past it into Game Boy deck / PSP grips).
     // Prior OOB spawns made hazards free-float over chrome (V-PLAY-ENTITIES-IN-BOUNDS).
     // Reserve a top band so hazards don't birth on the in-field level HUD line
-    // (V-PLAY-HUD-CLEAR / V-PLAY-HAZARD-NOT-ON-HUD).
-    let hud_band = if bounds.chrome { 34.0 } else { 14.0 };
-    let inset = HAZARD_RADIUS + 2.0;
+    // (V-PLAY-HUD-CLEAR / V-PLAY-HAZARD-NOT-ON-HUD). Triangle circumradius =
+    // HAZARD_RADIUS — inset by full radius so vertices start inside the blue rect.
+    let hud_band = if bounds.chrome { 42.0 } else { 22.0 };
+    let inset = HAZARD_RADIUS + 4.0;
     let y_lo = bounds.bottom() + inset;
     let y_hi = (bounds.top() - inset - hud_band).max(y_lo + 8.0);
     let x_lo = bounds.left() + inset;
@@ -403,14 +404,16 @@ pub fn move_hazards(
     mut query: Query<(Entity, &Hazard, &mut Transform)>,
 ) {
     let dt = time.delta_secs();
-    // Tight despawn: once the hazard center clears the play border by a fraction
-    // of its radius it is gone — no free-float over deck/grips
-    // (V-PLAY-ENTITIES-IN-BOUNDS). A tiny grace allows a single-frame edge clip.
-    let grace = HAZARD_RADIUS * 0.35;
-    let left = bounds.left() - grace;
-    let right = bounds.right() + grace;
-    let bottom = bounds.bottom() - grace;
-    let top = bounds.top() + grace;
+    // Despawn when the *body* would leave the play rect. Mesh is a regular polygon
+    // with circumradius HAZARD_RADIUS. OuterBorder is a 6wu blue ring *outside*
+    // play half-extents; keep an extra 4wu so tips stay clearly inside the dark
+    // field (not on/through the blue stroke — V-PLAY-ENTITIES-IN-BOUNDS).
+    // Prior positive "grace" let centers go outside, so tips floated over HUD/chrome.
+    let pad = HAZARD_RADIUS + 4.0;
+    let left = bounds.left() + pad;
+    let right = bounds.right() - pad;
+    let bottom = bounds.bottom() + pad;
+    let top = bounds.top() - pad;
     for (entity, hazard, mut transform) in &mut query {
         transform.translation += (hazard.velocity * dt).extend(0.0);
         transform.rotate_z(hazard.spin * dt);

@@ -1,0 +1,39 @@
+{
+  "artifact": "screenshots/viewports/phone_samsung_ultra_02_menu.png",
+  "artifact_kind": "matrix_png",
+  "reviewed_at": "2026-07-17T23:58:37Z",
+  "reviewer": "a7-fill-ship-worker",
+  "review_roles_completed": [
+    "discover",
+    "map_checklist",
+    "adversary"
+  ],
+  "run_start_unix": 1784331539,
+  "opened": true,
+  "frames_or_stills_opened": [
+    "screenshots/viewports/phone_samsung_ultra_02_menu.png"
+  ],
+  "discovery_notes": [
+    "Menu panel full blue border in canvas",
+    "Stick/DASH handheld copy; no two-finger text",
+    "Controls swap strip present",
+    "format=samsung ultra portrait"
+  ],
+  "verdict": "all_good",
+  "summary": "all good \u2014 samsung ultra portrait 02_menu",
+  "issues": [],
+  "criteria_checked": [
+    "V-STATE-MATCH",
+    "V-CLIP-TEXT",
+    "V-READABLE",
+    "V-GLYPH-TOFU",
+    "V-GHOST-FIELD",
+    "V-PANEL-IN-CANVAS",
+    "V-FORM-FACTOR-COPY",
+    "V-OVERLAP",
+    "V-LINES-OVER-TEXT",
+    "I-NO-TWO-FINGER-COPY"
+  ],
+  "sim_scenarios_checked": [],
+  "adversary_reviewed": true
+}

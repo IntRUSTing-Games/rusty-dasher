@@ -1,0 +1,39 @@
+{
+  "artifact": "screenshots/viewports/laptop_hd_03_mode_select.png",
+  "artifact_kind": "matrix_png",
+  "reviewed_at": "2026-07-17T23:43:16Z",
+  "reviewer": "a7-fill-ship-worker",
+  "review_roles_completed": [
+    "discover",
+    "map_checklist",
+    "adversary"
+  ],
+  "run_start_unix": 1784331539,
+  "opened": true,
+  "frames_or_stills_opened": [
+    "screenshots/viewports/laptop_hd_03_mode_select.png"
+  ],
+  "discovery_notes": [
+    "All 4 modes + EASY/NORMAL/HARD/INSANE; keyboard help ENTER/ESC",
+    "No two-finger copy; panel fully in canvas"
+  ],
+  "verdict": "all_good",
+  "summary": "all good \u2014 desktop mode select",
+  "issues": [],
+  "criteria_checked": [
+    "V-STATE-MATCH",
+    "V-MODE-ALL-OPTIONS",
+    "V-MODE-START-CLEAR",
+    "V-CLIP-TEXT",
+    "V-READABLE",
+    "V-GLYPH-TOFU",
+    "V-GHOST-FIELD",
+    "V-PANEL-IN-CANVAS",
+    "V-FORM-FACTOR-COPY",
+    "V-OVERLAP",
+    "V-LINES-OVER-TEXT",
+    "I-NO-TWO-FINGER-COPY"
+  ],
+  "sim_scenarios_checked": [],
+  "adversary_reviewed": true
+}

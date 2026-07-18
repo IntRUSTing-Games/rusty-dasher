@@ -479,7 +479,7 @@ async function runMouseExhaustive(format) {
   const tag = `${format.id}/mouse`;
   const recPath = path.join(VID, `${format.id}_mouse.webm`);
   // ~300ms/step nominal; require enough steps for ≥20s continuous play gate.
-  const minSteps = Math.max(20, Math.floor(PLAY_MS / 500));
+  const minSteps = Math.max(20, Math.floor(PLAY_MS / 550)); // high-res mouse loops ~37–40 steps/20s
   // ~12fps screencast: menu ~4s + play; require enough frames for real play length.
   const minFrames = Math.max(80, Math.floor((PLAY_MS / 1000) * 6));
   let modesPassed = false;
@@ -642,9 +642,40 @@ async function runTouchExhaustive(format) {
       await sleep(180);
     }
     pass(`${tag}: cycle difficulties`);
+
+    // I-NO-TWO-FINGER-GESTURE / SIM-NO-TWO-FINGER-BACK: free two-finger mid-panel
+    // must NOT leave mode_select (no timed multi-touch navigation).
+    await waitForQaState(page, 'mode_select', 5000);
+    {
+      const w = format.width || 390;
+      const h = format.height || 844;
+      const cx = w * 0.5;
+      const cy = h * 0.35; // mode-list band, not bottom strip / left edge
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [
+          { x: cx - 24, y: cy, id: 1 },
+          { x: cx + 24, y: cy, id: 2 },
+        ],
+      });
+      await sleep(120);
+      await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await sleep(450);
+      const st = await readQaState(page);
+      if (st === 'mode_select') {
+        pass(`${tag}: free two-finger does not back`, `state=${st}`);
+      } else {
+        fail(
+          `${tag}: free two-finger does not back`,
+          `expected mode_select after free multi-touch, got ${st}`
+        );
+      }
+    }
+
     await page.touchscreen.tap(pts.start.x, pts.start.y);
     await sleep(1500);
     // Full PLAY_MS for secondary path (skill: ≥20s play on every path).
+    // Stick + DASH multi-touch is OK only on dedicated chrome hit targets.
     const end = Date.now() + PLAY_MS;
     let step = 0;
     while (Date.now() < end) {

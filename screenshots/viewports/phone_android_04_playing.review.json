@@ -1,0 +1,38 @@
+{
+  "artifact": "screenshots/viewports/phone_android_04_playing.png",
+  "artifact_kind": "matrix_png",
+  "reviewed_at": "2026-07-18T00:07:40Z",
+  "reviewer": "agent",
+  "review_roles_completed": [
+    "discover",
+    "map_checklist",
+    "adversary"
+  ],
+  "run_start_unix": 1784331539,
+  "opened": true,
+  "frames_or_stills_opened": [
+    "screenshots/viewports/phone_android_04_playing.png"
+  ],
+  "discovery_notes": [
+    "Single blue play border; entities inside field (hazard residual pad); form-factor chrome correct; HUD clear of stick/DASH on handhelds"
+  ],
+  "verdict": "all_good",
+  "summary": "all good",
+  "issues": [],
+  "criteria_checked": [
+    "V-STATE-MATCH",
+    "V-PLAY-SINGLE-BORDER",
+    "V-PLAY-NO-SIDE-DIM-SLABS",
+    "V-PLAY-ENTITIES-IN-BOUNDS",
+    "V-PLAY-NO-WEIRD-POLYGONS",
+    "V-PLAY-CONTROLS-OUTSIDE-FIELD",
+    "V-PLAY-DESKTOP-NO-STICK",
+    "V-PLAY-HUD-CLEAR",
+    "V-OVERLAP",
+    "V-CLIP-TEXT",
+    "V-READABLE",
+    "V-FORM-FACTOR-COPY"
+  ],
+  "sim_scenarios_checked": [],
+  "adversary_reviewed": true
+}

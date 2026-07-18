@@ -1,41 +1,33 @@
 {
   "artifact": "screenshots/viewports/phone_portrait_02_menu.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-17T22:34:07Z",
-  "reviewer": "fix-ship-agent",
+  "reviewed_at": "2026-07-18T00:07:59Z",
+  "reviewer": "pipeline-review-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
     "adversary"
   ],
-  "run_start_unix": 1784327295,
+  "run_start_unix": 1784331539,
   "opened": true,
   "frames_or_stills_opened": [
     "screenshots/viewports/phone_portrait_02_menu.png"
   ],
   "discovery_notes": [
-    "Full blue panel border visible L/R/T/B with dark margin to canvas edges",
-    "Title/body/swap band fully inside panel; no lateral clip",
-    "No ghost field behind panel"
+    "Blue panel laterals complete; stick/DASH copy + swap strip; text not clipped"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 full panel border with lateral margins",
+  "summary": "all good (run_start refreshed)",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
-    "V-PANEL-IN-CANVAS",
-    "V-CLIP-TEXT",
     "V-READABLE",
+    "V-CLIP-TEXT",
+    "V-PANEL-IN-CANVAS",
     "V-GHOST-FIELD",
     "V-FORM-FACTOR-COPY",
-    "V-OVERLAP",
-    "V-GLYPH-TOFU"
+    "V-OVERLAP"
   ],
   "sim_scenarios_checked": [],
-  "adversary_reviewed": true,
-  "fix_scope": [
-    "V-PANEL-IN-CANVAS",
-    "V-PLAY-HUD-CLEAR",
-    "V-OVERLAP"
-  ]
+  "adversary_reviewed": true
 }

@@ -23,7 +23,10 @@ const OUT = path.join(ROOT, 'screenshots/viewports');
 const MATRIX = JSON.parse(fs.readFileSync(path.join(__dirname, 'qa_matrix.json'), 'utf8'));
 const PORT = process.env.PORT || process.env.RUSTY_PORT || '17880';
 const BASE = (process.env.E2E_URL || `http://127.0.0.1:${PORT}/`).replace(/\/?$/, '/');
-const URL = `${BASE}?qa_matrix=1`;
+// qa_go_ms must exceed time-to-playing-shot (start + holds). Default wasm matrix
+// force is 2.2s which races short holds and can capture GO on *_04_playing.
+const QA_GO_MS = Number(process.env.QA_GO_MS || 8000);
+const URL = `${BASE}?qa_matrix=1&qa_go_ms=${QA_GO_MS}`;
 const VERIFY_ONLY = process.env.VERIFY_ONLY === '1';
 const CONCURRENCY = Math.max(1, Number(process.env.CONCURRENCY || 3));
 const HOLD_MS = Number(process.env.MATRIX_HOLD_MS || 450);

@@ -1,40 +1,39 @@
 {
   "artifact": "screenshots/viewports/phone_landscape_02_menu.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-17T22:34:07Z",
-  "reviewer": "fix-ship-agent",
+  "reviewed_at": "2026-07-17T23:58:37Z",
+  "reviewer": "a7-fill-ship-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
     "adversary"
   ],
-  "run_start_unix": 1784327295,
+  "run_start_unix": 1784331539,
   "opened": true,
   "frames_or_stills_opened": [
     "screenshots/viewports/phone_landscape_02_menu.png"
   ],
   "discovery_notes": [
-    "Panel centered with full blue border and side margins on short landscape",
-    "Swap band fully inside"
+    "Menu panel full blue border in canvas",
+    "Stick/DASH handheld copy; no two-finger text",
+    "Controls swap strip present",
+    "format=landscape PSP grips"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 landscape menu panel in canvas",
+  "summary": "all good \u2014 landscape PSP grips 02_menu",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
-    "V-PANEL-IN-CANVAS",
     "V-CLIP-TEXT",
     "V-READABLE",
+    "V-GLYPH-TOFU",
     "V-GHOST-FIELD",
+    "V-PANEL-IN-CANVAS",
     "V-FORM-FACTOR-COPY",
     "V-OVERLAP",
-    "V-GLYPH-TOFU"
+    "V-LINES-OVER-TEXT",
+    "I-NO-TWO-FINGER-COPY"
   ],
   "sim_scenarios_checked": [],
-  "adversary_reviewed": true,
-  "fix_scope": [
-    "V-PANEL-IN-CANVAS",
-    "V-PLAY-HUD-CLEAR",
-    "V-OVERLAP"
-  ]
+  "adversary_reviewed": true
 }

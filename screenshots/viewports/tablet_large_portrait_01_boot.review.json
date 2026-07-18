@@ -1,0 +1,31 @@
+{
+  "artifact": "screenshots/viewports/tablet_large_portrait_01_boot.png",
+  "artifact_kind": "matrix_png",
+  "reviewed_at": "2026-07-18T00:05:10Z",
+  "reviewer": "a7-fill-ship-worker",
+  "review_roles_completed": [
+    "discover",
+    "map_checklist",
+    "adversary"
+  ],
+  "run_start_unix": 1784331539,
+  "opened": true,
+  "frames_or_stills_opened": [
+    "screenshots/viewports/tablet_large_portrait_01_boot.png"
+  ],
+  "discovery_notes": [
+    "Boot CTA",
+    "No blank panic"
+  ],
+  "verdict": "all_good",
+  "summary": "all good \u2014 large tablet boot",
+  "issues": [],
+  "criteria_checked": [
+    "V-BOOT-CTA",
+    "V-BLANK-PANIC",
+    "V-STATE-MATCH",
+    "V-READABLE"
+  ],
+  "sim_scenarios_checked": [],
+  "adversary_reviewed": true
+}

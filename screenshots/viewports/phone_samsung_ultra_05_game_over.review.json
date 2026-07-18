@@ -1,0 +1,38 @@
+{
+  "artifact": "screenshots/viewports/phone_samsung_ultra_05_game_over.png",
+  "artifact_kind": "matrix_png",
+  "reviewed_at": "2026-07-17T23:58:37Z",
+  "reviewer": "a7-fill-ship-worker",
+  "review_roles_completed": [
+    "discover",
+    "map_checklist",
+    "adversary"
+  ],
+  "run_start_unix": 1784331539,
+  "opened": true,
+  "frames_or_stills_opened": [
+    "screenshots/viewports/phone_samsung_ultra_05_game_over.png"
+  ],
+  "discovery_notes": [
+    "GAME OVER unclipped",
+    "Tap: again / Left edge: menu \u2014 no two-finger copy",
+    "Solid dim; no ghost field",
+    "format=samsung ultra portrait"
+  ],
+  "verdict": "all_good",
+  "summary": "all good \u2014 samsung ultra portrait 05_game_over",
+  "issues": [],
+  "criteria_checked": [
+    "V-STATE-MATCH",
+    "V-GO-UNCLIPPED",
+    "V-GHOST-FIELD",
+    "V-PANEL-IN-CANVAS",
+    "V-READABLE",
+    "V-CLIP-TEXT",
+    "V-FORM-FACTOR-COPY",
+    "V-GLYPH-TOFU",
+    "I-NO-TWO-FINGER-COPY"
+  ],
+  "sim_scenarios_checked": [],
+  "adversary_reviewed": true
+}

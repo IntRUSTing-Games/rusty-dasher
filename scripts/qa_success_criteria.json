@@ -1,6 +1,6 @@
 {
   "description": "Authoritative PASS/FAIL criteria for Rusty Dasher visual + input QA. Pair with scripts/qa_matrix.json (screens \u00d7 formats). Agents MUST open this file before writing matrix_critique.md or video_critique.md. A cell may only use BAD: none when every applicable criterion here is satisfied. Rubber-stamping GOOD without opening each artifact is a process failure.",
-  "version": 6,
+  "version": 7,
   "updated": "2026-07-17",
   "related": {
     "matrix": "scripts/qa_matrix.json",
@@ -103,7 +103,9 @@
       "Skipping phone_rodin_chrome / short-height landscape when judging resize fairness",
       "Marking portrait menu/mode BAD: none while blue panel laterals are cut by the canvas edge (V-PANEL-IN-CANVAS)",
       "Marking playing BAD: none while 'Dash X.Xs' / status text sits on the stick or DASH button (V-PLAY-HUD-CLEAR / V-OVERLAP)",
-      "Skipping mode_select V-PANEL-IN-CANVAS because menu was already reviewed"
+      "Skipping mode_select V-PANEL-IN-CANVAS because menu was already reviewed",
+      "Requiring or testing free two-finger back/dash after DASH button exists (I-NO-TWO-FINGER-GESTURE)",
+      "On-screen copy saying 'two fingers' for menu/back (I-NO-TWO-FINGER-COPY)"
     ]
   },
   "form_factor": {
@@ -725,6 +727,26 @@
         "id": "I-MULTITOUCH-STICK-DASH",
         "severity": "blocker",
         "check": "Simultaneous stick hold + DASH tap both work (SIM-DASH-WHILE-STICK)"
+      },
+      {
+        "id": "I-NO-TWO-FINGER-GESTURE",
+        "severity": "blocker",
+        "check": "No free two-finger / multi-finger gestures for back, menu, or dash. Menus/mode/game-over: single-finger taps + left-edge / bottom-strip back only. Desktop dash: right-click / Space only — not two-finger timing. Handheld play dash: on-screen DASH button only (stick+DASH multi-touch on dedicated chrome hit targets is OK). Free simultaneous taps away from those targets must not back, confirm, or dash.",
+        "known_fail_examples": [
+          "Historical: two-finger back on menus required ms-accurate multi-touch and failed fatty-finger play",
+          "Historical: two-finger dash on desktop before DASH button existed"
+        ]
+      },
+      {
+        "id": "I-NO-TWO-FINGER-COPY",
+        "severity": "blocker",
+        "check": "On-screen help/copy never tells the player to use two fingers / two-finger gestures (e.g. mode_select help, game_over hints). Prefer 'Left edge', 'bottom strip', 'Tap', 'DASH button'.",
+        "applies": [
+          "menu",
+          "mode_select",
+          "game_over",
+          "playing"
+        ]
       }
     ]
   },
@@ -874,7 +896,8 @@
       "V-PANEL-IN-CANVAS",
       "V-FORM-FACTOR-COPY",
       "V-OVERLAP",
-      "V-LINES-OVER-TEXT"
+      "V-LINES-OVER-TEXT",
+      "I-NO-TWO-FINGER-COPY"
     ],
     "mode_select": [
       "V-STATE-MATCH",
@@ -887,7 +910,8 @@
       "V-PANEL-IN-CANVAS",
       "V-FORM-FACTOR-COPY",
       "V-OVERLAP",
-      "V-LINES-OVER-TEXT"
+      "V-LINES-OVER-TEXT",
+      "I-NO-TWO-FINGER-COPY"
     ],
     "playing": [
       "V-STATE-MATCH",
@@ -923,7 +947,8 @@
       "V-READABLE",
       "V-CLIP-TEXT",
       "V-FORM-FACTOR-COPY",
-      "V-GLYPH-TOFU"
+      "V-GLYPH-TOFU",
+      "I-NO-TWO-FINGER-COPY"
     ]
   },
   "review_checklist_fairness": {
@@ -1273,13 +1298,57 @@
           "playing"
         ],
         "when": "handheld",
-        "simulate": "Multi-touch: hold stick deflection + tap DASH (two fingers).",
+        "simulate": "Multi-touch on chrome only: hold stick deflection + tap DASH button (dedicated hit targets; not a free two-finger gesture).",
         "expected_video_outcome": [
           "Both controls respond: movement continues while dash fires",
           "No control swap/glitch; stick knob stays on stick side",
           "Player dashes roughly along move facing"
         ],
         "severity": "blocker"
+      },
+      {
+        "id": "SIM-NO-TWO-FINGER-BACK",
+        "kind": "edge",
+        "modality": [
+          "touch"
+        ],
+        "screens": [
+          "menu",
+          "mode_select",
+          "game_over"
+        ],
+        "when": "handheld",
+        "simulate": "Two simultaneous taps mid-panel / mid-field (NOT left edge, NOT bottom back strip, NOT START/swap bands). Release.",
+        "expected_video_outcome": [
+          "State does not change solely due to two-finger timing (no back to menu from mode_select; no random confirm)",
+          "data-rd-state stays on the same screen unless a real single-finger control was hit",
+          "Player is never required to land multi-touch within ms for navigation"
+        ],
+        "severity": "blocker",
+        "criteria": [
+          "I-NO-TWO-FINGER-GESTURE"
+        ]
+      },
+      {
+        "id": "SIM-NO-TWO-FINGER-DASH",
+        "kind": "edge",
+        "modality": [
+          "mouse",
+          "touch"
+        ],
+        "screens": [
+          "playing"
+        ],
+        "simulate": "Desktop: two concurrent touches/pointers without right-click must not dash. Handheld: free two-finger on field (not DASH button) must not dash; only DASH chrome or Space/right-click dashes.",
+        "expected_video_outcome": [
+          "No dash trail / cooldown solely from free multi-touch",
+          "Dash still works via DASH button (handheld) or right-click/Space (desktop)"
+        ],
+        "severity": "blocker",
+        "criteria": [
+          "I-NO-TWO-FINGER-GESTURE",
+          "I-DASH"
+        ]
       },
       {
         "id": "SIM-MULTI-TOUCH-STRAY",
@@ -1482,6 +1551,7 @@
       "SIM-MODE-CYCLE-NORMAL",
       "SIM-PLAY-MOVE-MOUSE-NORMAL",
       "SIM-DASH-SPAM",
+      "SIM-NO-TWO-FINGER-DASH",
       "SIM-MOUSE-DRAG-OFFSCREEN",
       "SIM-LONG-PLAY-STABILITY",
       "SIM-GO-FORCE-TIMEOUT"
@@ -1491,8 +1561,10 @@
       "SIM-MENU-CONFIRM-NORMAL",
       "SIM-MENU-SWAP-TOUCH-NORMAL",
       "SIM-MODE-CYCLE-NORMAL",
+      "SIM-NO-TWO-FINGER-BACK",
       "SIM-PLAY-STICK-NORMAL",
       "SIM-DASH-WHILE-STICK",
+      "SIM-NO-TWO-FINGER-DASH",
       "SIM-STICK-MAX-DEFLECT",
       "SIM-STICK-DEADZONE",
       "SIM-STICK-OUTSIDE-HIT",

@@ -1165,3 +1165,26 @@ pub fn update_hud(
         **text = bits.join("  -  ");
     }
 }
+
+#[cfg(test)]
+mod no_two_finger_copy_tests {
+    /// On-screen copy must never instruct free multi-finger navigation (I-NO-TWO-FINGER-COPY).
+    #[test]
+    fn ui_rs_has_no_two_finger_player_copy() {
+        // Strip this test module so assertion literals do not false-positive.
+        let src = include_str!("ui.rs");
+        let production = src
+            .split("mod no_two_finger_copy_tests")
+            .next()
+            .unwrap_or(src);
+        let lower = production.to_ascii_lowercase();
+        assert!(
+            !lower.contains("two fingers"),
+            "ui.rs player-facing copy must not instruct multi-finger back/menu"
+        );
+        assert!(
+            !lower.contains("two-finger"),
+            "ui.rs player-facing copy must not mention multi-finger gestures"
+        );
+    }
+}

@@ -1,0 +1,34 @@
+{
+  "artifact": "screenshots/viewports/phone_large_05_game_over.png",
+  "artifact_kind": "matrix_png",
+  "reviewed_at": "2026-07-18T00:07:40Z",
+  "reviewer": "agent",
+  "review_roles_completed": [
+    "discover",
+    "map_checklist",
+    "adversary"
+  ],
+  "run_start_unix": 1784331539,
+  "opened": true,
+  "frames_or_stills_opened": [
+    "screenshots/viewports/phone_large_05_game_over.png"
+  ],
+  "discovery_notes": [
+    "GAME OVER panel complete borders; Left edge: menu / desktop ESC copy (no two-finger)"
+  ],
+  "verdict": "all_good",
+  "summary": "all good",
+  "issues": [],
+  "criteria_checked": [
+    "V-STATE-MATCH",
+    "V-CLIP-TEXT",
+    "V-READABLE",
+    "V-GLYPH-TOFU",
+    "V-PANEL-IN-CANVAS",
+    "V-GHOST-FIELD",
+    "V-FORM-FACTOR-COPY",
+    "V-OVERLAP"
+  ],
+  "sim_scenarios_checked": [],
+  "adversary_reviewed": true
+}

@@ -1,20 +1,29 @@
 {
   "artifact": "screenshots/viewports/phone_android_landscape_04_playing.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-17T21:36:55Z",
-  "reviewer": "agent",
-  "run_start_unix": 1784321756,
-  "opened": true,
-  "verdict": "issues",
-  "summary": "PSP layout controls outside field; hazard overlaps/crowds top status band near mode text",
-  "issues": [
-    {
-      "id": "V-PLAY-HAZARD-NOT-ON-HUD",
-      "detail": "Red triangle hazard sits in the upper field near the CLASSIC|NORMAL status line (same class of HUD/world z-layout clash as phone_landscape)."
-    }
+  "reviewed_at": "2026-07-18T00:07:49Z",
+  "reviewer": "a7-fill-ship-worker",
+  "review_roles_completed": [
+    "discover",
+    "map_checklist",
+    "adversary"
   ],
+  "run_start_unix": 1784331539,
+  "opened": true,
+  "frames_or_stills_opened": [
+    "screenshots/viewports/phone_android_landscape_04_playing.png"
+  ],
+  "discovery_notes": [
+    "True Playing PSP; stick+DASH outside; entities in bounds",
+    "recapture after mercadolivre corrupt"
+  ],
+  "verdict": "all_good",
+  "summary": "all good \u2014 android land 04_playing",
+  "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
+    "V-FORM-FACTOR-CHROME",
+    "V-FORM-FACTOR-COPY",
     "V-PLAY-SINGLE-BORDER",
     "V-PLAY-NO-SIDE-DIM-SLABS",
     "V-PLAY-ENTITIES-IN-BOUNDS",
@@ -22,11 +31,19 @@
     "V-PLAY-HUD-CLEAR",
     "V-PLAY-HAZARD-NOT-ON-HUD",
     "V-PLAY-CONTROLS-OUTSIDE-FIELD",
-    "V-FORM-FACTOR-CHROME",
-    "SIM-FAT-FINGER-GAP",
-    "V-READABLE"
+    "V-OVERLAP",
+    "V-GLYPH-TOFU",
+    "V-CLIP-TEXT",
+    "V-READABLE",
+    "V-LINES-OVER-TEXT",
+    "F-PLAY-AREA-HANDHELD",
+    "F-ENTITY-CSS-SIZE",
+    "F-CROSS-TIME",
+    "F-STICK-SIZE",
+    "F-DASH-SIZE",
+    "F-SPEED-FEEL",
+    "F-DENSITY"
   ],
   "sim_scenarios_checked": [],
-  "review_focus": "mobile_usability",
-  "usability_notes": "Stick L / DASH R outside blue rect; single border; entities mostly in-bounds; Score/hearts legible. Control chrome does not crowd field interior. Same landscape status-band vulnerability as other phone landscape cells."
+  "adversary_reviewed": true
 }

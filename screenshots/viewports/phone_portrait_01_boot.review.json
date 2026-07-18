@@ -1,33 +1,31 @@
 {
   "artifact": "screenshots/viewports/phone_portrait_01_boot.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-17T22:34:07Z",
-  "reviewer": "fix-ship-agent",
+  "reviewed_at": "2026-07-18T00:07:59Z",
+  "reviewer": "pipeline-review-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
     "adversary"
   ],
-  "run_start_unix": 1784327295,
+  "run_start_unix": 1784331539,
   "opened": true,
   "frames_or_stills_opened": [
     "screenshots/viewports/phone_portrait_01_boot.png"
   ],
   "discovery_notes": [
-    "Boot CTA layer present over game (emulator chrome + address bar expected)"
+    "Title RUSTY DASHER + ENTER/click/tap CTA centered; full-display emu chrome OK; not blank"
   ],
   "verdict": "all_good",
-  "summary": "boot overlay on portrait",
+  "summary": "all good (run_start refreshed)",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
-    "V-BLANK-PANIC"
+    "V-READABLE",
+    "V-CLIP-TEXT",
+    "V-BLANK-PANIC",
+    "V-FORM-FACTOR-COPY"
   ],
   "sim_scenarios_checked": [],
-  "adversary_reviewed": true,
-  "fix_scope": [
-    "V-PANEL-IN-CANVAS",
-    "V-PLAY-HUD-CLEAR",
-    "V-OVERLAP"
-  ]
+  "adversary_reviewed": true
 }

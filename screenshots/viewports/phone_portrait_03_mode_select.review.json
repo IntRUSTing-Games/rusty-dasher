@@ -1,41 +1,39 @@
 {
   "artifact": "screenshots/viewports/phone_portrait_03_mode_select.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-17T22:34:07Z",
-  "reviewer": "fix-ship-agent",
+  "reviewed_at": "2026-07-17T23:50:32Z",
+  "reviewer": "a7-fill-ship-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
     "adversary"
   ],
-  "run_start_unix": 1784327295,
+  "run_start_unix": 1784331539,
   "opened": true,
   "frames_or_stills_opened": [
     "screenshots/viewports/phone_portrait_03_mode_select.png"
   ],
   "discovery_notes": [
-    "Full blue mode panel with clear L/R margins",
-    "START button fully inside; help text inside bottom of panel",
-    "No lateral clip of border"
+    "SELECT MODE 4 modes; START clear; bottom/edge back \u2014 no two fingers",
+    "Panel full laterals"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 mode panel laterals complete; START clear",
+  "summary": "all good \u2014 portrait mode edge-back",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
-    "V-PANEL-IN-CANVAS",
+    "V-MODE-ALL-OPTIONS",
+    "V-MODE-START-CLEAR",
     "V-CLIP-TEXT",
     "V-READABLE",
-    "V-MODE-START-CLEAR",
+    "V-GLYPH-TOFU",
+    "V-GHOST-FIELD",
+    "V-PANEL-IN-CANVAS",
     "V-FORM-FACTOR-COPY",
     "V-OVERLAP",
-    "V-GHOST-FIELD"
+    "V-LINES-OVER-TEXT",
+    "I-NO-TWO-FINGER-COPY"
   ],
   "sim_scenarios_checked": [],
-  "adversary_reviewed": true,
-  "fix_scope": [
-    "V-PANEL-IN-CANVAS",
-    "V-PLAY-HUD-CLEAR",
-    "V-OVERLAP"
-  ]
+  "adversary_reviewed": true
 }

@@ -578,3 +578,28 @@ pub fn window_to_world_approx(
     let ny = 1.0 - (window_pos.y / h) * 2.0;
     Vec2::new(nx * bounds.view_half.x, ny * bounds.view_half.y)
 }
+
+#[cfg(test)]
+mod no_two_finger_gesture_tests {
+    /// Free multi-finger back/dash must stay removed (I-NO-TWO-FINGER-GESTURE).
+    #[test]
+    fn no_two_finger_back_or_dash_impl() {
+        let src = include_str!("touch_controls.rs");
+        let production = src
+            .split("mod no_two_finger_gesture_tests")
+            .next()
+            .unwrap_or(src);
+        assert!(
+            !production.contains("held_prior"),
+            "desktop multi-finger dash path must stay removed"
+        );
+        assert!(
+            !production.contains("fn pick_move_pointer"),
+            "pick_move_pointer (multi-finger move owner) must stay removed"
+        );
+        assert!(
+            !production.contains("touches.iter().count() >= 2"),
+            "must not treat multi-touch count as back/dash"
+        );
+    }
+}

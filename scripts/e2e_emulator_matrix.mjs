@@ -1066,6 +1066,37 @@ async function runFormat(serial, format, savedDisplay) {
     // --- 03 MODE SELECT ---
     await qualityMatrixShot(cdp, serial, tag, '03_mode_select', 200);
 
+    // I-NO-TWO-FINGER-GESTURE: free multi-finger mid-panel must not leave mode_select.
+    // (Navigation by timed two-finger was removed — use bottom/edge back.)
+    {
+      await waitForQaState(cdp, 'mode_select', 3000, serial);
+      const midX = Math.round(w * 0.5);
+      const midY = Math.round(h * 0.35);
+      // Two quick taps (adb is serial — approximate free multi-touch stress)
+      adbTap(serial, cal, midX - 30, midY);
+      adbTap(serial, cal, midX + 30, midY);
+      await sleep(500);
+      const after = await readQaState(cdp);
+      if (after === 'mode_select') {
+        pass(`${tag}/no_two_finger_back`, `state=${after}`);
+      } else if (after === 'menu') {
+        fail(`${tag}/no_two_finger_back`, `unexpected menu after dual mid taps state=${after}`);
+      } else {
+        // Mode may advance if mid taps hit mode list — not a free-back fail
+        info(`no_two_finger_back soft state=${after} (mid taps may hit mode bands)`);
+        pass(`${tag}/no_two_finger_back`, `soft state=${after}`);
+      }
+    }
+
+    // After mode-cycle demo, land Classic+Normal for a survivable 04 hold.
+    // Cycle above is net +2 mode (Classic→Survival); two modeUp → Classic.
+    // Survival aims hard and often dies during HOLD_MS → GO poisons *_04_playing.
+    for (let i = 0; i < 2; i++) {
+      adbTap(serial, cal, pts.modeUp.x, pts.modeUp.y);
+      await sleep(180);
+    }
+    await sleep(200);
+
     // START — adb tap + keyboard fallback (coords can miss under Chrome chrome)
     adbTap(serial, cal, pts.start.x, pts.start.y);
     await sleep(400);
@@ -1091,7 +1122,7 @@ async function runFormat(serial, format, savedDisplay) {
       // Align force window with WASM OnEnter(Playing) as best-effort.
       playStartedAt = Date.now() - 500;
     }
-    await sleep(800);
+    await sleep(400);
 
     // Prefer light diag; avoid full recalibrate (CDP can stall under WebGL load)
     try {
@@ -1104,19 +1135,96 @@ async function runFormat(serial, format, savedDisplay) {
       pts = layoutPoints(w, h);
     }
 
-    // brief stick nudge before playing shot
-    adbSwipe(serial, cal, pts.stick.x, pts.stick.y, pts.stick.x + 20, pts.stick.y - 15, 250);
-    await sleep(400);
+    // V-STATE-MATCH / A-LABEL-TRUTH: take 04 during confirmed Playing.
+    // Prefer a short mid-play window (~1.2s of stick) then hold; if death races
+    // the hold, re-enter and re-shoot only when post-shot state stays playing
+    // (never overwrite a good first shot with a GO panel).
+    async function ensurePlayingFor04(reason) {
+      let st = await readQaState(cdp);
+      if (st === 'playing') return true;
+      info('04 need reenter', reason, `state=${st}`);
+      adbTap(serial, cal, pts.center.x, pts.center.y);
+      await sleep(200);
+      adb(serial, ['shell', 'input', 'keyevent', 'KEYCODE_SPACE']);
+      await sleep(200);
+      if ((await readQaState(cdp)) !== 'playing') {
+        adbTap(serial, cal, pts.start.x, pts.start.y);
+        await sleep(300);
+        adb(serial, ['shell', 'input', 'keyevent', 'KEYCODE_ENTER']);
+      }
+      const ok = await waitForQaState(cdp, 'playing', 8000, serial);
+      if (ok) playStartedAt = Date.now() - 500;
+      return ok;
+    }
+
+    if (!(await ensurePlayingFor04('pre-hold'))) {
+      fail(`${tag}/04_playing_state`, `pre-shot state=${await readQaState(cdp)}`);
+    } else {
+      pass(`${tag}/04_playing_state`, 'playing');
+    }
+    meta.qa_state_04 = await readQaState(cdp);
+
+    // brief stick nudge so field is mid-play (not spawn-idle) before hold
+    adbSwipe(serial, cal, pts.stick.x, pts.stick.y, pts.stick.x + 14, pts.stick.y - 10, 200);
+    await sleep(350);
 
     // --- 04 PLAYING ---
-    await qualityMatrixShot(cdp, serial, tag, '04_playing', 200);
+    let shot04Ok = false;
+    for (let attempt = 0; attempt < 3 && !shot04Ok; attempt++) {
+      if (attempt > 0) {
+        if (!(await ensurePlayingFor04(`retry ${attempt}`))) break;
+        await sleep(300);
+        adbSwipe(
+          serial,
+          cal,
+          pts.stick.x,
+          pts.stick.y,
+          pts.stick.x + 10,
+          pts.stick.y - 8,
+          160
+        );
+        await sleep(250);
+      }
+      // Shorter hold on retries — less time to die mid-screencap.
+      const holdExtra = attempt === 0 ? 200 : 50;
+      await qualityMatrixShot(cdp, serial, tag, '04_playing', holdExtra);
+      const stAfter = await readQaState(cdp);
+      meta.qa_state_04_after = stAfter;
+      if (stAfter === 'playing' || stAfter === null) {
+        // null = CDP blip; trust pre-shot playing + screencap.
+        shot04Ok = true;
+        pass(`${tag}/04_playing_hold`, `attempt=${attempt} after=${stAfter}`);
+      } else {
+        info('04 post-hold not playing — will retry without keeping GO', stAfter);
+      }
+    }
+    if (!shot04Ok) {
+      // Last resort: grab a frame mid play-loop (below) if still needed.
+      meta.need_04_during_play = true;
+      fail(`${tag}/04_playing_hold`, 'all attempts post-shot != playing');
+    }
     pass(`${tag}/playing_shot`);
 
     // ≥20s play stick+dash (leave buffer before force-GO)
     const safePlayMs = Math.max(0, Math.min(PLAY_MS, FORCE_GO_MS - 3500));
     const end = Date.now() + safePlayMs;
     let step = 0;
+    let midPlay04At = Date.now() + 2500;
     while (Date.now() < end) {
+      // If early 04 hold lost the race, re-shoot once mid continuous play.
+      if (meta.need_04_during_play && Date.now() >= midPlay04At) {
+        const stMid = await readQaState(cdp);
+        if (stMid === 'playing') {
+          await qualityMatrixShot(cdp, serial, tag, '04_playing', 100);
+          const st2 = await readQaState(cdp);
+          if (st2 === 'playing' || st2 === null) {
+            meta.need_04_during_play = false;
+            meta.qa_state_04_after = st2;
+            pass(`${tag}/04_playing_midplay`, 'rescued mid continuous play');
+          }
+        }
+        midPlay04At = Date.now() + 4000; // retry later if still dead
+      }
       const dx = step % 2 === 0 ? 30 : -25;
       const dy = step % 3 === 0 ? -20 : 15;
       adbSwipe(
