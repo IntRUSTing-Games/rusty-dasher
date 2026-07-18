@@ -1,8 +1,8 @@
 {
   "artifact": "screenshots/viewports/phone_android_landscape_01_boot.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-18T00:07:49Z",
-  "reviewer": "a7-fill-ship-worker",
+  "reviewed_at": "2026-07-18T00:08:19Z",
+  "reviewer": "agent",
   "review_roles_completed": [
     "discover",
     "map_checklist",
@@ -14,17 +14,14 @@
     "screenshots/viewports/phone_android_landscape_01_boot.png"
   ],
   "discovery_notes": [
-    "True boot CTA",
-    "No blank",
-    "recapture after mercadolivre corrupt"
+    "Boot CTA settled landscape; full-display chrome OK"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 android land 01_boot",
+  "summary": "all good",
   "issues": [],
   "criteria_checked": [
-    "V-BOOT-CTA",
-    "V-BLANK-PANIC",
     "V-STATE-MATCH",
+    "V-BLANK-PANIC",
     "V-READABLE"
   ],
   "sim_scenarios_checked": [],

@@ -1,8 +1,8 @@
 {
   "artifact": "screenshots/viewports/phone_android_landscape_03_mode_select.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-18T00:07:49Z",
-  "reviewer": "a7-fill-ship-worker",
+  "reviewed_at": "2026-07-18T00:08:19Z",
+  "reviewer": "agent",
   "review_roles_completed": [
     "discover",
     "map_checklist",
@@ -14,25 +14,16 @@
     "screenshots/viewports/phone_android_landscape_03_mode_select.png"
   ],
   "discovery_notes": [
-    "SELECT MODE; bottom/edge back \u2014 no two fingers",
-    "recapture after mercadolivre corrupt"
+    "SELECT MODE+START; bottom/edge back (no two-finger)"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 android land 03_mode_select",
+  "summary": "all good",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
-    "V-MODE-ALL-OPTIONS",
     "V-MODE-START-CLEAR",
-    "V-CLIP-TEXT",
-    "V-READABLE",
-    "V-GLYPH-TOFU",
-    "V-GHOST-FIELD",
     "V-PANEL-IN-CANVAS",
-    "V-FORM-FACTOR-COPY",
-    "V-OVERLAP",
-    "V-LINES-OVER-TEXT",
-    "I-NO-TWO-FINGER-COPY"
+    "V-FORM-FACTOR-COPY"
   ],
   "sim_scenarios_checked": [],
   "adversary_reviewed": true

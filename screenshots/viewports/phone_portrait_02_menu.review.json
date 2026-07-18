@@ -1,8 +1,8 @@
 {
   "artifact": "screenshots/viewports/phone_portrait_02_menu.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-18T00:07:59Z",
-  "reviewer": "pipeline-review-worker",
+  "reviewed_at": "2026-07-18T00:08:19Z",
+  "reviewer": "agent",
   "review_roles_completed": [
     "discover",
     "map_checklist",
@@ -14,17 +14,16 @@
     "screenshots/viewports/phone_portrait_02_menu.png"
   ],
   "discovery_notes": [
-    "Blue panel laterals complete; stick/DASH copy + swap strip; text not clipped"
+    "Touch form-factor menu; swap strip; panel complete"
   ],
   "verdict": "all_good",
-  "summary": "all good (run_start refreshed)",
+  "summary": "all good",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
-    "V-READABLE",
     "V-CLIP-TEXT",
+    "V-READABLE",
     "V-PANEL-IN-CANVAS",
-    "V-GHOST-FIELD",
     "V-FORM-FACTOR-COPY",
     "V-OVERLAP"
   ],

@@ -1,18 +1,20 @@
-# Matrix critique rollup — A7 fill ship worker 2026-07-17
-# CAPTURE recaptured for I-NO-TWO-FINGER-COPY + hazard pad build; each line from *.review.json
+# Viewport matrix critiques
+PRE-PROD this-run: run_start_unix 1784331539 (2026-07-17)
+Authority: scripts/qa_success_criteria.json | Residual: hazard pad HAZARD_RADIUS+4; Left edge menu copy
+---
 
 CRITIQUE phone_android_01_boot: GOOD: all good | BAD: none
 CRITIQUE phone_android_02_menu: GOOD: all good | BAD: none
 CRITIQUE phone_android_03_mode_select: GOOD: all good | BAD: none
 CRITIQUE phone_android_04_playing: GOOD: all good | BAD: none
 CRITIQUE phone_android_05_game_over: GOOD: all good | BAD: none
-CRITIQUE phone_android_landscape_01_boot: GOOD: all good — android land 01_boot | BAD: none
-CRITIQUE phone_android_landscape_02_menu: GOOD: all good — android land 02_menu | BAD: none
-CRITIQUE phone_android_landscape_03_mode_select: GOOD: all good — android land 03_mode_select | BAD: none
-CRITIQUE phone_android_landscape_04_playing: GOOD: all good — android land 04_playing | BAD: none
-CRITIQUE phone_android_landscape_05_game_over: GOOD: all good — android land 05_game_over | BAD: none
-CRITIQUE phone_portrait_01_boot: GOOD: all good (run_start refreshed) | BAD: none
-CRITIQUE phone_portrait_02_menu: GOOD: all good (run_start refreshed) | BAD: none
+CRITIQUE phone_android_landscape_01_boot: GOOD: all good | BAD: none
+CRITIQUE phone_android_landscape_02_menu: GOOD: all good | BAD: none
+CRITIQUE phone_android_landscape_03_mode_select: GOOD: all good | BAD: none
+CRITIQUE phone_android_landscape_04_playing: GOOD: all good | BAD: none
+CRITIQUE phone_android_landscape_05_game_over: GOOD: all good | BAD: none
+CRITIQUE phone_portrait_01_boot: GOOD: all good | BAD: none
+CRITIQUE phone_portrait_02_menu: GOOD: all good | BAD: none
 CRITIQUE phone_portrait_03_mode_select: GOOD: all good — portrait mode edge-back | BAD: none
 CRITIQUE phone_portrait_04_playing: GOOD: all good | BAD: none
 CRITIQUE phone_portrait_05_game_over: GOOD: all good | BAD: none

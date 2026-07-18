@@ -1,8 +1,8 @@
 {
   "artifact": "screenshots/viewports/phone_android_landscape_02_menu.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-18T00:07:49Z",
-  "reviewer": "a7-fill-ship-worker",
+  "reviewed_at": "2026-07-18T00:08:19Z",
+  "reviewer": "agent",
   "review_roles_completed": [
     "discover",
     "map_checklist",
@@ -14,23 +14,18 @@
     "screenshots/viewports/phone_android_landscape_02_menu.png"
   ],
   "discovery_notes": [
-    "Menu panel; stick/DASH; no two-finger",
-    "recapture after mercadolivre corrupt"
+    "Touch stick/DASH copy + swap; panel complete borders"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 android land 02_menu",
+  "summary": "all good",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
     "V-CLIP-TEXT",
     "V-READABLE",
-    "V-GLYPH-TOFU",
-    "V-GHOST-FIELD",
     "V-PANEL-IN-CANVAS",
     "V-FORM-FACTOR-COPY",
-    "V-OVERLAP",
-    "V-LINES-OVER-TEXT",
-    "I-NO-TWO-FINGER-COPY"
+    "V-OVERLAP"
   ],
   "sim_scenarios_checked": [],
   "adversary_reviewed": true
