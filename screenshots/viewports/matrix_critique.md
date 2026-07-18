@@ -41,7 +41,7 @@ CRITIQUE phone_iphone_promax_landscape_05_game_over: GOOD: emu open; GO panel; L
 CRITIQUE phone_samsung_ultra_01_boot: GOOD: this-run open emu boot CTA full-display | BAD: none
 CRITIQUE phone_samsung_ultra_02_menu: GOOD: Menu stick/DASH form factor; swap row; no two-finger | BAD: none
 CRITIQUE phone_samsung_ultra_03_mode_select: GOOD: Mode select edge:back; START; no two-finger | BAD: none
-CRITIQUE phone_samsung_ultra_04_playing: GOOD: chrome matrix Playing CLASSIC Score1 stick L + DASH R outside field; single border | BAD: none
+CRITIQUE phone_samsung_ultra_04_playing: GOOD: CLASSIC NORMAL Playing stick+DASH outside field single border | BAD: none
 CRITIQUE phone_samsung_ultra_05_game_over: GOOD: this-run open GO panel full; Left edge menu residual | BAD: none
 CRITIQUE phone_samsung_ultra_landscape_01_boot: GOOD: emu; Emu boot CTA | BAD: none
 CRITIQUE phone_samsung_ultra_landscape_02_menu: GOOD: emu; Menu stick/DASH swap copy | BAD: none

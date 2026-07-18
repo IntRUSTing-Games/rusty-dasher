@@ -1,22 +1,21 @@
 {
   "artifact": "screenshots/viewports/phone_samsung_ultra_04_playing.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-18T01:32:23Z",
-  "reviewer": "phase-a-worker",
+  "reviewed_at": "2026-07-18T01:44:38Z",
+  "reviewer": "samsung-sim-residual-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
     "adversary"
   ],
-  "run_start_unix": 1784335802,
+  "run_start_unix": 1784336449,
   "opened": true,
   "frames_or_stills_opened": [
     "screenshots/viewports/phone_samsung_ultra_04_playing.png"
   ],
   "discovery_notes": [
-    "Recapture: Game Boy stick left + DASH right outside field",
-    "Single blue border; entities in bounds; HUD clear of chrome",
-    "serialized-residual opened PNG @ 2026-07-18T01:32:23Z: Playing CLASSIC Score1 stick L + DASH R outside field; not GO; V-STATE-MATCH OK"
+    "Residual single-format recapture: Playing CLASSIC|NORMAL L1; 3 hearts; stick R + DASH L outside field",
+    "Single blue border; entities in bounds; HUD clear; not GO; V-STATE-MATCH OK"
   ],
   "verdict": "all_good",
   "summary": "all good",
