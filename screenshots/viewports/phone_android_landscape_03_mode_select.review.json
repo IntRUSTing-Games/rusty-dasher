@@ -1,30 +1,39 @@
 {
   "artifact": "screenshots/viewports/phone_android_landscape_03_mode_select.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-18T00:08:19Z",
-  "reviewer": "agent",
+  "reviewed_at": "2026-07-18T01:08:42Z",
+  "reviewer": "a4b-a6-deep-review-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
     "adversary"
   ],
-  "run_start_unix": 1784331539,
+  "run_start_unix": 1784336449,
   "opened": true,
   "frames_or_stills_opened": [
     "screenshots/viewports/phone_android_landscape_03_mode_select.png"
   ],
   "discovery_notes": [
-    "SELECT MODE+START; bottom/edge back (no two-finger)"
+    "R1: Modes+START landscape; help edge: back full; full panel ring"
   ],
   "verdict": "all_good",
   "summary": "all good",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
+    "V-MODE-ALL-OPTIONS",
     "V-MODE-START-CLEAR",
+    "V-CLIP-TEXT",
+    "V-READABLE",
+    "V-GLYPH-TOFU",
+    "V-GHOST-FIELD",
     "V-PANEL-IN-CANVAS",
-    "V-FORM-FACTOR-COPY"
+    "V-FORM-FACTOR-COPY",
+    "V-OVERLAP",
+    "V-LINES-OVER-TEXT",
+    "I-NO-TWO-FINGER-COPY"
   ],
   "sim_scenarios_checked": [],
-  "adversary_reviewed": true
+  "adversary_reviewed": true,
+  "capture_path": "android_emulator_adb_screenrecord_input"
 }

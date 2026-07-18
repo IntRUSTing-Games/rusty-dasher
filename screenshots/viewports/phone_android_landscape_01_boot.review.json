@@ -1,29 +1,31 @@
 {
   "artifact": "screenshots/viewports/phone_android_landscape_01_boot.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-18T00:08:19Z",
-  "reviewer": "agent",
+  "reviewed_at": "2026-07-18T01:08:42Z",
+  "reviewer": "a4b-a6-deep-review-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
     "adversary"
   ],
-  "run_start_unix": 1784331539,
+  "run_start_unix": 1784336449,
   "opened": true,
   "frames_or_stills_opened": [
     "screenshots/viewports/phone_android_landscape_01_boot.png"
   ],
   "discovery_notes": [
-    "Boot CTA settled landscape; full-display chrome OK"
+    "R1: Landscape boot CTA centered readable; full-display emu"
   ],
   "verdict": "all_good",
   "summary": "all good",
   "issues": [],
   "criteria_checked": [
-    "V-STATE-MATCH",
+    "V-BOOT-CTA",
     "V-BLANK-PANIC",
+    "V-STATE-MATCH",
     "V-READABLE"
   ],
   "sim_scenarios_checked": [],
-  "adversary_reviewed": true
+  "adversary_reviewed": true,
+  "capture_path": "android_emulator_adb_screenrecord_input"
 }

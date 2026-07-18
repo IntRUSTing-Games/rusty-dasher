@@ -1,36 +1,35 @@
 {
   "artifact": "screenshots/viewports/laptop_hd_02_menu.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-17T23:43:16Z",
-  "reviewer": "a7-fill-ship-worker",
+  "reviewed_at": "2026-07-18T01:19:21Z",
+  "reviewer": "phase-a-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
     "adversary"
   ],
-  "run_start_unix": 1784331539,
+  "run_start_unix": 1784335802,
   "opened": true,
   "frames_or_stills_opened": [
     "screenshots/viewports/laptop_hd_02_menu.png"
   ],
   "discovery_notes": [
-    "Desktop WASD/mouse/right-click copy; no stick-only language",
-    "Blue panel complete laterals; no two-finger text"
+    "Desktop menu: WASD/arrows/SPACE + mouse right-click copy",
+    "no stick chrome",
+    "full panel border",
+    "no two-finger"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 desktop menu form-factor copy",
+  "summary": "all good",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
-    "V-CLIP-TEXT",
-    "V-READABLE",
-    "V-GLYPH-TOFU",
-    "V-GHOST-FIELD",
-    "V-PANEL-IN-CANVAS",
     "V-FORM-FACTOR-COPY",
-    "V-OVERLAP",
-    "V-LINES-OVER-TEXT",
-    "I-NO-TWO-FINGER-COPY"
+    "I-NO-TWO-FINGER-COPY",
+    "V-PANEL-IN-CANVAS",
+    "V-GHOST-FIELD",
+    "V-READABLE",
+    "V-PLAY-DESKTOP-NO-STICK"
   ],
   "sim_scenarios_checked": [],
   "adversary_reviewed": true

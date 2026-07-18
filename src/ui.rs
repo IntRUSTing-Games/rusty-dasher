@@ -1186,5 +1186,25 @@ mod no_two_finger_copy_tests {
             !lower.contains("two-finger"),
             "ui.rs player-facing copy must not mention multi-finger gestures"
         );
+        assert!(
+            !lower.contains("two finger"),
+            "ui.rs player-facing copy must not use 'two finger' phrasing"
+        );
+    }
+
+    /// README controls table must not advertise two-finger back (docs match product).
+    #[test]
+    fn readme_has_no_two_finger_controls() {
+        let readme = include_str!("../README.md");
+        let lower = readme.to_ascii_lowercase();
+        // Ban the old control row, not historical notes in other docs.
+        assert!(
+            !lower.contains("two-finger / left edge"),
+            "README must not list two-finger as a Back control"
+        );
+        assert!(
+            !lower.contains("| two-finger"),
+            "README controls table must not advertise two-finger gestures"
+        );
     }
 }

@@ -1,8 +1,8 @@
 {
   "artifact": "screenshots/viewports/1080p_03_mode_select.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-17T23:43:16Z",
-  "reviewer": "a7-fill-ship-worker",
+  "reviewed_at": "2026-07-18T00:59:48Z",
+  "reviewer": "pipeline-a4b-a6-desktop-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
@@ -14,11 +14,10 @@
     "screenshots/viewports/1080p_03_mode_select.png"
   ],
   "discovery_notes": [
-    "All 4 modes + difficulties; keyboard help; panel in canvas",
-    "No two-finger copy"
+    "SELECT MODE with CLASSIC/ZEN/SURVIVAL/TIMED + EASY..INSANE; panel complete; keyboard nav copy; START via ENTER/SPACE"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 1080p mode select",
+  "summary": "all good \u2014 1080p_03_mode_select opened this-run R1-R3",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",

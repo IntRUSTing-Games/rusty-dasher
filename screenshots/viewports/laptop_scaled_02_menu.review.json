@@ -1,8 +1,8 @@
 {
   "artifact": "screenshots/viewports/laptop_scaled_02_menu.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-18T00:07:40Z",
-  "reviewer": "agent",
+  "reviewed_at": "2026-07-18T00:59:48Z",
+  "reviewer": "pipeline-a4b-a6-desktop-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
@@ -14,20 +14,22 @@
     "screenshots/viewports/laptop_scaled_02_menu.png"
   ],
   "discovery_notes": [
-    "Panel complete; form-factor control copy; no ghost field"
+    "Desktop WASD/arrows/SPACE + mouse copy; full blue panel inside canvas; no stick-only copy; no two-finger copy; no ghost field"
   ],
   "verdict": "all_good",
-  "summary": "all good",
+  "summary": "all good \u2014 laptop_scaled_02_menu opened this-run R1-R3",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
     "V-CLIP-TEXT",
     "V-READABLE",
     "V-GLYPH-TOFU",
-    "V-PANEL-IN-CANVAS",
     "V-GHOST-FIELD",
+    "V-PANEL-IN-CANVAS",
     "V-FORM-FACTOR-COPY",
-    "V-OVERLAP"
+    "V-OVERLAP",
+    "V-LINES-OVER-TEXT",
+    "I-NO-TWO-FINGER-COPY"
   ],
   "sim_scenarios_checked": [],
   "adversary_reviewed": true

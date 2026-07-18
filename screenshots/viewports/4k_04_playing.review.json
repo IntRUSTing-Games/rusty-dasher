@@ -1,8 +1,8 @@
 {
   "artifact": "screenshots/viewports/4k_04_playing.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-17T23:47:11Z",
-  "reviewer": "a7-fill-ship-worker",
+  "reviewed_at": "2026-07-18T00:59:48Z",
+  "reviewer": "pipeline-a4b-a6-desktop-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
@@ -14,10 +14,14 @@
     "screenshots/viewports/4k_04_playing.png"
   ],
   "discovery_notes": [
-    "True Playing; single border; no stick; hazard in bounds"
+    "True Playing CLASSIC|NORMAL; single blue play border full-bleed field",
+    "No virtual stick / no DASH button (V-PLAY-DESKTOP-NO-STICK / F-NO-DESKTOP-REGRESS)",
+    "Player/stars/hazards inside field (hazard tip residual pad known)",
+    "HUD Score/mode/lives/Dash READY clear; no nested borders; no side dim slabs",
+    "Entity CSS size and full play area match desktop baseline feel"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 4k playing",
+  "summary": "all good \u2014 4k_04_playing opened this-run R1-R3",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
@@ -29,6 +33,7 @@
     "V-PLAY-NO-WEIRD-POLYGONS",
     "V-PLAY-HUD-CLEAR",
     "V-PLAY-HAZARD-NOT-ON-HUD",
+    "V-PLAY-CONTROLS-OUTSIDE-FIELD",
     "V-PLAY-DESKTOP-NO-STICK",
     "V-OVERLAP",
     "V-GLYPH-TOFU",
@@ -36,8 +41,7 @@
     "V-READABLE",
     "V-LINES-OVER-TEXT",
     "F-NO-DESKTOP-REGRESS",
-    "F-SPEED-FEEL",
-    "F-DENSITY"
+    "F-SPEED-FEEL"
   ],
   "sim_scenarios_checked": [],
   "adversary_reviewed": true

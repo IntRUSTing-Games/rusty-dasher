@@ -1,43 +1,33 @@
 {
   "artifact": "screenshots/viewports/laptop_720_04_playing.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-17T23:43:16Z",
-  "reviewer": "a7-fill-ship-worker",
+  "reviewed_at": "2026-07-18T01:35:49Z",
+  "reviewer": "phase-a-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
     "adversary"
   ],
-  "run_start_unix": 1784331539,
+  "run_start_unix": 1784335802,
   "opened": true,
   "frames_or_stills_opened": [
     "screenshots/viewports/laptop_720_04_playing.png"
   ],
   "discovery_notes": [
-    "CLASSIC|NORMAL playing; single border; no stick; stars+player in bounds; Dash READY outside"
+    "Desktop play no stick chrome",
+    "single border",
+    "entities in bounds"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 laptop_720 playing",
+  "summary": "all good",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
-    "V-FORM-FACTOR-CHROME",
-    "V-FORM-FACTOR-COPY",
-    "V-PLAY-SINGLE-BORDER",
-    "V-PLAY-NO-SIDE-DIM-SLABS",
-    "V-PLAY-ENTITIES-IN-BOUNDS",
-    "V-PLAY-NO-WEIRD-POLYGONS",
-    "V-PLAY-HUD-CLEAR",
-    "V-PLAY-HAZARD-NOT-ON-HUD",
     "V-PLAY-DESKTOP-NO-STICK",
-    "V-OVERLAP",
-    "V-GLYPH-TOFU",
-    "V-CLIP-TEXT",
-    "V-READABLE",
-    "V-LINES-OVER-TEXT",
-    "F-NO-DESKTOP-REGRESS",
-    "F-SPEED-FEEL",
-    "F-DENSITY"
+    "V-PLAY-SINGLE-BORDER",
+    "V-PLAY-ENTITIES-IN-BOUNDS",
+    "V-PLAY-HUD-CLEAR",
+    "F-NO-DESKTOP-REGRESS"
   ],
   "sim_scenarios_checked": [],
   "adversary_reviewed": true

@@ -1,8 +1,8 @@
 {
   "artifact": "screenshots/viewports/4k_05_game_over.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-18T00:07:40Z",
-  "reviewer": "agent",
+  "reviewed_at": "2026-07-18T00:59:48Z",
+  "reviewer": "pipeline-a4b-a6-desktop-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
@@ -14,20 +14,21 @@
     "screenshots/viewports/4k_05_game_over.png"
   ],
   "discovery_notes": [
-    "GAME OVER panel complete borders; Left edge: menu / desktop ESC copy (no two-finger)"
+    "GAME OVER or NEW HIGH SCORE panel complete; ENTER/SPACE play again + ESC menu; no two-finger copy"
   ],
   "verdict": "all_good",
-  "summary": "all good",
+  "summary": "all good \u2014 4k_05_game_over opened this-run R1-R3",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
-    "V-CLIP-TEXT",
-    "V-READABLE",
-    "V-GLYPH-TOFU",
-    "V-PANEL-IN-CANVAS",
+    "V-GO-UNCLIPPED",
     "V-GHOST-FIELD",
+    "V-PANEL-IN-CANVAS",
+    "V-READABLE",
+    "V-CLIP-TEXT",
     "V-FORM-FACTOR-COPY",
-    "V-OVERLAP"
+    "V-GLYPH-TOFU",
+    "I-NO-TWO-FINGER-COPY"
   ],
   "sim_scenarios_checked": [],
   "adversary_reviewed": true

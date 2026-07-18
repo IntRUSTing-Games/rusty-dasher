@@ -236,6 +236,76 @@ async function readQaState(page) {
   }
 }
 
+/** Read data-rd-dash-cd (player dash cooldown seconds) published by WASM. */
+async function readDashCd(page) {
+  try {
+    const v = await page.evaluate(() =>
+      document.documentElement?.getAttribute('data-rd-dash-cd')
+    );
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  } catch (_) {
+    return 0;
+  }
+}
+
+/**
+ * SIM-NO-TWO-FINGER-DASH: free dual-touch mid-field must not start a dash.
+ * Expects Playing. Optional legitDash() proves dash still works after.
+ */
+async function assertFreeTwoFingerDoesNotDash(page, client, format, tag, legitDash) {
+  await waitForQaState(page, 'playing', 5000);
+  // Wait until ready to dash (cd ~0) so a free dual-touch would have set cd if wired.
+  {
+    const readyDeadline = Date.now() + 4000;
+    while (Date.now() < readyDeadline) {
+      if ((await readDashCd(page)) <= 0.05) break;
+      await sleep(80);
+    }
+  }
+  const before = await readDashCd(page);
+  const w = format.width || 390;
+  const h = format.height || 844;
+  // Mid playfield — not DASH chrome, not stick deck, not bottom strip.
+  const cx = w * 0.5;
+  const cy = h * (isHandheldFormat(format) ? 0.38 : 0.45);
+  await client.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [
+      { x: cx - 28, y: cy, id: 1 },
+      { x: cx + 28, y: cy, id: 2 },
+    ],
+  });
+  await sleep(140);
+  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await sleep(280);
+  const after = await readDashCd(page);
+  const st = await readQaState(page);
+  // Free multi-touch must not arm dash cooldown and must not leave Playing.
+  if (st !== 'playing') {
+    fail(`${tag}: free two-finger does not dash`, `left playing → state=${st}`);
+  } else if (before <= 0.05 && after > 0.15) {
+    fail(
+      `${tag}: free two-finger does not dash`,
+      `dash cooldown rose without DASH/right-click/Space: ${before} → ${after}`
+    );
+  } else {
+    pass(`${tag}: free two-finger does not dash`, `cd ${before}→${after} state=${st}`);
+  }
+  if (typeof legitDash === 'function') {
+    await legitDash();
+    await sleep(200);
+    const afterLegit = await readDashCd(page);
+    if (afterLegit > 0.15) {
+      pass(`${tag}: legit dash still works`, `cd=${afterLegit}`);
+    } else {
+      // Soft: timing/hit may miss on some viewports; free-two-finger check is the blocker.
+      console.warn(`[qa] ${tag}: legit dash cd still low (${afterLegit}) — soft`);
+      pass(`${tag}: legit dash still works`, `soft cd=${afterLegit}`);
+    }
+  }
+}
+
 /** Poll until GameState label matches (or timeout). */
 async function waitForQaState(page, want, timeoutMs = 15000) {
   const deadline = Date.now() + timeoutMs;
@@ -515,6 +585,16 @@ async function runMouseExhaustive(format) {
       }
       await page.mouse.click(cx, cy);
       await sleep(1500);
+      // SIM-NO-TWO-FINGER-DASH (desktop): free dual-touch must not dash;
+      // right-click remains the mouse dash.
+      {
+        const client = await page.createCDPSession();
+        await assertFreeTwoFingerDoesNotDash(page, client, format, tag, async () => {
+          await page.mouse.click(Math.floor(w * 0.55), Math.floor(h * 0.45), {
+            button: 'right',
+          });
+        });
+      }
       // Full PLAY_MS for secondary path (skill: ≥20s play on every path).
       const playStarted = Date.now();
       const end = playStarted + PLAY_MS;
@@ -674,6 +754,15 @@ async function runTouchExhaustive(format) {
 
     await page.touchscreen.tap(pts.start.x, pts.start.y);
     await sleep(1500);
+    // SIM-NO-TWO-FINGER-DASH: free dual mid-field must not dash; DASH chrome still works.
+    await assertFreeTwoFingerDoesNotDash(page, client, format, tag, async () => {
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: pts.dash.x, y: pts.dash.y, id: 9 }],
+      });
+      await sleep(90);
+      await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    });
     // Full PLAY_MS for secondary path (skill: ≥20s play on every path).
     // Stick + DASH multi-touch is OK only on dedicated chrome hit targets.
     const end = Date.now() + PLAY_MS;

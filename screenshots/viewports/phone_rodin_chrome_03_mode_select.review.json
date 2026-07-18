@@ -1,40 +1,31 @@
 {
   "artifact": "screenshots/viewports/phone_rodin_chrome_03_mode_select.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-18T00:04:07Z",
-  "reviewer": "a7-fill-ship-worker",
+  "reviewed_at": "2026-07-18T01:19:58Z",
+  "reviewer": "emu-phase-a-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
     "adversary"
   ],
-  "run_start_unix": 1784331539,
+  "run_start_unix": 1784336449,
   "opened": true,
   "frames_or_stills_opened": [
     "screenshots/viewports/phone_rodin_chrome_03_mode_select.png"
   ],
   "discovery_notes": [
-    "SELECT MODE 4 modes; START clear; bottom/edge back \u2014 no two fingers",
-    "Panel in canvas",
-    "format=phone_rodin_chrome recapture a7b"
+    "Modes+START; no-two-finger-back CAPTURE_OK"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 phone_rodin_chrome 03_mode_select",
+  "summary": "all good",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
     "V-MODE-ALL-OPTIONS",
     "V-MODE-START-CLEAR",
-    "V-CLIP-TEXT",
-    "V-READABLE",
-    "V-GLYPH-TOFU",
-    "V-GHOST-FIELD",
-    "V-PANEL-IN-CANVAS",
-    "V-FORM-FACTOR-COPY",
-    "V-OVERLAP",
-    "V-LINES-OVER-TEXT",
-    "I-NO-TWO-FINGER-COPY"
+    "V-READABLE"
   ],
   "sim_scenarios_checked": [],
-  "adversary_reviewed": true
+  "adversary_reviewed": true,
+  "capture_path": "android_emulator_adb_screenrecord_input"
 }

@@ -1,20 +1,20 @@
 {
   "artifact": "screenshots/viewports/phone_android_landscape_02_menu.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-18T00:08:19Z",
-  "reviewer": "agent",
+  "reviewed_at": "2026-07-18T01:08:42Z",
+  "reviewer": "a4b-a6-deep-review-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
     "adversary"
   ],
-  "run_start_unix": 1784331539,
+  "run_start_unix": 1784336449,
   "opened": true,
   "frames_or_stills_opened": [
     "screenshots/viewports/phone_android_landscape_02_menu.png"
   ],
   "discovery_notes": [
-    "Touch stick/DASH copy + swap; panel complete borders"
+    "R1: Landscape menu panel full laterals; Stick/DASH + swap Stick RIGHT - DASH LEFT; no two-finger"
   ],
   "verdict": "all_good",
   "summary": "all good",
@@ -23,10 +23,15 @@
     "V-STATE-MATCH",
     "V-CLIP-TEXT",
     "V-READABLE",
+    "V-GLYPH-TOFU",
+    "V-GHOST-FIELD",
     "V-PANEL-IN-CANVAS",
     "V-FORM-FACTOR-COPY",
-    "V-OVERLAP"
+    "V-OVERLAP",
+    "V-LINES-OVER-TEXT",
+    "I-NO-TWO-FINGER-COPY"
   ],
   "sim_scenarios_checked": [],
-  "adversary_reviewed": true
+  "adversary_reviewed": true,
+  "capture_path": "android_emulator_adb_screenrecord_input"
 }

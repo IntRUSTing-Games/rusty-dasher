@@ -1,25 +1,23 @@
 {
   "artifact": "screenshots/viewports/phone_rodin_landscape_01_boot.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-18T00:04:07Z",
-  "reviewer": "a7-fill-ship-worker",
+  "reviewed_at": "2026-07-18T01:25:40Z",
+  "reviewer": "emu-phase-a-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
     "adversary"
   ],
-  "run_start_unix": 1784331539,
+  "run_start_unix": 1784336449,
   "opened": true,
   "frames_or_stills_opened": [
     "screenshots/viewports/phone_rodin_landscape_01_boot.png"
   ],
   "discovery_notes": [
-    "Boot CTA readable",
-    "No blank panic",
-    "format=phone_rodin_landscape recapture a7b"
+    "Emu boot CTA"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 phone_rodin_landscape 01_boot",
+  "summary": "all good",
   "issues": [],
   "criteria_checked": [
     "V-BOOT-CTA",
@@ -28,5 +26,6 @@
     "V-READABLE"
   ],
   "sim_scenarios_checked": [],
-  "adversary_reviewed": true
+  "adversary_reviewed": true,
+  "capture_path": "android_emulator_adb_screenrecord_input"
 }

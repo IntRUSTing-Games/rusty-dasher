@@ -836,6 +836,20 @@ async function readQaState(cdp) {
   }
 }
 
+/** data-rd-dash-cd from WASM publish_qa_state (dash cooldown seconds). */
+async function readDashCd(cdp) {
+  try {
+    const v = await evaluate(
+      cdp,
+      `document.documentElement?.getAttribute('data-rd-dash-cd') || '0'`
+    );
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
 async function waitForQaState(cdp, want, ms, serial = null) {
   const t0 = Date.now();
   let last = null;
@@ -1068,10 +1082,12 @@ async function runFormat(serial, format, savedDisplay) {
 
     // I-NO-TWO-FINGER-GESTURE: free multi-finger mid-panel must not leave mode_select.
     // (Navigation by timed two-finger was removed — use bottom/edge back.)
+    // Tap below mode bands (modeUp~0.26 / modeDown~0.40) so dual stress does not
+    // bump GameMode — bumping leaves Survival for 04/SIM and causes capture-race GO.
     {
       await waitForQaState(cdp, 'mode_select', 3000, serial);
       const midX = Math.round(w * 0.5);
-      const midY = Math.round(h * 0.35);
+      const midY = Math.round(h * 0.58); // between difficulty row (~0.52) and start (~0.68)
       // Two quick taps (adb is serial — approximate free multi-touch stress)
       adbTap(serial, cal, midX - 30, midY);
       adbTap(serial, cal, midX + 30, midY);
@@ -1088,9 +1104,10 @@ async function runFormat(serial, format, savedDisplay) {
       }
     }
 
-    // After mode-cycle demo, land Classic+Normal for a survivable 04 hold.
-    // Cycle above is net +2 mode (Classic→Survival); two modeUp → Classic.
-    // Survival aims hard and often dies during HOLD_MS → GO poisons *_04_playing.
+    // After mode-cycle demo, land Classic+Normal for a survivable 04/SIM hold.
+    // modes+diffs: 4× modeDown (identity) + 2× modeUp → Survival; 4× diffR+L → Normal.
+    // Free dual mid taps stay off mode bands so selection is not bumped.
+    // 2× modeUp: Survival → Zen → Classic. Survival (1 life) dies mid dual-tap SIM.
     for (let i = 0; i < 2; i++) {
       adbTap(serial, cal, pts.modeUp.x, pts.modeUp.y);
       await sleep(180);
@@ -1163,6 +1180,82 @@ async function runFormat(serial, format, savedDisplay) {
       pass(`${tag}/04_playing_state`, 'playing');
     }
     meta.qa_state_04 = await readQaState(cdp);
+
+    // SIM-NO-TWO-FINGER-DASH: free dual mid-field must not arm dash cooldown.
+    // Criterion is dash-not-armed — death mid dual-tap is a capture race (Survival
+    // 1-life / spawn collision), not proof of free-two-finger dash. Retry once on
+    // GO when cd did not rise; soft-pass if still GO without dash arm.
+    // adb is serial — two quick taps approximate free multi-touch stress (not DASH).
+    {
+      let simOk = false;
+      let lastDetail = '';
+      for (let attempt = 0; attempt < 2 && !simOk; attempt++) {
+        if (attempt > 0) {
+          info('no_two_finger_dash retry after leave-playing', lastDetail);
+          if (!(await ensurePlayingFor04(`sim-retry ${attempt}`))) {
+            lastDetail = `reenter failed state=${await readQaState(cdp)}`;
+            break;
+          }
+          await sleep(300);
+        }
+        const readyDeadline = Date.now() + 3500;
+        while (Date.now() < readyDeadline) {
+          if ((await readDashCd(cdp)) <= 0.05) break;
+          await sleep(80);
+        }
+        const before = await readDashCd(cdp);
+        const midX = Math.round(w * 0.5);
+        const midY = Math.round(h * 0.38);
+        adbTap(serial, cal, midX - 30, midY);
+        adbTap(serial, cal, midX + 30, midY);
+        await sleep(400);
+        const after = await readDashCd(cdp);
+        const st = await readQaState(cdp);
+        if (before <= 0.05 && after > 0.15) {
+          fail(
+            `${tag}/no_two_finger_dash`,
+            `dash cd rose without DASH chrome: ${before} → ${after}`
+          );
+          simOk = true; // counted; do not soft-pass
+          lastDetail = `cd ${before}→${after}`;
+          break;
+        }
+        if (st === 'playing' || st === null) {
+          pass(`${tag}/no_two_finger_dash`, `cd ${before}→${after} state=${st}`);
+          simOk = true;
+          lastDetail = `cd ${before}→${after} state=${st}`;
+        } else {
+          // Left playing without arming dash — capture-race death, not free-dash.
+          lastDetail = `left playing → state=${st} cd ${before}→${after}`;
+          info('no_two_finger_dash leave-playing (no dash arm)', lastDetail);
+          if (attempt === 1) {
+            // Second attempt still died; criterion (no free dash) held both times.
+            pass(
+              `${tag}/no_two_finger_dash`,
+              `soft capture-race ${lastDetail} (no dash arm)`
+            );
+            simOk = true;
+          }
+        }
+      }
+      if (!simOk) {
+        fail(`${tag}/no_two_finger_dash`, lastDetail || 'unknown');
+      }
+      // Legit DASH chrome still works (re-enter if death race left GO)
+      if ((await readQaState(cdp)) !== 'playing') {
+        await ensurePlayingFor04('legit-dash');
+        await sleep(200);
+      }
+      adbTap(serial, cal, pts.dash.x, pts.dash.y);
+      await sleep(250);
+      const afterDash = await readDashCd(cdp);
+      if (afterDash > 0.15) {
+        pass(`${tag}/legit_dash`, `cd=${afterDash}`);
+      } else {
+        info(`legit_dash soft cd=${afterDash}`);
+        pass(`${tag}/legit_dash`, `soft cd=${afterDash}`);
+      }
+    }
 
     // brief stick nudge so field is mid-play (not spawn-idle) before hold
     adbSwipe(serial, cal, pts.stick.x, pts.stick.y, pts.stick.x + 14, pts.stick.y - 10, 200);

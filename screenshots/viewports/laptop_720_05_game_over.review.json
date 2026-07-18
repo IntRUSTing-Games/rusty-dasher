@@ -1,8 +1,8 @@
 {
   "artifact": "screenshots/viewports/laptop_720_05_game_over.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-17T23:47:11Z",
-  "reviewer": "a7-fill-ship-worker",
+  "reviewed_at": "2026-07-18T00:59:48Z",
+  "reviewer": "pipeline-a4b-a6-desktop-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
@@ -14,10 +14,10 @@
     "screenshots/viewports/laptop_720_05_game_over.png"
   ],
   "discovery_notes": [
-    "GAME OVER unclipped; desktop hints"
+    "GAME OVER or NEW HIGH SCORE panel complete; ENTER/SPACE play again + ESC menu; no two-finger copy"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 720 GO",
+  "summary": "all good \u2014 laptop_720_05_game_over opened this-run R1-R3",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",

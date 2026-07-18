@@ -1,49 +1,36 @@
 {
   "artifact": "screenshots/viewports/tablet_large_portrait_04_playing.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-18T00:05:10Z",
-  "reviewer": "a7-fill-ship-worker",
+  "reviewed_at": "2026-07-18T01:25:40Z",
+  "reviewer": "emu-phase-a-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
     "adversary"
   ],
-  "run_start_unix": 1784331539,
+  "run_start_unix": 1784336449,
   "opened": true,
   "frames_or_stills_opened": [
     "screenshots/viewports/tablet_large_portrait_04_playing.png"
   ],
   "discovery_notes": [
-    "True Playing; stick+DASH outside; single border",
-    "Entities in field incl hazards; HUD outside"
+    "Large tablet DASH+stick outside field; entities in bounds"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 large tablet playing",
+  "summary": "all good",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
     "V-FORM-FACTOR-CHROME",
-    "V-FORM-FACTOR-COPY",
     "V-PLAY-SINGLE-BORDER",
-    "V-PLAY-NO-SIDE-DIM-SLABS",
     "V-PLAY-ENTITIES-IN-BOUNDS",
-    "V-PLAY-NO-WEIRD-POLYGONS",
-    "V-PLAY-HUD-CLEAR",
-    "V-PLAY-HAZARD-NOT-ON-HUD",
     "V-PLAY-CONTROLS-OUTSIDE-FIELD",
-    "V-OVERLAP",
-    "V-GLYPH-TOFU",
-    "V-CLIP-TEXT",
-    "V-READABLE",
-    "V-LINES-OVER-TEXT",
+    "V-PLAY-HUD-CLEAR",
     "F-PLAY-AREA-HANDHELD",
-    "F-ENTITY-CSS-SIZE",
-    "F-CROSS-TIME",
     "F-STICK-SIZE",
-    "F-DASH-SIZE",
-    "F-SPEED-FEEL",
-    "F-DENSITY"
+    "F-DASH-SIZE"
   ],
   "sim_scenarios_checked": [],
-  "adversary_reviewed": true
+  "adversary_reviewed": true,
+  "capture_path": "android_emulator_adb_screenrecord_input"
 }

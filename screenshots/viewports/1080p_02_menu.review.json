@@ -1,8 +1,8 @@
 {
   "artifact": "screenshots/viewports/1080p_02_menu.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-17T23:47:11Z",
-  "reviewer": "a7-fill-ship-worker",
+  "reviewed_at": "2026-07-18T00:59:48Z",
+  "reviewer": "pipeline-a4b-a6-desktop-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
@@ -14,10 +14,10 @@
     "screenshots/viewports/1080p_02_menu.png"
   ],
   "discovery_notes": [
-    "Desktop WASD/mouse; panel complete"
+    "Desktop WASD/arrows/SPACE + mouse copy; full blue panel inside canvas; no stick-only copy; no two-finger copy; no ghost field"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 1080 menu",
+  "summary": "all good \u2014 1080p_02_menu opened this-run R1-R3",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",

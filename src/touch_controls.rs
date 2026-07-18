@@ -582,6 +582,8 @@ pub fn window_to_world_approx(
 #[cfg(test)]
 mod no_two_finger_gesture_tests {
     /// Free multi-finger back/dash must stay removed (I-NO-TWO-FINGER-GESTURE).
+    /// Historical: two-finger back/dash needed ms timing and failed fatty-finger play;
+    /// DASH button + left-edge/bottom-strip replaced them.
     #[test]
     fn no_two_finger_back_or_dash_impl() {
         let src = include_str!("touch_controls.rs");
@@ -600,6 +602,21 @@ mod no_two_finger_gesture_tests {
         assert!(
             !production.contains("touches.iter().count() >= 2"),
             "must not treat multi-touch count as back/dash"
+        );
+        assert!(
+            !production.contains("touch_count >= 2"),
+            "must not gate dash/back on touch_count >= 2"
+        );
+        // Menu/mode empty-tap path must not promote multi-touch to back.
+        assert!(
+            production.contains("do not treat multi-touch as back/dash")
+                || production.contains("No single-finger tap"),
+            "empty-tap path must explicitly refuse multi-touch back"
+        );
+        // Desktop dash must be right-click (or chrome DASH), not free multi-touch.
+        assert!(
+            production.contains("mouse_right_just"),
+            "desktop dash should remain right-click based"
         );
     }
 }

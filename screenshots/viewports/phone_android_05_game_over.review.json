@@ -1,34 +1,37 @@
 {
   "artifact": "screenshots/viewports/phone_android_05_game_over.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-18T00:07:40Z",
-  "reviewer": "agent",
+  "reviewed_at": "2026-07-18T01:08:42Z",
+  "reviewer": "a4b-a6-deep-review-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
     "adversary"
   ],
-  "run_start_unix": 1784331539,
+  "run_start_unix": 1784336449,
   "opened": true,
   "frames_or_stills_opened": [
     "screenshots/viewports/phone_android_05_game_over.png"
   ],
   "discovery_notes": [
-    "GAME OVER panel complete borders; Left edge: menu / desktop ESC copy (no two-finger)"
+    "R1: GAME OVER panel full ring; Tap: again + Left edge: menu (residual wording); no two-finger copy",
+    "State match GO; text unclipped"
   ],
   "verdict": "all_good",
   "summary": "all good",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
-    "V-CLIP-TEXT",
-    "V-READABLE",
-    "V-GLYPH-TOFU",
-    "V-PANEL-IN-CANVAS",
+    "V-GO-UNCLIPPED",
     "V-GHOST-FIELD",
+    "V-PANEL-IN-CANVAS",
+    "V-READABLE",
+    "V-CLIP-TEXT",
     "V-FORM-FACTOR-COPY",
-    "V-OVERLAP"
+    "V-GLYPH-TOFU",
+    "I-NO-TWO-FINGER-COPY"
   ],
   "sim_scenarios_checked": [],
-  "adversary_reviewed": true
+  "adversary_reviewed": true,
+  "capture_path": "android_emulator_adb_screenrecord_input"
 }

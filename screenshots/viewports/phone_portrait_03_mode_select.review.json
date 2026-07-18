@@ -1,24 +1,24 @@
 {
   "artifact": "screenshots/viewports/phone_portrait_03_mode_select.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-17T23:50:32Z",
-  "reviewer": "a7-fill-ship-worker",
+  "reviewed_at": "2026-07-18T01:08:42Z",
+  "reviewer": "a4b-a6-deep-review-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
     "adversary"
   ],
-  "run_start_unix": 1784331539,
+  "run_start_unix": 1784336449,
   "opened": true,
   "frames_or_stills_opened": [
     "screenshots/viewports/phone_portrait_03_mode_select.png"
   ],
   "discovery_notes": [
-    "SELECT MODE 4 modes; START clear; bottom/edge back \u2014 no two fingers",
-    "Panel full laterals"
+    "R1: SELECT MODE full ring; all modes+START; help footer fully inside panel (not cut)",
+    "No two-finger copy"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 portrait mode edge-back",
+  "summary": "all good",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",
@@ -35,5 +35,6 @@
     "I-NO-TWO-FINGER-COPY"
   ],
   "sim_scenarios_checked": [],
-  "adversary_reviewed": true
+  "adversary_reviewed": true,
+  "capture_path": "android_emulator_adb_screenrecord_input"
 }

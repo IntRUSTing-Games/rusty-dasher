@@ -1,8 +1,8 @@
 {
   "artifact": "screenshots/viewports/qhd_03_mode_select.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-17T23:47:11Z",
-  "reviewer": "a7-fill-ship-worker",
+  "reviewed_at": "2026-07-18T00:59:48Z",
+  "reviewer": "pipeline-a4b-a6-desktop-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
@@ -14,10 +14,10 @@
     "screenshots/viewports/qhd_03_mode_select.png"
   ],
   "discovery_notes": [
-    "4 modes+diffs; keyboard; no two-finger"
+    "SELECT MODE with CLASSIC/ZEN/SURVIVAL/TIMED + EASY..INSANE; panel complete; keyboard nav copy; START via ENTER/SPACE"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 qhd mode",
+  "summary": "all good \u2014 qhd_03_mode_select opened this-run R1-R3",
   "issues": [],
   "criteria_checked": [
     "V-STATE-MATCH",

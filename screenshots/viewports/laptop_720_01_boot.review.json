@@ -1,8 +1,8 @@
 {
   "artifact": "screenshots/viewports/laptop_720_01_boot.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-17T23:47:11Z",
-  "reviewer": "a7-fill-ship-worker",
+  "reviewed_at": "2026-07-18T00:59:48Z",
+  "reviewer": "pipeline-a4b-a6-desktop-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
@@ -14,10 +14,10 @@
     "screenshots/viewports/laptop_720_01_boot.png"
   ],
   "discovery_notes": [
-    "Boot CTA readable"
+    "Boot CTA present (ENTER/click/tap); title readable; no panic/blank"
   ],
   "verdict": "all_good",
-  "summary": "all good \u2014 720 boot",
+  "summary": "all good \u2014 laptop_720_01_boot opened this-run R1-R3",
   "issues": [],
   "criteria_checked": [
     "V-BOOT-CTA",

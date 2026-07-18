@@ -98,7 +98,7 @@ On-screen **Game Boy** (portrait) / **PSP** (landscape) chrome:
 | Tap | Confirm / start / retry |
 | Top / bottom thirds | Mode select — mode |
 | Left / right sides | Mode select — difficulty |
-| Two-finger / left edge | Back |
+| Left edge / bottom strip | Back (no two-finger gestures) |
 
 Install the PWA (or use Fullscreen) from the post-boot prompt for true full-screen play without browser chrome.
 

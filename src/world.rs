@@ -743,8 +743,14 @@ pub fn qa_matrix_force_gameover(
 }
 
 /// Publish `document.documentElement[data-rd-state]` for QA scripts
-/// (`menu` | `mode_select` | `playing` | `game_over`). No-op on native.
-pub fn publish_qa_state(state: Res<State<GameState>>) {
+/// (`menu` | `mode_select` | `playing` | `game_over`).
+/// Also `data-rd-dash-cd` = player dash cooldown seconds while Playing (else `"0"`)
+/// so e2e can assert free multi-touch never fires a dash (I-NO-TWO-FINGER-GESTURE).
+/// No-op on native.
+pub fn publish_qa_state(
+    state: Res<State<GameState>>,
+    player_q: Query<&Player>,
+) {
     #[cfg(target_arch = "wasm32")]
     {
         let label = match state.get() {
@@ -753,16 +759,27 @@ pub fn publish_qa_state(state: Res<State<GameState>>) {
             GameState::Playing => "playing",
             GameState::GameOver => "game_over",
         };
+        let dash_cd = if matches!(state.get(), GameState::Playing) {
+            player_q
+                .iter()
+                .next()
+                .map(|p| p.dash_cooldown)
+                .unwrap_or(0.0)
+        } else {
+            0.0
+        };
         if let Some(el) = web_sys::window()
             .and_then(|w| w.document())
             .and_then(|d| d.document_element())
         {
             let _ = el.set_attribute("data-rd-state", label);
+            // One decimal is enough for "was 0, stayed 0" e2e checks.
+            let _ = el.set_attribute("data-rd-dash-cd", &format!("{dash_cd:.2}"));
         }
     }
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let _ = state;
+        let _ = (state, player_q);
     }
 }
 

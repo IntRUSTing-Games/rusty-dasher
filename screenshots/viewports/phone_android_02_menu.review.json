@@ -1,20 +1,21 @@
 {
   "artifact": "screenshots/viewports/phone_android_02_menu.png",
   "artifact_kind": "matrix_png",
-  "reviewed_at": "2026-07-18T00:07:40Z",
-  "reviewer": "agent",
+  "reviewed_at": "2026-07-18T01:08:42Z",
+  "reviewer": "a4b-a6-deep-review-worker",
   "review_roles_completed": [
     "discover",
     "map_checklist",
     "adversary"
   ],
-  "run_start_unix": 1784331539,
+  "run_start_unix": 1784336449,
   "opened": true,
   "frames_or_stills_opened": [
     "screenshots/viewports/phone_android_02_menu.png"
   ],
   "discovery_notes": [
-    "Panel complete; form-factor control copy; no ghost field"
+    "R1: Menu panel full blue ring laterals; Stick moves / DASH dashes copy; swap band Stick RIGHT - DASH LEFT",
+    "No two-finger copy; panel in canvas; no ghost field"
   ],
   "verdict": "all_good",
   "summary": "all good",
@@ -24,11 +25,14 @@
     "V-CLIP-TEXT",
     "V-READABLE",
     "V-GLYPH-TOFU",
-    "V-PANEL-IN-CANVAS",
     "V-GHOST-FIELD",
+    "V-PANEL-IN-CANVAS",
     "V-FORM-FACTOR-COPY",
-    "V-OVERLAP"
+    "V-OVERLAP",
+    "V-LINES-OVER-TEXT",
+    "I-NO-TWO-FINGER-COPY"
   ],
   "sim_scenarios_checked": [],
-  "adversary_reviewed": true
+  "adversary_reviewed": true,
+  "capture_path": "android_emulator_adb_screenrecord_input"
 }
